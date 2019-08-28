@@ -4,8 +4,8 @@ subroutine unpack_data_0d(fileobj, varid, var_data)
   class(*), intent(inout) :: var_data !< Array that the data
                                                  !! will be read into.
 
-  real(kind=int32) :: buf_int32
-  real(kind=int64) :: buf_int64
+  integer(kind=int32) :: buf_int32
+  integer(kind=int64) :: buf_int64
   real(kind=real32) :: buf_real32
   real(kind=real64) :: buf_real64
   integer :: err
@@ -69,8 +69,8 @@ subroutine unpack_data_1d(fileobj, varid, var_data)
   class(*), dimension(:), intent(inout) :: var_data !< Array that the data
                                                  !! will be read into.
 
-  real(kind=int32) :: buf_int32
-  real(kind=int64) :: buf_int64
+  integer(kind=int32) :: buf_int32
+  integer(kind=int64) :: buf_int64
   real(kind=real32) :: buf_real32
   real(kind=real64) :: buf_real64
   integer :: err
@@ -133,8 +133,8 @@ subroutine unpack_data_2d(fileobj, varid, var_data)
   class(*), dimension(:,:), intent(inout) :: var_data !< Array that the data
                                                  !! will be read into.
 
-  real(kind=int32) :: buf_int32
-  real(kind=int64) :: buf_int64
+  integer(kind=int32) :: buf_int32
+  integer(kind=int64) :: buf_int64
   real(kind=real32) :: buf_real32
   real(kind=real64) :: buf_real64
   integer :: err
@@ -197,8 +197,8 @@ subroutine unpack_data_3d(fileobj, varid, var_data)
   class(*), dimension(:,:,:), intent(inout) :: var_data !< Array that the data
                                                  !! will be read into.
 
-  real(kind=int32) :: buf_int32
-  real(kind=int64) :: buf_int64
+  integer(kind=int32) :: buf_int32
+  integer(kind=int64) :: buf_int64
   real(kind=real32) :: buf_real32
   real(kind=real64) :: buf_real64
   integer :: err
@@ -261,8 +261,8 @@ subroutine unpack_data_4d(fileobj, varid, var_data)
   class(*), dimension(:,:,:,:), intent(inout) :: var_data !< Array that the data
                                                  !! will be read into.
 
-  real(kind=int32) :: buf_int32
-  real(kind=int64) :: buf_int64
+  integer(kind=int32) :: buf_int32
+  integer(kind=int64) :: buf_int64
   real(kind=real32) :: buf_real32
   real(kind=real64) :: buf_real64
   integer :: err
@@ -325,8 +325,8 @@ subroutine unpack_data_5d(fileobj, varid, var_data)
   class(*), dimension(:,:,:,:,:), intent(inout) :: var_data !< Array that the data
                                                  !! will be read into.
 
-  real(kind=int32) :: buf_int32
-  real(kind=int64) :: buf_int64
+  integer(kind=int32) :: buf_int32
+  integer(kind=int64) :: buf_int64
   real(kind=real32) :: buf_real32
   real(kind=real64) :: buf_real64
   integer :: err
