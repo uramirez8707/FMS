@@ -156,5 +156,6 @@ AC_CONFIG_FILES([Makefile
         test_fms/fft/Makefile
         test_fms/axis_utils/Makefile
         test_fms/mosaic/Makefile
+        test_fms/SPEAR_ME/Makefile
         ])
 AC_OUTPUT()
