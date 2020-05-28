@@ -23,7 +23,7 @@
 # J.Liptak, R.Menzel
 
 # Find the fms_mod.mod file.
-AM_CPPFLAGS = -I${top_builddir}/mpp -I${top_builddir}/fms2_io
+AM_CPPFLAGS = -I${top_builddir}/mpp/fms -I${top_builddir}/mpp -I${top_builddir}/fms2_io
 
 # Link to the FMS library.
 LDADD = ${top_builddir}/libFMS/libFMS.la
