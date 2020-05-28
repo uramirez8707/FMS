@@ -30,3 +30,5 @@
 
 echo CASE 1: Do not use fms2io namelist
 printf "EOF\n&dummy\nEOF" | cat > input.nml
+run_test test_open_file 1
+
