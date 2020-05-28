@@ -1,11 +1,12 @@
 program main
 
 use fms2_io_mod
+use fms_mod
 use, intrinsic :: iso_fortran_env
 
 type(FmsNetcdfFile_t) :: fileobj
 
-call fms2_io_init()
+call fms_init()
 
 !! The file type for default.nc should be whatever is set in the namelist
 if (open_file(fileobj, "default.nc", "overwrite", is_restart=.true.)) then
@@ -64,5 +65,7 @@ if (open_file(fileobj, "ncformat_netcdf4.nc", "overwrite", nc_format="netcdf4", 
 
    call close_file(fileobj)
 endif
+
+call fms_end()
 
 end program main
