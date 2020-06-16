@@ -133,6 +133,10 @@ subroutine domain_write_2d(fileobj, variable_name, vdata, unlim_dim_level, &
   integer :: ydim_index
   integer :: ypos
   integer :: yc_size
+  real(kind=int32) :: fill_int32
+  real(kind=int64) :: fill_int64
+  real(kind=real32) :: fill_real32
+  real(kind=real64) :: fill_real64
 
   if (.not. is_variable_domain_decomposed(fileobj, variable_name, .true., &
                                           xdim_index, ydim_index, xpos, ypos)) then
@@ -170,15 +174,27 @@ subroutine domain_write_2d(fileobj, variable_name, vdata, unlim_dim_level, &
       type is (integer(kind=int32))
         call allocate_array(global_buf_int32, e)
         global_buf_int32 = 0
+        if (get_fill_value(fileobj, variable_name, fill_int32)) then
+            global_buf_int32 = fill_int32
+        endif
       type is (integer(kind=int64))
         call allocate_array(global_buf_int64, e)
         global_buf_int64 = 0
+        if (get_fill_value(fileobj, variable_name, fill_int64)) then
+            global_buf_int64 = fill_int64
+        endif
       type is (real(kind=real32))
         call allocate_array(global_buf_real32, e)
         global_buf_real32 = 0.
+        if (get_fill_value(fileobj, variable_name, fill_real32)) then
+            global_buf_real32 = fill_real32
+        endif
       type is (real(kind=real64))
         call allocate_array(global_buf_real64, e)
         global_buf_real64 = 0.
+        if (get_fill_value(fileobj, variable_name, fill_real64)) then
+            global_buf_real64 = fill_real64
+        endif
       class default
         call error("unsupported type.")
     end select
@@ -402,6 +418,10 @@ subroutine domain_write_3d(fileobj, variable_name, vdata, unlim_dim_level, &
   integer :: ydim_index
   integer :: ypos
   integer :: yc_size
+  real(kind=int32) :: fill_int32
+  real(kind=int64) :: fill_int64
+  real(kind=real32) :: fill_real32
+  real(kind=real64) :: fill_real64
 
   if (.not. is_variable_domain_decomposed(fileobj, variable_name, .true., &
                                           xdim_index, ydim_index, xpos, ypos)) then
@@ -439,15 +459,27 @@ subroutine domain_write_3d(fileobj, variable_name, vdata, unlim_dim_level, &
       type is (integer(kind=int32))
         call allocate_array(global_buf_int32, e)
         global_buf_int32 = 0
+        if (get_fill_value(fileobj, variable_name, fill_int32)) then
+            global_buf_int32 = fill_int32
+        endif
       type is (integer(kind=int64))
         call allocate_array(global_buf_int64, e)
         global_buf_int64 = 0
+        if (get_fill_value(fileobj, variable_name, fill_int64)) then
+            global_buf_int64 = fill_int64
+        endif
       type is (real(kind=real32))
         call allocate_array(global_buf_real32, e)
         global_buf_real32 = 0.
+        if (get_fill_value(fileobj, variable_name, fill_real32)) then
+            global_buf_real32 = fill_real32
+        endif
       type is (real(kind=real64))
         call allocate_array(global_buf_real64, e)
         global_buf_real64 = 0.
+        if (get_fill_value(fileobj, variable_name, fill_real64)) then
+            global_buf_real64 = fill_real64
+        endif
       class default
         call error("unsupported type.")
     end select
@@ -671,6 +703,10 @@ subroutine domain_write_4d(fileobj, variable_name, vdata, unlim_dim_level, &
   integer :: ydim_index
   integer :: ypos
   integer :: yc_size
+  real(kind=int32) :: fill_int32
+  real(kind=int64) :: fill_int64
+  real(kind=real32) :: fill_real32
+  real(kind=real64) :: fill_real64
 
   if (.not. is_variable_domain_decomposed(fileobj, variable_name, .true., &
                                           xdim_index, ydim_index, xpos, ypos)) then
@@ -708,15 +744,27 @@ subroutine domain_write_4d(fileobj, variable_name, vdata, unlim_dim_level, &
       type is (integer(kind=int32))
         call allocate_array(global_buf_int32, e)
         global_buf_int32 = 0
+        if (get_fill_value(fileobj, variable_name, fill_int32)) then
+            global_buf_int32 = fill_int32
+        endif
       type is (integer(kind=int64))
         call allocate_array(global_buf_int64, e)
         global_buf_int64 = 0
+        if (get_fill_value(fileobj, variable_name, fill_int64)) then
+            global_buf_int64 = fill_int64
+        endif
       type is (real(kind=real32))
         call allocate_array(global_buf_real32, e)
         global_buf_real32 = 0.
+        if (get_fill_value(fileobj, variable_name, fill_real32)) then
+            global_buf_real32 = fill_real32
+        endif
       type is (real(kind=real64))
         call allocate_array(global_buf_real64, e)
         global_buf_real64 = 0.
+        if (get_fill_value(fileobj, variable_name, fill_real64)) then
+            global_buf_real64 = fill_real64
+        endif
       class default
         call error("unsupported type.")
     end select
@@ -940,6 +988,10 @@ subroutine domain_write_5d(fileobj, variable_name, vdata, unlim_dim_level, &
   integer :: ydim_index
   integer :: ypos
   integer :: yc_size
+  real(kind=int32) :: fill_int32
+  real(kind=int64) :: fill_int64
+  real(kind=real32) :: fill_real32
+  real(kind=real64) :: fill_real64
 
   if (.not. is_variable_domain_decomposed(fileobj, variable_name, .true., &
                                           xdim_index, ydim_index, xpos, ypos)) then
@@ -977,15 +1029,27 @@ subroutine domain_write_5d(fileobj, variable_name, vdata, unlim_dim_level, &
       type is (integer(kind=int32))
         call allocate_array(global_buf_int32, e)
         global_buf_int32 = 0
+        if (get_fill_value(fileobj, variable_name, fill_int32)) then
+            global_buf_int32 = fill_int32
+        endif
       type is (integer(kind=int64))
         call allocate_array(global_buf_int64, e)
         global_buf_int64 = 0
+        if (get_fill_value(fileobj, variable_name, fill_int64)) then
+            global_buf_int64 = fill_int64
+        endif
       type is (real(kind=real32))
         call allocate_array(global_buf_real32, e)
         global_buf_real32 = 0.
+        if (get_fill_value(fileobj, variable_name, fill_real32)) then
+            global_buf_real32 = fill_real32
+        endif
       type is (real(kind=real64))
         call allocate_array(global_buf_real64, e)
         global_buf_real64 = 0.
+        if (get_fill_value(fileobj, variable_name, fill_real64)) then
+            global_buf_real64 = fill_real64
+        endif
       class default
         call error("unsupported type.")
     end select
