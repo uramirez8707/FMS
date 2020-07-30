@@ -84,6 +84,7 @@ public :: check_if_open
 public :: set_fileobj_time_name
 public :: is_dimension_registered
 public :: fms2_io_init
+public :: write_restart_bc
 
 interface open_file
   module procedure netcdf_file_open_wrap
@@ -140,6 +141,7 @@ interface register_restart_field
   module procedure register_unstructured_domain_restart_variable_3d
   module procedure register_unstructured_domain_restart_variable_4d
   module procedure register_unstructured_domain_restart_variable_5d
+  module procedure do_some_magic
 end interface register_restart_field
 
 

@@ -49,6 +49,21 @@ integer, private :: fms2_nc_format_param = -1 !< Netcdf format type param used i
 character (len = 10), private :: fms2_nc_format !< Netcdf format type used in netcdf_file_open
 integer, private :: fms2_header_buffer_val = -1  !< value used in NF__ENDDEF
 
+type :: bc_information
+  integer, dimension(:), allocatable :: indices
+  integer, dimension(:), allocatable :: global_size
+  integer, dimension(:), allocatable :: pelist
+  logical :: is_root_pe
+  integer :: x_halo
+  integer :: y_halo
+  integer :: jshift
+  integer :: ishift
+  class(*), dimension(:,:), pointer :: globaldata2d => null() !< 2d data pointer.
+  class(*), dimension(:,:,:), pointer :: globaldata3d => null() !< 3d data pointer.
+  character(len=32) :: chksum
+  character(len=7) :: dimnames(5)
+endtype bc_information
+
 !> @brief Restart variable.
 type :: RestartVariable_t
   character(len=256) :: varname !< Variable name.
@@ -60,8 +75,9 @@ type :: RestartVariable_t
   class(*), dimension(:,:,:,:,:), pointer :: data5d => null() !< 5d data pointer.
   logical :: was_read !< Flag to support legacy "query_initialized" feature, which
                       !! keeps track if a file was read.
+  logical :: is_bc_variable
+  type(bc_information) :: bc_info
 endtype RestartVariable_t
-
 
 !> @brief Compressed dimension.
 type :: CompressedDimension_t
@@ -74,6 +90,12 @@ type :: CompressedDimension_t
   integer :: nelems !< Total size of the dimension.
 endtype CompressedDimension_t
 
+type :: dimension_information
+  integer, dimension(5) :: xlen
+  integer, dimension(5) :: ylen
+  integer, dimension(5) :: zlen
+  integer, dimension(3) :: cur_dim_len
+endtype dimension_information
 
 !> @brief Netcdf file type.
 type, public :: FmsNetcdfFile_t
@@ -97,6 +119,8 @@ type, public :: FmsNetcdfFile_t
   integer :: num_compressed_dims !< Number of compressed dimensions.
   logical :: is_diskless !< Flag telling whether this is a diskless file.
   character (len=20) :: time_name
+  type(dimension_information) :: bc_dimensions
+
 endtype FmsNetcdfFile_t
 
 
@@ -169,6 +193,7 @@ public :: netcdf_add_restart_variable_2d_wrap
 public :: netcdf_add_restart_variable_3d_wrap
 public :: netcdf_add_restart_variable_4d_wrap
 public :: netcdf_add_restart_variable_5d_wrap
+public :: do_some_magic
 public :: compressed_start_and_count
 public :: get_fill_value
 public :: get_variable_sense
@@ -180,6 +205,7 @@ public :: set_netcdf_mode
 public :: check_netcdf_code
 public :: check_if_open
 public :: set_fileobj_time_name
+public :: write_restart_bc
 
 interface netcdf_add_restart_variable
   module procedure netcdf_add_restart_variable_0d
@@ -555,6 +581,12 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart, do
   ! Set the is_open flag to true for this file object.
   if (.not.allocated(fileobj%is_open)) allocate(fileobj%is_open)
   fileobj%is_open = .true.
+
+  fileobj%bc_dimensions%xlen = 0
+  fileobj%bc_dimensions%ylen = 0
+  fileobj%bc_dimensions%zlen = 0
+  fileobj%bc_dimensions%cur_dim_len = 0
+
 end function netcdf_file_open
 
 
@@ -1803,7 +1835,6 @@ subroutine netcdf_add_variable_wrap(fileobj, variable_name, variable_type, dimen
   call netcdf_add_variable(fileobj, variable_name, variable_type, dimensions)
 end subroutine netcdf_add_variable_wrap
 
-
 !> @brief Wrapper to distinguish interfaces.
 subroutine netcdf_save_restart_wrap(fileobj, unlim_dim_level)
 
@@ -1982,5 +2013,121 @@ subroutine set_fileobj_time_name (fileobj,time_name)
 !     call error ("set_fileobj_time_name :: The time_name has already been set")
 !  endif
 end subroutine set_fileobj_time_name
+
+subroutine write_restart_bc(fileobj, unlim_dim_level)
+  class(FmsNetcdfFile_t), intent(inout) :: fileobj
+  integer, intent(in), optional :: unlim_dim_level !< Unlimited dimension
+                                                     !! level.
+  integer :: i
+  integer :: i_glob, j_glob
+  integer :: isc, iec, jsc, jec, i1, i2, j1, j2, i_add, j_add
+
+  if (.not. fileobj%is_restart) then
+    call error("file "//trim(fileobj%path)//" is not a restart file.")
+  endif
+
+ !> Get the checksum and the data, write only the chksum (meta data) for each variable
+ do i = 1, fileobj%num_restart_vars
+    !> Go away if you are not in the pelist!
+    if (.not.ANY(mpp_pe().eq.fileobj%restart_vars(i)%bc_info%pelist(:))) cycle
+
+    !> Go away if this is not a BC variable
+    if (.not. fileobj%restart_vars(i)%is_bc_variable) cycle
+
+    if (associated(fileobj%restart_vars(i)%data2d)) then
+        call gather_data_bc(fileobj%restart_vars(i)%data2d, fileobj%restart_vars(i)%bc_info)
+    endif
+    !! TO DO add 3d version of gather_data (interface(?)) add the data_3d part
+ enddo
+
+ !> Write the data
+ do i = 1, fileobj%num_restart_vars
+
+    if (associated(fileobj%restart_vars(i)%bc_info%globaldata2d )) then
+       call compressed_write(fileobj, fileobj%restart_vars(i)%varname, &
+                            fileobj%restart_vars(i)%bc_info%globaldata2d , &
+                            unlim_dim_level=unlim_dim_level)
+    endif
+    !! Add the other dimensions
+
+ enddo
+
+end subroutine
+
+subroutine gather_data_bc(vdata, bc_info)
+  class(*), dimension(:,:), intent(in) :: vdata
+  type(bc_information), intent(inout) :: bc_info
+
+  integer :: i_glob, j_glob
+  integer :: isc, iec, jsc, jec, i1, i2, j1, j2, i_add, j_add
+
+  real(kind=real32), dimension(:,:), allocatable, target :: global_buf_real32, local_buf_real32
+  real(kind=real64), dimension(:,:), allocatable, target :: global_buf_real64, local_buf_real64
+  integer(kind=int64) :: chksum_val
+  character(len=32) :: chksum
+
+  !> Set the indices
+  isc = bc_info%indices(1)
+  iec = bc_info%indices(2)
+  jsc = bc_info%indices(3)
+  jec = bc_info%indices(4)
+
+  !> This is the section of the PE that will actually be added to the global_buffer
+  i1 = 1 + bc_info%x_halo
+  i2 = i1 + (iec-isc)
+  j1 = 1 + bc_info%y_halo
+  j2 = j1 + (jec-jsc)
+
+  !> Set up index shifts for global array
+  i_add = bc_info%ishift
+  j_add = bc_info%jshift
+
+  !> Allocate a global_buffer that will be written
+  if (bc_info%is_root_pe) then
+        i_glob = bc_info%global_size(1)
+        j_glob = bc_info%global_size(2)
+  endif
+
+  !> Gather the data and calculate the checksum for the resulting array.
+  select type(vdata)
+    type is (real(kind=real32))
+       if (bc_info%is_root_pe) allocate(global_buf_real32(i_glob, j_glob))
+       allocate(local_buf_real32(size(vdata,1), size(vdata,2)))
+       local_buf_real32 = vdata
+       call mpp_gather(isc+i_add, iec+i_add, jsc+j_add, jec+j_add, bc_info%pelist, &
+                          local_buf_real32(i1:i2,j1:j2), &
+                          global_buf_real32, bc_info%is_root_pe)
+#ifdef OVERLOAD_R4
+          chksum_val = mpp_chksum(global_buf_real32, (/mpp_pe()/))
+#else
+          call error("gather_date_bc: you are trying to use a real*4 without defining OVERLOAD_R4")
+#endif
+       deallocate(local_buf_real32)
+       if (bc_info%is_root_pe) then
+           bc_info%globaldata2d => global_buf_real32
+           deallocate(global_buf_real32)
+       endif
+    type is (real(kind=real64))
+       if (bc_info%is_root_pe) allocate(global_buf_real64(i_glob, j_glob))
+       allocate(local_buf_real64(size(vdata,1), size(vdata,2)))
+       local_buf_real64 = vdata
+       call mpp_gather(isc+i_add, iec+i_add, jsc+j_add, jec+j_add, bc_info%pelist, &
+                          local_buf_real64(i1:i2,j1:j2), &
+                          global_buf_real64, bc_info%is_root_pe)
+       chksum_val = mpp_chksum(global_buf_real64, (/mpp_pe()/))
+       deallocate(local_buf_real64)
+       if (bc_info%is_root_pe) then
+           bc_info%globaldata2d => global_buf_real64
+           deallocate(global_buf_real64)
+       endif
+     class default
+        call error("unsupported type.")
+   end select
+
+   chksum = ""
+   write(chksum, "(Z16)") chksum_val
+   bc_info%chksum = chksum
+
+end subroutine
 
 end module netcdf_io_mod

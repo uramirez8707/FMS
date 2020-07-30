@@ -343,3 +343,117 @@ subroutine netcdf_add_restart_variable_5d_wrap(fileobj, variable_name, vdata, &
 
   call netcdf_add_restart_variable(fileobj, variable_name, vdata, dimensions, is_optional)
 end subroutine netcdf_add_restart_variable_5d_wrap
+
+subroutine do_some_magic(fileobj, variable_name, vdata, indices, global_size, pelist, is_root_pe, &
+                         x_halo, y_halo, jshift, ishift, is_optional)
+  type(FmsNetcdfFile_t), intent(inout) :: fileobj !< File object.
+  character(len=*), intent(in) :: variable_name !< Variable name.
+  real, dimension(:,:), intent(in), target :: vdata !< Pointer to
+  integer, dimension(4), intent(in)                 :: indices
+  integer, dimension(2), intent(in)                 :: global_size
+  integer, dimension(:), intent(in)                 :: pelist
+  logical, intent(in)                               :: is_root_pe
+  integer, intent(in), optional :: x_halo
+  integer, intent(in), optional :: y_halo
+  integer, intent(in), optional :: jshift
+  integer, intent(in), optional :: ishift
+  logical, intent(in), optional :: is_optional !< Prevent errors in read-only files
+                                               !! if a variable does not exist.
+
+  integer :: current_var
+  character(len=7) :: dimnames(5)
+
+  if (fileobj%is_readonly .and. present(is_optional)) then
+    if (is_optional .and. .not. variable_exists(fileobj, variable_name)) then
+      return
+    endif
+  endif
+
+  call set_dimensions(fileobj, fileobj%bc_dimensions, dimnames, global_size)
+  call netcdf_add_restart_variable_2d(fileobj, variable_name, vdata, dimnames(1:3), is_optional)
+
+  current_var = fileobj%num_restart_vars
+  fileobj%restart_vars(current_var)%is_bc_variable = .true.
+  fileobj%restart_vars(current_var)%bc_info%is_root_pe = is_root_pe
+
+  allocate(fileobj%restart_vars(current_var)%bc_info%indices(4))
+  fileobj%restart_vars(current_var)%bc_info%indices = indices
+
+  allocate(fileobj%restart_vars(current_var)%bc_info%global_size(2))
+  fileobj%restart_vars(current_var)%bc_info%global_size = global_size
+
+  allocate(fileobj%restart_vars(current_var)%bc_info%pelist(size(pelist)))
+  fileobj%restart_vars(current_var)%bc_info%pelist = pelist
+
+  fileobj%restart_vars(current_var)%bc_info%x_halo = 0
+  fileobj%restart_vars(current_var)%bc_info%y_halo = 0
+  fileobj%restart_vars(current_var)%bc_info%ishift = 0
+  fileobj%restart_vars(current_var)%bc_info%jshift = 0
+
+  if (present(x_halo)) fileobj%restart_vars(current_var)%bc_info%x_halo = x_halo
+  if (present(y_halo)) fileobj%restart_vars(current_var)%bc_info%y_halo = y_halo
+  if (present(ishift)) fileobj%restart_vars(current_var)%bc_info%ishift = ishift
+  if (present(jshift)) fileobj%restart_vars(current_var)%bc_info%jshift = jshift
+
+end subroutine do_some_magic
+
+subroutine set_dimensions(fileobj, bc_dimensions, dimnames, global_size)
+  type(FmsNetcdfFile_t), intent(inout) :: fileobj !< File object.
+  type(dimension_information), intent(inout) :: bc_dimensions
+  character(len=7), intent(inout) :: dimnames(5)
+  integer, dimension(:), intent(in) :: global_size
+
+  character(len=1) :: suffix
+  character(len=7) :: axisname
+
+  if (sum(bc_dimensions%cur_dim_len) .eq. 0) call netcdf_add_dimension(fileobj, "Time", unlimited)
+
+  if (bc_dimensions%cur_dim_len(1) .eq. 0) then
+     bc_dimensions%cur_dim_len(1) = 1
+     bc_dimensions%xlen(1) = global_size(1)
+     call netcdf_add_dimension(fileobj, "xaxis_1", bc_dimensions%xlen(1))
+     dimnames(1) = "xaxis_1"
+  else
+     if ( .not. any(bc_dimensions%xlen(1:bc_dimensions%cur_dim_len(1)) .eq. global_size(1))) then
+        bc_dimensions%cur_dim_len(1) = bc_dimensions%cur_dim_len(1) + 1
+        bc_dimensions%xlen(bc_dimensions%cur_dim_len(1)) = global_size(1)
+        write(suffix,'(I1)') bc_dimensions%cur_dim_len(1)
+        axisname = 'xaxis_'//suffix
+        call netcdf_add_dimension(fileobj, axisname, global_size(1))
+        dimnames(1) = axisname
+     endif
+  endif
+
+  if (bc_dimensions%cur_dim_len(2) .eq. 0) then
+     bc_dimensions%cur_dim_len(2) = 1
+     bc_dimensions%ylen(1) = global_size(2)
+     call netcdf_add_dimension(fileobj, "yaxis_1", bc_dimensions%ylen(1))
+     dimnames(2) = "yaxis_1"
+  else
+     if ( .not. any(bc_dimensions%xlen(1:bc_dimensions%cur_dim_len(2)) .eq. global_size(2))) then
+        bc_dimensions%cur_dim_len(2) = bc_dimensions%cur_dim_len(2) + 1
+        bc_dimensions%ylen(bc_dimensions%cur_dim_len(2)) = global_size(2)
+        write(suffix,'(I1)') bc_dimensions%cur_dim_len(2)
+        axisname = 'yaxis_'//suffix
+        call netcdf_add_dimension(fileobj, axisname, global_size(2))
+        dimnames(2) = axisname
+     endif
+  endif
+
+  dimnames(size(global_size)+1) = "Time"
+
+!  if (.not. dimension_exists(fileobj, "Time", broadcast=.false.)) then
+!      call netcdf_add_dimension(fileobj, "Time", unlimited)
+!  endif
+! TO DO: Handle the 3D case
+!  if (bc_dimensions%cur_dim_len(3) .eq. 0) then
+!     bc_dimensions%cur_dim_len(3) = 1
+!     bc_dimensions%zlen = global_size(3)
+!  else
+!     if ( .not. any(bc_dimensions%xlen(1:bc_dimensions%cur_dim_len(3)) .eq. global_size(3)) then
+!     bc_dimensions%cur_dim_len(3) = bc_dimensions%cur_dim_len(3) + 1
+!     bc_dimensions%zlen = global_size(3)
+!     endif
+!  endif
+
+end subroutine
