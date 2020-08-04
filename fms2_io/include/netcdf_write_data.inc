@@ -306,6 +306,7 @@ subroutine netcdf_write_data_3d(fileobj, variable_name, variable_data, unlim_dim
       type is (real(kind=real32))
         err = nf90_put_var(fileobj%ncid, varid, variable_data, start=c, count=e)
       type is (real(kind=real64))
+        write (mpp_pe()+100, *) "THIS:", variable_data
         err = nf90_put_var(fileobj%ncid, varid, variable_data, start=c, count=e)
       class default
         call error("unsupported type.")

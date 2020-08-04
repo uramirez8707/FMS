@@ -141,7 +141,8 @@ interface register_restart_field
   module procedure register_unstructured_domain_restart_variable_3d
   module procedure register_unstructured_domain_restart_variable_4d
   module procedure register_unstructured_domain_restart_variable_5d
-  module procedure do_some_magic
+  module procedure register_restart_region_2d
+  module procedure register_restart_region_3d
 end interface register_restart_field
 
 
