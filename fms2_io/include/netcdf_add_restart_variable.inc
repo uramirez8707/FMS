@@ -348,7 +348,7 @@ subroutine register_restart_region_2d(fileobj, variable_name, vdata, indices, gl
                          x_halo, y_halo, jshift, ishift, is_optional)
   type(FmsNetcdfFile_t), intent(inout) :: fileobj !< File object.
   character(len=*), intent(in) :: variable_name !< Variable name.
-  real, dimension(:,:), intent(in), target :: vdata !< Pointer to
+  class(*), dimension(:,:), intent(in), target :: vdata !< Pointer to
   integer, dimension(4), intent(in)                 :: indices
   integer, dimension(2), intent(in)                 :: global_size
   integer, dimension(:), intent(in)                 :: pelist
@@ -406,7 +406,7 @@ subroutine register_restart_region_3d(fileobj, variable_name, vdata, indices, gl
                          x_halo, y_halo, jshift, ishift, is_optional)
   type(FmsNetcdfFile_t), intent(inout) :: fileobj !< File object.
   character(len=*), intent(in) :: variable_name !< Variable name.
-  real, dimension(:,:,:), intent(in), target :: vdata !< Pointer to
+  class(*), dimension(:,:,:), intent(in), target :: vdata !< Pointer to
   integer, dimension(4), intent(in)                 :: indices
   integer, dimension(3), intent(in)                 :: global_size
   integer, dimension(:), intent(in)                 :: pelist
@@ -440,8 +440,13 @@ subroutine register_restart_region_3d(fileobj, variable_name, vdata, indices, gl
   allocate(fileobj%restart_vars(current_var)%bc_info%global_size(3))
   fileobj%restart_vars(current_var)%bc_info%global_size = global_size
 
-  allocate(fileobj%restart_vars(current_var)%bc_info%pelist(size(pelist)))
-  fileobj%restart_vars(current_var)%bc_info%pelist = pelist
+  if (any(fileobj%io_root .eq. pelist(:))) then
+      allocate(fileobj%restart_vars(current_var)%bc_info%pelist(size(pelist)))
+      fileobj%restart_vars(current_var)%bc_info%pelist = pelist
+  else
+      allocate(fileobj%restart_vars(current_var)%bc_info%pelist(size(pelist)+1))
+      fileobj%restart_vars(current_var)%bc_info%pelist = (/ fileobj%io_root, pelist(:) /)
+  endif
 
   fileobj%restart_vars(current_var)%bc_info%x_halo = 0
   fileobj%restart_vars(current_var)%bc_info%y_halo = 0
@@ -463,57 +468,70 @@ subroutine set_dimensions(fileobj, bc_dimensions, dimnames, global_size)
 
   character(len=1) :: suffix
   character(len=7) :: axisname
+  integer          :: i, found_index
 
   if (sum(bc_dimensions%cur_dim_len) .eq. 0) call netcdf_add_dimension(fileobj, "Time", unlimited)
   dimnames(size(global_size)+1) = "Time"
 
-  if (bc_dimensions%cur_dim_len(1) .eq. 0) then
-     bc_dimensions%cur_dim_len(1) = 1
-     bc_dimensions%xlen(1) = global_size(1)
-     call netcdf_add_dimension(fileobj, "xaxis_1", bc_dimensions%xlen(1))
-     dimnames(1) = "xaxis_1"
-  else
-     if ( .not. any(bc_dimensions%xlen(1:bc_dimensions%cur_dim_len(1)) .eq. global_size(1))) then
-        bc_dimensions%cur_dim_len(1) = bc_dimensions%cur_dim_len(1) + 1
-        bc_dimensions%xlen(bc_dimensions%cur_dim_len(1)) = global_size(1)
-        write(suffix,'(I1)') bc_dimensions%cur_dim_len(1)
+  found_index = 0
+  do i = 1, bc_dimensions%cur_dim_len(1)
+     if (bc_dimensions%xlen(i) .eq. global_size(1)) then
+        found_index= i
+        write(suffix,'(I1)') i
         axisname = 'xaxis_'//suffix
-        call netcdf_add_dimension(fileobj, axisname, global_size(1))
         dimnames(1) = axisname
-     endif
+        exit
+      endif
+  enddo
+
+  if (found_index .eq. 0) then
+     bc_dimensions%cur_dim_len(1) = bc_dimensions%cur_dim_len(1) + 1
+     bc_dimensions%xlen(bc_dimensions%cur_dim_len(1)) = global_size(1)
+     write(suffix,'(I1)') bc_dimensions%cur_dim_len(1)
+     axisname = 'xaxis_'//suffix
+     call netcdf_add_dimension(fileobj, axisname, global_size(1))
+     dimnames(1) = axisname
   endif
 
-  if (bc_dimensions%cur_dim_len(2) .eq. 0) then
-     bc_dimensions%cur_dim_len(2) = 1
-     bc_dimensions%ylen(1) = global_size(2)
-     call netcdf_add_dimension(fileobj, "yaxis_1", bc_dimensions%ylen(1))
-     dimnames(2) = "yaxis_1"
-  else
-     if ( .not. any(bc_dimensions%ylen(1:bc_dimensions%cur_dim_len(2)) .eq. global_size(2))) then
-        bc_dimensions%cur_dim_len(2) = bc_dimensions%cur_dim_len(2) + 1
-        bc_dimensions%ylen(bc_dimensions%cur_dim_len(2)) = global_size(2)
-        write(suffix,'(I1)') bc_dimensions%cur_dim_len(2)
+  found_index = 0
+  do i = 1, bc_dimensions%cur_dim_len(2)
+     if (bc_dimensions%ylen(i) .eq. global_size(2)) then
+        found_index= i
+        write(suffix,'(I1)') i
         axisname = 'yaxis_'//suffix
-        call netcdf_add_dimension(fileobj, axisname, global_size(2))
         dimnames(2) = axisname
-     endif
+        exit
+      endif
+  enddo
+
+  if (found_index .eq. 0) then
+     bc_dimensions%cur_dim_len(2) = bc_dimensions%cur_dim_len(2) + 1
+     bc_dimensions%ylen(bc_dimensions%cur_dim_len(2)) = global_size(2)
+     write(suffix,'(I1)') bc_dimensions%cur_dim_len(2)
+     axisname = 'yaxis_'//suffix
+     call netcdf_add_dimension(fileobj, axisname, global_size(2))
+     dimnames(2) = axisname
   endif
 
   if (size(global_size) .eq. 3) then
-     if (bc_dimensions%cur_dim_len(3) .eq. 0) then
-        bc_dimensions%cur_dim_len(3) = 1
-        bc_dimensions%zlen(1) = global_size(3)
-        call netcdf_add_dimension(fileobj, "zaxis_1", bc_dimensions%zlen(1))
-        dimnames(3) = "zaxis_1"
-     else
-        if ( .not. any(bc_dimensions%zlen(1:bc_dimensions%cur_dim_len(3)) .eq. global_size(3))) then
-           bc_dimensions%cur_dim_len(3) = bc_dimensions%cur_dim_len(3) + 1
-           write(suffix,'(I1)') bc_dimensions%cur_dim_len(3)
-           axisname = 'yaxis_'//suffix
-           call netcdf_add_dimension(fileobj, axisname, global_size(3))
+     found_index = 0
+     do i = 1, bc_dimensions%cur_dim_len(3)
+        if (bc_dimensions%zlen(i) .eq. global_size(3)) then
+           found_index= i
+           write(suffix,'(I1)') i
+           axisname = 'zaxis_'//suffix
            dimnames(3) = axisname
+           exit
         endif
+     enddo
+
+     if (found_index .eq. 0) then
+        bc_dimensions%cur_dim_len(3) = bc_dimensions%cur_dim_len(3) + 1
+        bc_dimensions%zlen(bc_dimensions%cur_dim_len(3)) = global_size(3)
+        write(suffix,'(I1)') bc_dimensions%cur_dim_len(3)
+        axisname = 'zaxis_'//suffix
+        call netcdf_add_dimension(fileobj, axisname, global_size(3))
+        dimnames(3) = axisname
       endif
   endif
-
 end subroutine set_dimensions
