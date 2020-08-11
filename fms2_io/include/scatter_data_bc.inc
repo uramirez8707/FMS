@@ -68,7 +68,9 @@ subroutine scatter_data_bc_2d(fileobj, varname, vdata, bc_info, unlim_dim_level)
          !> If the checksum exists read it and compare it with the calculated from the data that was read
          if (variable_att_exists(fileobj, varname, "checksum", broadcast=.false.)) then
             call get_variable_attribute(fileobj, varname, "checksum", chksum_read)
+#ifdef OVERLOAD_R4
             chksum_val = mpp_chksum(global_buf_real32, (/mpp_pe()/))
+#endif
             chksum = ""
             write(chksum, "(Z16)") chksum_val
             if (.not. string_compare(adjustl(chksum), adjustl(chksum_read))) then
@@ -204,7 +206,9 @@ subroutine scatter_data_bc_3d(fileobj, varname, vdata, bc_info, unlim_dim_level)
          !> If the checksum exists read it and compare it with the calculated from the data that was read
          if (variable_att_exists(fileobj, varname, "checksum", broadcast=.false.)) then
             call get_variable_attribute(fileobj, varname, "checksum", chksum_read)
+#ifdef OVERLOAD_R4
             chksum_val = mpp_chksum(global_buf_real32, (/mpp_pe()/))
+#endif
             chksum = ""
             write(chksum, "(Z16)") chksum_val
             if (.not. string_compare(adjustl(chksum), adjustl(chksum_read))) then
