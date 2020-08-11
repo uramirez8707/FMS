@@ -105,6 +105,10 @@ do n=jsd, jed
    write(mpp_pe()+600, *), "n = ", n, " atm%var_64_2d: ", atm%var_64_2d(:,n)
 end do
 
+do n=jsd, jed
+   write(mpp_pe()+500, *), "n = ", n, " atm%var_64_3d: ", atm%var_64_3d(:,n,:)
+end do
+
 call mpi_barrier(mpi_comm_world, err)
 call mpp_exit()
 
@@ -187,12 +191,12 @@ subroutine register_bcs_2d(atm, fileobj_ne, fileobj_sw, var_name, layout, istag,
   if (atm%BCfile_sw_open) call register_restart_field(fileobj_sw, trim(var_name)//'64_west', atm%var_64_2d, &
                                                 indices, global_size(1:2), y2_pelist, &
                                                 is_root_pe, jshift=y_halo)
-!  if (atm%BCfile_sw_open) call register_restart_field(fileobj_sw, trim(var_name)//'64_3d_west', atm%var_64_3d, &
-!                                                indices, global_size(1:3), y2_pelist, &
-!                                                is_root_pe, jshift=y_halo)
-!  if (atm%BCfile_sw_open) call register_restart_field(fileobj_sw, trim(var_name)//'32_3d_west', atm%var_32_3d, &
-!                                                indices, global_size(1:3), y2_pelist, &
-!                                                is_root_pe, jshift=y_halo)
+  if (atm%BCfile_sw_open) call register_restart_field(fileobj_sw, trim(var_name)//'64_3d_west', atm%var_64_3d, &
+                                                indices, global_size(1:3), y2_pelist, &
+                                                is_root_pe, jshift=y_halo)
+  if (atm%BCfile_sw_open) call register_restart_field(fileobj_sw, trim(var_name)//'32_3d_west', atm%var_32_3d, &
+                                                indices, global_size(1:3), y2_pelist, &
+                                                is_root_pe, jshift=y_halo)
 
   !< Define east root_pe
   is_root_pe = .FALSE.
@@ -210,14 +214,14 @@ subroutine register_bcs_2d(atm, fileobj_ne, fileobj_sw, var_name, layout, istag,
                                                 indices, global_size(1:2), y1_pelist, &
                                                 is_root_pe, jshift=y_halo, &
                                                 x_halo=(size(atm%var_32_2d,1)-x_halo), ishift=-(ie+i_stag))
-!  if (atm%BCfile_ne_open) call register_restart_field(fileobj_ne, trim(var_name)//'64_3d_east', atm%var_64_3d, &
-!                                                indices, global_size(1:3), y1_pelist, &
-!                                                is_root_pe, jshift=y_halo, &
-!                                                x_halo=(size(atm%var_32_2d,1)-x_halo), ishift=-(ie+i_stag))
-!  if (atm%BCfile_ne_open) call register_restart_field(fileobj_ne, trim(var_name)//'32_3d_east', atm%var_32_3d, &
-!                                                indices, global_size(1:3), y1_pelist, &
-!                                                is_root_pe, jshift=y_halo, &
-!                                                x_halo=(size(atm%var_32_2d,1)-x_halo), ishift=-(ie+i_stag))
+  if (atm%BCfile_ne_open) call register_restart_field(fileobj_ne, trim(var_name)//'64_3d_east', atm%var_64_3d, &
+                                                indices, global_size(1:3), y1_pelist, &
+                                                is_root_pe, jshift=y_halo, &
+                                                x_halo=(size(atm%var_32_2d,1)-x_halo), ishift=-(ie+i_stag))
+  if (atm%BCfile_ne_open) call register_restart_field(fileobj_ne, trim(var_name)//'32_3d_east', atm%var_32_3d, &
+                                                indices, global_size(1:3), y1_pelist, &
+                                                is_root_pe, jshift=y_halo, &
+                                                x_halo=(size(atm%var_32_2d,1)-x_halo), ishift=-(ie+i_stag))
 
   !< NORTH & SOUTH
   !< set defaults for north/south halo regions
@@ -244,12 +248,12 @@ subroutine register_bcs_2d(atm, fileobj_ne, fileobj_sw, var_name, layout, istag,
   if (atm%BCfile_sw_open) call register_restart_field(fileobj_sw, trim(var_name)//'64_south', atm%var_64_2d, &
                                                 indices, global_size(1:2), x2_pelist, &
                                                 is_root_pe, x_halo=x_halo_ns)
-!  if (atm%BCfile_sw_open) call register_restart_field(fileobj_sw, trim(var_name)//'64_3d_south', atm%var_64_3d, &
-!                                                indices, global_size(1:3), x2_pelist, &
-!                                                is_root_pe, x_halo=x_halo_ns)
-!  if (atm%BCfile_sw_open) call register_restart_field(fileobj_sw, trim(var_name)//'32_3d_south', atm%var_32_3d, &
-!                                                indices, global_size(1:3), x2_pelist, &
-!                                                is_root_pe, x_halo=x_halo_ns)
+  if (atm%BCfile_sw_open) call register_restart_field(fileobj_sw, trim(var_name)//'64_3d_south', atm%var_64_3d, &
+                                                indices, global_size(1:3), x2_pelist, &
+                                                is_root_pe, x_halo=x_halo_ns)
+  if (atm%BCfile_sw_open) call register_restart_field(fileobj_sw, trim(var_name)//'32_3d_south', atm%var_32_3d, &
+                                                indices, global_size(1:3), x2_pelist, &
+                                                is_root_pe, x_halo=x_halo_ns)
 
   !< Define north root_pe
   is_root_pe = .FALSE.
@@ -267,14 +271,14 @@ subroutine register_bcs_2d(atm, fileobj_ne, fileobj_sw, var_name, layout, istag,
                                                 indices, global_size(1:2), x1_pelist, &
                                                 is_root_pe, x_halo=x_halo_ns, &
                                                 y_halo=(size(atm%var_32_2d,2)-y_halo), jshift=-(je+j_stag))
-!  if (atm%BCfile_ne_open) call register_restart_field(fileobj_ne, trim(var_name)//'64_3d_north', atm%var_64_3d, &
-!                                                indices, global_size(1:3), x1_pelist, &
-!                                                is_root_pe, x_halo=x_halo_ns, &
-!                                                y_halo=(size(atm%var_32_2d,2)-y_halo), jshift=-(je+j_stag))
-!  if (atm%BCfile_ne_open) call register_restart_field(fileobj_ne, trim(var_name)//'32_3d_north', atm%var_32_3d, &
-!                                                indices, global_size(1:3), x1_pelist, &
-!                                                is_root_pe, x_halo=x_halo_ns, &
-!                                                y_halo=(size(atm%var_32_2d,2)-y_halo), jshift=-(je+j_stag))
+  if (atm%BCfile_ne_open) call register_restart_field(fileobj_ne, trim(var_name)//'64_3d_north', atm%var_64_3d, &
+                                                indices, global_size(1:3), x1_pelist, &
+                                                is_root_pe, x_halo=x_halo_ns, &
+                                                y_halo=(size(atm%var_32_2d,2)-y_halo), jshift=-(je+j_stag))
+  if (atm%BCfile_ne_open) call register_restart_field(fileobj_ne, trim(var_name)//'32_3d_north', atm%var_32_3d, &
+                                                indices, global_size(1:3), x1_pelist, &
+                                                is_root_pe, x_halo=x_halo_ns, &
+                                                y_halo=(size(atm%var_32_2d,2)-y_halo), jshift=-(je+j_stag))
 
 end subroutine register_bcs_2d
 
