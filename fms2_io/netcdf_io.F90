@@ -209,6 +209,7 @@ public :: check_netcdf_code
 public :: check_if_open
 public :: set_fileobj_time_name
 public :: write_restart_bc
+public :: read_restart_bc
 
 interface netcdf_add_restart_variable
   module procedure netcdf_add_restart_variable_0d
@@ -2016,6 +2017,166 @@ subroutine set_fileobj_time_name (fileobj,time_name)
 !  endif
 end subroutine set_fileobj_time_name
 
+subroutine read_restart_bc(fileobj, unlim_dim_level)
+  class(FmsNetcdfFile_t), intent(inout) :: fileobj
+  integer, intent(in), optional :: unlim_dim_level !< Unlimited dimension
+                                                     !! level.
+  integer :: i
+
+  if (.not. fileobj%is_restart) then
+    call error("file "//trim(fileobj%path)//" is not a restart file.")
+  endif
+
+  do i = 1, fileobj%num_restart_vars
+    !> Go away if you are not in the pelist!
+    if (.not.ANY(mpp_pe().eq.fileobj%restart_vars(i)%bc_info%pelist(:))) cycle
+
+    if (associated(fileobj%restart_vars(i)%data2d)) then
+       call scatter_data_bc_2d (fileobj, fileobj%restart_vars(i)%varname, &
+                                fileobj%restart_vars(i)%data2d, &
+                                fileobj%restart_vars(i)%bc_info)
+    endif
+
+  end do
+
+
+end subroutine read_restart_bc
+
+subroutine scatter_data_bc_2d(fileobj, varname, vdata, bc_info, unlim_dim_level)
+  class(FmsNetcdfFile_t), intent(inout) :: fileobj
+  character(len=*), intent(in) :: varname !< Variable name.
+  class(*), dimension(:,:), intent(inout) :: vdata
+  type(bc_information), intent(inout) :: bc_info
+  integer, intent(in), optional :: unlim_dim_level !< Unlimited dimension
+                                                     !! level.
+
+  real(kind=real64), dimension(:,:), allocatable, target :: global_buf_real64, local_buf_real64
+  real(kind=real32), dimension(:,:), allocatable, target :: global_buf_real32, local_buf_real32
+
+  integer(kind=int64) :: chksum_val
+  character(len=32) :: chksum, chksum_read
+
+  integer :: isc, iec, jsc, jec, i1, i2, j1, j2, i_add, j_add
+  integer :: i_glob, j_glob
+
+  !> Set the indices
+  isc = bc_info%indices(1)
+  iec = bc_info%indices(2)
+  jsc = bc_info%indices(3)
+  jec = bc_info%indices(4)
+
+  !> This is the section of the PE that will actually be read to the global_buffer
+  i1 = 1 + bc_info%x_halo
+  i2 = i1 + (iec-isc)
+  j1 = 1 + bc_info%y_halo
+  j2 = j1 + (jec-jsc)
+
+  !> Set up index shifts for global array
+  i_add = bc_info%ishift
+  j_add = bc_info%jshift
+
+  if (fileobj%is_root) then
+        i_glob = bc_info%global_size(1)
+        j_glob = bc_info%global_size(2)
+  endif
+
+  select type(vdata)
+    type is (real(kind=real32))
+      if (fileobj%is_root) then
+         !> If you are the file root, read in the data
+         allocate(global_buf_real32(i_glob, j_glob))
+
+         call netcdf_read_data(fileobj, varname, &
+                              global_buf_real32, &
+                              unlim_dim_level=unlim_dim_level, &
+                              broadcast=.false.)
+         !> If the checksum exists read it and compare it with the calculated from the data that was read
+         if (variable_att_exists(fileobj, varname, "checksum", broadcast=.false.)) then
+            call get_variable_attribute(fileobj, varname, "checksum", chksum_read)
+            chksum_val = mpp_chksum(global_buf_real32, (/mpp_pe()/))
+            chksum = ""
+            write(chksum, "(Z16)") chksum_val
+            if (.not. string_compare(chksum, chksum_read)) then
+                call error("scatter_data_bc_2d: "//trim(varname)//" chksum_in:"//(chksum)//" chksum_out:"//(chksum_read))
+            endif
+         endif
+      endif
+
+      !> If the fileobj's root is not the same as the variable's root, then no data will be read for the
+      !! file root
+      if (fileobj%is_root .and. .not. bc_info%is_root_pe) then
+          allocate(local_buf_real32(1,1))
+          local_buf_real32 = 0.
+          isc = 1; i_add=0; iec=1; jsc=1; j_add=0; jec=1
+          i1=1; i2=1; j1=1; j2=1
+      else
+          allocate(local_buf_real32(i1:i2,j1:j2))
+      endif
+
+      !> Scatter the data to the other PE
+      call mpp_scatter(isc+i_add, iec+i_add, jsc+j_add, jec+j_add, bc_info%pelist, &
+                       local_buf_real32(i1:i2,j1:j2), global_buf_real32, fileobj%is_root)
+
+      !> Return if fileobj's root is not the same as the variable's root
+      if (fileobj%is_root .and. .not. bc_info%is_root_pe) return
+
+      !> Set vdata to equal the scattered data
+      vdata(i1:i2,j1:j2) = local_buf_real32(i1:i2,j1:j2)
+
+      deallocate(local_buf_real32)
+      if (fileobj%is_root) deallocate(global_buf_real32)
+
+    type is (real(kind=real64))
+      if (fileobj%is_root) then
+         !> If you are the file root, read in the data
+         allocate(global_buf_real64(i_glob, j_glob))
+         write(mpp_pe()+1, *), "i_glob= ", i_glob, " j_glob=", j_glob
+
+         call netcdf_read_data(fileobj, varname, &
+                              global_buf_real64, &
+                              unlim_dim_level=unlim_dim_level, &
+                              broadcast=.false.)
+         !> If the checksum exists read it and compare it with the calculated from the data that was read
+         if (variable_att_exists(fileobj, varname, "checksum", broadcast=.false.)) then
+            call get_variable_attribute(fileobj, varname, "checksum", chksum_read)
+            chksum_val = mpp_chksum(global_buf_real64, (/mpp_pe()/))
+            chksum = ""
+            write(chksum, "(Z16)") chksum_val
+            if (.not. string_compare(chksum, chksum_read)) then
+                call error("scatter_data_bc_2d: "//trim(varname)//" chksum_in:"//chksum//" chksum_out:"//chksum_read)
+            endif
+         endif
+      endif
+
+      !> If the fileobj's root is not the same as the variable's root, then no data will be read for the
+      !! file root
+      if (fileobj%is_root .and. .not. bc_info%is_root_pe) then
+          allocate(local_buf_real64(1,1))
+          local_buf_real64 = 0.
+          isc = 1; i_add=0; iec=1; jsc=1; j_add=0; jec=1
+          i1=1; i2=1; j1=1; j2=1
+      else
+          allocate(local_buf_real64(i1:i2,j1:j2))
+      endif
+
+      !> Scatter the data to the other PE
+      call mpp_scatter(isc+i_add, iec+i_add, jsc+j_add, jec+j_add, bc_info%pelist, &
+                       local_buf_real64(i1:i2,j1:j2), global_buf_real64, fileobj%is_root)
+
+      !> Return if fileobj's root is not the same as the variable's root
+      if (fileobj%is_root .and. .not. bc_info%is_root_pe) return
+
+      !> Set vdata to equal the scattered data
+      vdata(i1:i2,j1:j2) = local_buf_real64(i1:i2,j1:j2)
+
+      deallocate(local_buf_real64)
+      if (fileobj%is_root) deallocate(global_buf_real64)
+
+      class default
+         call error("unsupported type.")
+    end select
+end subroutine
+
 subroutine write_restart_bc(fileobj, unlim_dim_level)
   class(FmsNetcdfFile_t), intent(inout) :: fileobj
   integer, intent(in), optional :: unlim_dim_level !< Unlimited dimension
@@ -2134,9 +2295,7 @@ subroutine gather_data_bc_2d(fileobj, vdata, bc_info)
        !> If you are on fileobj's root, calculate the checksum and save the gathered data in a buffer
        if (fileobj%is_root) then
 #ifdef OVERLOAD_R4
-           chksum_val = mpp_chksum(global_buf_real32, (/mpp_pe()/))
-#else
-          call error("gather_date_bc: you are trying to use a real*4 without defining OVERLOAD_R4")
+           chksum_val = mpp_chksum(global_buf_real32(1:i_glob,1:j_glob), (/mpp_pe()/))
 #endif
            allocate(bc_info%globaldata2d_32(i_glob, j_glob))
            bc_info%globaldata2d_32=global_buf_real32(1:i_glob,1:j_glob)
@@ -2167,7 +2326,7 @@ subroutine gather_data_bc_2d(fileobj, vdata, bc_info)
        deallocate(local_buf_real64)
        !> If you are on fileobj's root, calculate the checksum and save the gathered data in a buffer
        if (fileobj%is_root) then
-           chksum_val = mpp_chksum(global_buf_real64, (/mpp_pe()/))
+           chksum_val = mpp_chksum(global_buf_real64(1:i_glob,1:j_glob), (/mpp_pe()/))
            allocate(bc_info%globaldata2d_64(i_glob, j_glob))
            bc_info%globaldata2d_64=global_buf_real64(1:i_glob,1:j_glob)
            deallocate(global_buf_real64)
@@ -2248,7 +2407,9 @@ subroutine gather_data_bc_3d(fileobj, vdata, bc_info)
        deallocate(local_buf_real32)
        !> If you are on fileobj's root, calculate the checksum and save the gathered data in a buffer
        if (fileobj%is_root) then
-           chksum_val = mpp_chksum(global_buf_real32, (/mpp_pe()/))
+#ifdef OVERLOAD_R4
+           chksum_val = mpp_chksum(global_buf_real32(1:i_glob,1:j_glob, :), (/mpp_pe()/))
+#endif
            allocate(bc_info%globaldata3d_32(i_glob, j_glob, bc_info%global_size(3)))
            bc_info%globaldata3d_32=global_buf_real32(1:i_glob,1:j_glob,:)
            deallocate(global_buf_real32)
@@ -2278,7 +2439,7 @@ subroutine gather_data_bc_3d(fileobj, vdata, bc_info)
        deallocate(local_buf_real64)
        !> If you are on fileobj's root, calculate the checksum and save the gathered data in a buffer
        if (fileobj%is_root) then
-           chksum_val = mpp_chksum(global_buf_real64, (/mpp_pe()/))
+           chksum_val = mpp_chksum(global_buf_real64(1:i_glob,1:j_glob, :), (/mpp_pe()/))
            allocate(bc_info%globaldata3d_64(i_glob, j_glob, bc_info%global_size(3)))
            bc_info%globaldata3d_64=global_buf_real64(1:i_glob,1:j_glob,:)
            deallocate(global_buf_real64)

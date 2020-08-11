@@ -85,6 +85,7 @@ public :: set_fileobj_time_name
 public :: is_dimension_registered
 public :: fms2_io_init
 public :: write_restart_bc
+public :: read_restart_bc
 public :: get_mosaic_tile_grid
 
 interface open_file
