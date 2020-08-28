@@ -29,6 +29,8 @@ use mpp_mod
 implicit none
 private
 
+character(len=32), save :: filename_appendix = '' !< Appendix added to the filename
+
 public :: char_linked_list
 public :: error
 public :: file_exists
@@ -47,6 +49,11 @@ public :: get_checksum
 public :: open_check
 public :: string_compare
 public :: restart_filepath_mangle
+public :: magic_filepath_mangle
+public :: get_filename_appendix
+public :: set_filename_appendix
+public :: get_instance_filename
+public :: nullify_filename_appendix
 
 !> @brief A linked list of strings
 type :: char_linked_list
@@ -438,8 +445,39 @@ subroutine restart_filepath_mangle(dest, source)
       call error("file "//trim(source)//" does not contain .nc")
     endif
   endif
+
   call string_copy(dest, source(1:i-1)//".res"//source(i:len_trim(source)))
 end subroutine restart_filepath_mangle
+
+subroutine magic_filepath_mangle(dest, source)
+
+  character(len=*), intent(inout) :: dest
+  character(len=*), intent(in) :: source
+
+  character(len=20) :: filename_append
+  character(len=20) :: buf
+
+  integer :: i
+
+  call get_filename_appendix(buf)
+  if (trim(buf) .eq. '') then
+     call string_copy(dest, source)
+     return
+  endif
+
+  if (has_domain_tile_string(source)) then
+    i = index(trim(source), ".tile", back=.true.)
+  else
+    i = index(trim(source), ".nc", back=.true.)
+    if (i .eq. 0) then
+      call error("file "//trim(source)//" does not contain .nc")
+    endif
+  endif
+
+  filename_append = '.'//trim(buf)
+
+  call string_copy(dest, source(1:i-1)//trim(filename_append)//source(i:len_trim(source)))
+end subroutine magic_filepath_mangle
 
 subroutine open_check(flag, fname)
 
@@ -454,6 +492,52 @@ subroutine open_check(flag, fname)
      endif
   endif
 end subroutine open_check
+
+subroutine get_filename_appendix(string_out)
+  character(len=*) , intent(out) :: string_out
+
+  string_out = trim(filename_appendix)
+
+
+end subroutine get_filename_appendix
+
+
+subroutine nullify_filename_appendix()
+
+  filename_appendix = ''
+
+end subroutine nullify_filename_appendix
+
+subroutine set_filename_appendix(string_in)
+  character(len=*) , intent(in) :: string_in
+
+  integer :: index_num
+
+  ! Check if string has already been added
+  index_num = index(filename_appendix, string_in)
+  if ( index_num .le. 0 ) then
+     filename_appendix = trim(filename_appendix)//trim(string_in)
+  end if
+
+end subroutine set_filename_appendix
+
+subroutine get_instance_filename(name_in,name_out)
+  character(len=*)  , intent(in)  :: name_in
+  character(len=*), intent(inout) :: name_out
+  integer :: length
+
+  length = len_trim(name_in)
+  name_out = name_in(1:length)
+
+  if(len_trim(filename_appendix) > 0) then
+     if(name_in(length-2:length) == '.nc') then
+        name_out = name_in(1:length-3)//'.'//trim(filename_appendix)//'.nc'
+     else
+        name_out = name_in(1:length)  //'.'//trim(filename_appendix)
+     end if
+  end if
+
+end subroutine get_instance_filename
 
 
 include "array_utils.inc"
