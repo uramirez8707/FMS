@@ -35,6 +35,8 @@ run_test test_global_att 1
 cat input.nml
 ncdump -k test_global_att.nc 
 
+exit 
+
 #Check that file was written in the correct type
 if [ `ncdump test_global_att.nc -k | grep netCDF-4 | wc -l` == 0 ]; then
    echo "ERROR: test_global_att.nc should be type netCDF-4"

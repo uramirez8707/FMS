@@ -54,6 +54,8 @@ if (open_file(fileobj, "test_global_att.nc", "overwrite")) then
        call register_global_attribute(fileobj, "buf_int64_1d", (/ int(2, kind=int64), int(4, kind=int64) /) )
    endif
 
+   print * "The file type is: ", trim(fileobj%nc_format)
+
    call register_global_attribute(fileobj, "buf_str", "some text"//char(0), str_len=10)
 
    call close_file(fileobj)
