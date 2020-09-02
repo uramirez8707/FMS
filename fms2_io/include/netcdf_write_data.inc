@@ -60,6 +60,9 @@ subroutine netcdf_write_data_0d(fileobj, variable_name, variable_data, unlim_dim
       type is (integer(kind=int32))
         err = nf90_put_var(fileobj%ncid, varid, variable_data, start=c)
       type is (integer(kind=int64))
+        if ( trim(fileobj%nc_format) .ne. "netcdf4") &
+           call error("netcdf_write_data_0d: Writing int64 variables is only available for &
+                      &netcdf4 file types.")
         err = nf90_put_var(fileobj%ncid, varid, variable_data, start=c)
       type is (real(kind=real32))
         err = nf90_put_var(fileobj%ncid, varid, variable_data, start=c)
@@ -151,6 +154,9 @@ subroutine netcdf_write_data_1d(fileobj, variable_name, variable_data, unlim_dim
       type is (integer(kind=int32))
         err = nf90_put_var(fileobj%ncid, varid, variable_data, start=c, count=e)
       type is (integer(kind=int64))
+        if ( trim(fileobj%nc_format) .ne. "netcdf4") &
+           call error("netcdf_write_data_1d: Writing int64 variables is only available for &
+                      &netcdf4 file types.")
         err = nf90_put_var(fileobj%ncid, varid, variable_data, start=c, count=e)
       type is (real(kind=real32))
         err = nf90_put_var(fileobj%ncid, varid, variable_data, start=c, count=e)
@@ -240,6 +246,9 @@ subroutine netcdf_write_data_2d(fileobj, variable_name, variable_data, unlim_dim
       type is (integer(kind=int32))
         err = nf90_put_var(fileobj%ncid, varid, variable_data, start=c, count=e)
       type is (integer(kind=int64))
+        if ( trim(fileobj%nc_format) .ne. "netcdf4") &
+           call error("netcdf_write_data_2d: Writing int64 variables is only available for &
+                      &netcdf4 file types.")
         err = nf90_put_var(fileobj%ncid, varid, variable_data, start=c, count=e)
       type is (real(kind=real32))
         err = nf90_put_var(fileobj%ncid, varid, variable_data, start=c, count=e)
@@ -302,6 +311,9 @@ subroutine netcdf_write_data_3d(fileobj, variable_name, variable_data, unlim_dim
       type is (integer(kind=int32))
         err = nf90_put_var(fileobj%ncid, varid, variable_data, start=c, count=e)
       type is (integer(kind=int64))
+        if ( trim(fileobj%nc_format) .ne. "netcdf4") &
+           call error("netcdf_write_data_3d: Writing int64 variables is only available for &
+                      &netcdf4 file types.")
         err = nf90_put_var(fileobj%ncid, varid, variable_data, start=c, count=e)
       type is (real(kind=real32))
         err = nf90_put_var(fileobj%ncid, varid, variable_data, start=c, count=e)
@@ -362,6 +374,9 @@ subroutine netcdf_write_data_4d(fileobj, variable_name, variable_data, unlim_dim
       type is (integer(kind=int32))
         err = nf90_put_var(fileobj%ncid, varid, variable_data, start=c, count=e)
       type is (integer(kind=int64))
+        if ( trim(fileobj%nc_format) .ne. "netcdf4") &
+           call error("netcdf_write_data_4d: Writing int64 variables is only available for &
+                      &netcdf4 file types.")
         err = nf90_put_var(fileobj%ncid, varid, variable_data, start=c, count=e)
       type is (real(kind=real32))
         err = nf90_put_var(fileobj%ncid, varid, variable_data, start=c, count=e)
@@ -425,6 +440,9 @@ subroutine netcdf_write_data_5d(fileobj, variable_name, variable_data, unlim_dim
       type is (integer(kind=int32))
         err = nf90_put_var(fileobj%ncid, varid, variable_data, start=c, count=e)
       type is (integer(kind=int64))
+        if ( trim(fileobj%nc_format) .ne. "netcdf4") &
+           call error("netcdf_write_data_5d: Writing int64 variables is only available for &
+                      &netcdf4 file types.")
         err = nf90_put_var(fileobj%ncid, varid, variable_data, start=c, count=e)
       type is (real(kind=real32))
         err = nf90_put_var(fileobj%ncid, varid, variable_data, start=c, count=e)

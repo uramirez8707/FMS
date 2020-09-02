@@ -42,6 +42,9 @@ subroutine register_global_attribute_0d(fileobj, &
                                    trim(attribute_name), &
                                    attribute_value)
             type is (integer(kind=int64))
+                if ( trim(fileobj%nc_format) .ne. "netcdf4") &
+                   call error("register_global_attribute_0d: Writing int64 global attributes is only available for &
+                               &netcdf4 file types.")
                 err = nf90_put_att(fileobj%ncid, &
                                    nf90_global, &
                                    trim(attribute_name), &
@@ -82,6 +85,9 @@ subroutine register_global_attribute_1d(fileobj, &
                                    trim(attribute_name), &
                                    attribute_value)
             type is (integer(kind=int64))
+                if ( trim(fileobj%nc_format) .ne. "netcdf4") &
+                   call error("register_global_attribute_1d: Writing int64 global attributes is only available for &
+                               &netcdf4 file types.")
                 err = nf90_put_att(fileobj%ncid, &
                                    nf90_global, &
                                    trim(attribute_name), &

@@ -48,6 +48,9 @@ subroutine register_variable_attribute_0d(fileobj, variable_name, attribute_name
         err = nf90_put_att(fileobj%ncid, varid, trim(attribute_name), &
                            attribute_value)
       type is (integer(kind=int64))
+        if ( trim(fileobj%nc_format) .ne. "netcdf4") &
+           call error("register_variable_attribute_0d: Writing int64 variable attributes is only available for &
+                      &netcdf4 file types.")
         err = nf90_put_att(fileobj%ncid, varid, trim(attribute_name), &
                            attribute_value)
       type is (real(kind=real32))
@@ -144,6 +147,9 @@ subroutine register_variable_attribute_1d(fileobj, variable_name, attribute_name
         err = nf90_put_att(fileobj%ncid, varid, trim(attribute_name), &
                            attribute_value)
       type is (integer(kind=int64))
+        if ( trim(fileobj%nc_format) .ne. "netcdf4") &
+           call error("register_variable_attribute_1d: Writing int64 variable attributes is only available for &
+                      &netcdf4 file types.")
         err = nf90_put_att(fileobj%ncid, varid, trim(attribute_name), &
                            attribute_value)
       type is (real(kind=real32))
