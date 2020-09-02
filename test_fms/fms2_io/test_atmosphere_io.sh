@@ -27,4 +27,7 @@
 # make an input.nml for mpp_init to read
 printf "EOF\n&dummy\nEOF" | cat > input.nml
 # run the tests
+
+# Remove existing netcdf files to remove clobber errors
+rm -f `find -name "00002.atm.res.tile*"` 
 run_test test_atmosphere_io 6

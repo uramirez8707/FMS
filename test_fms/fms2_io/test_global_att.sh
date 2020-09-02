@@ -28,6 +28,32 @@
 # make an input.nml for mpp_init to read
 touch input.nml
 
-# run the tests
+# Test 1: netcdf 4 file type
+printf "&fms2_io_nml \n netcdf_default_format = netcdf4  \n/" | cat > input.nml
 run_test test_global_att 1
 
+#Check that file was written in the correct type
+if [ `ncdump test_global_att.nc -k | grep netCDF-4 | wc -l` == 0 ]; then
+   echo "ERROR: test_global_att.nc should type netCDF-4"
+   exit 12
+fi
+
+# Test 2: classic file type
+printf "&fms2_io_nml \n netcdf_default_format = classic  \n/" | cat > input.nml
+run_test test_global_att 1
+
+#Check that file was written in the correct type
+if [ `ncdump test_global_att.nc -k | grep classic | wc -l` == 0 ]; then
+   echo "ERROR: test_global_att.nc should type classic"
+   exit 12
+fi
+
+# Test 3: 64bit file type
+printf "&fms2_io_nml \n netcdf_default_format = 64bit  \n/" | cat > input.nml
+run_test test_global_att 1
+
+#Check that file was written in the correct type
+if [ `ncdump test_global_att.nc -k | grep 64-bit | wc -l` == 0 ]; then
+   echo "ERROR: test_global_att.nc should type 64bit"
+   exit 12
+fi

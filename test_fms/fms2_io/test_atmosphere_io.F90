@@ -115,18 +115,6 @@ call open_check(open_file(fileobj, "atmosphere_io.nc", "overwrite", &
                           domain, nc_format="64bit", is_restart=.true.))
 call open_check(open_virtual_file(fileobjv, domain, "atm.nc"))
 
-!Add some global attributes to the restart file.
-call register_global_attribute(fileobj, "globalatt1", real(7., kind=real64))
-call register_global_attribute(fileobj, "globalatt2", real(4., kind=real32))
-call register_global_attribute(fileobj, "globalatt3", int(3, kind=int32))
-call register_global_attribute(fileobj, "globalatt4", int(2, kind=int64))
-call register_global_attribute(fileobj, "globalatt5", "some text", str_len=9)
-call register_global_attribute(fileobjv, "globalatt1", real(7., kind=real64))
-call register_global_attribute(fileobjv, "globalatt2", real(4., kind=real32))
-call register_global_attribute(fileobjv, "globalatt3", int(3, kind=int32))
-call register_global_attribute(fileobjv, "globalatt4", int(2, kind=int64))
-call register_global_attribute(fileobjv, "globalatt5", "some text", str_len=9)
-
 !Add dimensions and corresponding variables to the file.
 !Longitude (domain "x" dimension with center position).
 names(1) = "lon"

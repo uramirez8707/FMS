@@ -49,8 +49,10 @@ if (open_file(fileobj, "test_global_att.nc", "overwrite")) then
    call register_global_attribute(fileobj, "buf_int32", int(3, kind=int32))
    call register_global_attribute(fileobj, "buf_int32_1d", (/ int(3, kind=int32), int(5, kind=int32) /) )
 
-   call register_global_attribute(fileobj, "buf_int64", int(2, kind=int64))
-   call register_global_attribute(fileobj, "buf_int64_1d", (/ int(2, kind=int64), int(4, kind=int64) /) )
+   if (trim(fileobj%nc_format) .eq. "netcdf4" ) then
+       call register_global_attribute(fileobj, "buf_int64", int(2, kind=int64))
+       call register_global_attribute(fileobj, "buf_int64_1d", (/ int(2, kind=int64), int(4, kind=int64) /) )
+   endif
 
    call register_global_attribute(fileobj, "buf_str", "some text"//char(0), str_len=10)
 
@@ -70,8 +72,10 @@ if (open_file(fileobj, "test_global_att.nc", "read")) then
    call get_global_attribute(fileobj, "buf_int32", buf_int32)
    call get_global_attribute(fileobj, "buf_int32_1d", buf_int32_1d)
 
-   call get_global_attribute(fileobj, "buf_int64", buf_int64)
-   call get_global_attribute(fileobj, "buf_int64_1d", buf_int64_1d)
+   if (trim(fileobj%nc_format) .eq. "netcdf4" ) then
+       call get_global_attribute(fileobj, "buf_int64", buf_int64)
+       call get_global_attribute(fileobj, "buf_int64_1d", buf_int64_1d)
+   endif
 
    call get_global_attribute(fileobj, "buf_str", buf_str)
 
@@ -93,9 +97,11 @@ if (buf_int32 /= int(3, kind=int32)) call mpp_error(FATAL, "test_global_att: err
 if (buf_int32_1d(1) /= int(3, kind=int32) .or. buf_int32_1d(2) /= int(5, kind=int32)) &
     call mpp_error(FATAL, "test_global_att: error reading buf_int32_1d")
 
-if (buf_int64 /= int(2, kind=int64)) call mpp_error(FATAL, "test_global_att: error reading buf_int64")
-if (buf_int64_1d(1) /= int(2, kind=int64) .or. buf_int64_1d(2) /= int(4, kind=int64)) &
-    call mpp_error(FATAL, "test_global_att: error reading buf_int64_1d")
+if (trim(fileobj%nc_format) .eq. "netcdf4" ) then
+    if (buf_int64 /= int(2, kind=int64)) call mpp_error(FATAL, "test_global_att: error reading buf_int64")
+    if (buf_int64_1d(1) /= int(2, kind=int64) .or. buf_int64_1d(2) /= int(4, kind=int64)) &
+       call mpp_error(FATAL, "test_global_att: error reading buf_int64_1d")
+endif
 
 if (trim(buf_str) /= "some text") then
     print *, "buf_str read in = ", trim(buf_str)
