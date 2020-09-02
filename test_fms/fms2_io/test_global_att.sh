@@ -33,8 +33,10 @@ printf "&fms2_io_nml \n netcdf_default_format = netcdf4  \n/" | cat > input.nml
 run_test test_global_att 1
 
 #Check that file was written in the correct type
+ncdump test_global_att.nc -k | grep netCDF-4
+
 if [ `ncdump test_global_att.nc -k | grep netCDF-4 | wc -l` == 0 ]; then
-   echo "ERROR: test_global_att.nc should type netCDF-4"
+   echo "ERROR: test_global_att.nc should be type netCDF-4"
    exit 12
 fi
 
