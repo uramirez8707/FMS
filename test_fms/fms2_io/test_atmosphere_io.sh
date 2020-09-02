@@ -25,7 +25,8 @@
 # Set common test settings.
 . ../test_common.sh
 # make an input.nml for mpp_init to read
-printf "EOF\n&dummy\nEOF" | cat > input.nml
+touch input.nml
+
 # run the tests
 
 # Remove existing netcdf files to remove clobber errors
