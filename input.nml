@@ -1,0 +1,4 @@
+&test_data_override_ongrid_nml 
+ nhalox=0 
+ nhaloy=0
+/

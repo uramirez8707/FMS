@@ -69,7 +69,8 @@ read (input_nml_file, test_data_override_ongrid_nml, iostat=io_status)
 if (io_status > 0) call mpp_error(FATAL,'=>test_data_override_ongrid: Error reading input.nml')
 
 !< Create some files needed by data_override!
-if (mpp_pe() .eq. mpp_root_pe()) then
+!if (mpp_pe() .eq. mpp_root_pe()) then
+if (.false.) then
    allocate(runoff_in(1440, 1080, 10))
    do i = 1, 10
        runoff_in(:,:,i) = real(i)
@@ -134,14 +135,14 @@ call mpi_barrier(mpi_comm_world, err)
 
 call set_calendar_type(NOLEAP)
 
-nlon = 1440
-nlat = 1080
+nlat = 1152/2
+nlon = 1440/2
 
 !< Create a domain nlonXnlat with mask
 call mpp_domains_set_stack_size(17280000)
 call mpp_define_domains( (/1,nlon,1,nlat/), layout, Domain, xhalo=nhalox, yhalo=nhaloy, name='test_data_override_emc')
 call mpp_define_io_domain(Domain, (/1,1/))
-call mpp_get_data_domain(Domain, is, ie, js, je)
+call mpp_get_compute_domain(Domain, is, ie, js, je)
 
 print *, nhalox, nhaloy
 
@@ -154,21 +155,25 @@ runoff = 999.
 call data_override_init(Ocean_domain_in=Domain)
 
 !< Run it when time=3
-Time = set_date(1,1,4,0,0,0)
+
+Time = set_date(1958,1,1,0,0,0)
 call data_override('OCN','runoff',runoff, Time)
+
+write(mpp_pe()+100,*), runoff
+
 !< Because you are getting the data when time=3, and this is an "ongrid" case, the expected result is just
 !! equal to the data at time=3, which is 3.
-expected_result = real(3.)
-call compare_data(Domain, runoff, expected_result)
+!expected_result = real(3.)
+!call compare_data(Domain, runoff, expected_result)
 
 !< Run it when time=4
-runoff = 999.
-Time = set_date(1,1,5,0,0,0)
-call data_override('OCN','runoff',runoff, Time)
+!runoff = 999.
+!Time = set_date(1,1,5,0,0,0)
+!call data_override('OCN','runoff',runoff, Time)
 !< You are getting the data when time=4, the data at time=3 is 3. and at time=5 is 4., so the expected result
 !! is the average of the 2 (because this is is an "ongrid" case and there is no horizontal interpolation).
-expected_result = (real(3.)+ real(4.))/2
-call compare_data(Domain, runoff, expected_result)
+!expected_result = (real(3.)+ real(4.))/2
+!call compare_data(Domain, runoff, expected_result)
 
 deallocate(runoff)
 
