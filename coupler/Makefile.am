@@ -31,6 +31,7 @@ AM_CPPFLAGS += -I${top_builddir}/diag_manager
 AM_CPPFLAGS += -I${top_builddir}/data_override
 AM_CPPFLAGS += -I${top_builddir}/field_manager
 AM_CPPFLAGS += -I${top_builddir}/platform
+AM_CPPFLAGS += -I${top_builddir}/fms2_io
 
 # Build these uninstalled convenience libraries.
 noinst_LTLIBRARIES = libcoupler_types.la libensemble_manager.la \

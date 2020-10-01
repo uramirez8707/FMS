@@ -350,7 +350,7 @@ subroutine register_restart_region_2d(fileobj, variable_name, vdata, indices, gl
   character(len=*), intent(in) :: variable_name !< Variable name.
   class(*), dimension(:,:), intent(in), target :: vdata !< Pointer to
   integer, dimension(4), intent(in)                 :: indices
-  integer, dimension(2), intent(in)                 :: global_size
+  integer, dimension(:), intent(in)                 :: global_size
   integer, dimension(:), intent(in)                 :: pelist
   logical, intent(in)                               :: is_root_pe
   integer, intent(in), optional :: x_halo
@@ -408,7 +408,7 @@ subroutine register_restart_region_3d(fileobj, variable_name, vdata, indices, gl
   character(len=*), intent(in) :: variable_name !< Variable name.
   class(*), dimension(:,:,:), intent(in), target :: vdata !< Pointer to
   integer, dimension(4), intent(in)                 :: indices
-  integer, dimension(3), intent(in)                 :: global_size
+  integer, dimension(:), intent(in)                 :: global_size
   integer, dimension(:), intent(in)                 :: pelist
   logical, intent(in)                               :: is_root_pe
   integer, intent(in), optional :: x_halo
