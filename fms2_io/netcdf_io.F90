@@ -494,7 +494,7 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart, do
 
   integer :: nc_format_param
   integer :: err
-  character(len=256) :: buf
+  character(len=256) :: buf, buf2
   logical :: is_res
   logical :: dont_add_res !< flag indicated to not add ".res" to the filename
 
@@ -521,17 +521,24 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart, do
     call string_copy(buf, trim(path))
   endif
 
+  !< Add the ens number or the nest number or whatever to the filename
+  if (is_res) then
+     call magic_filepath_mangle(buf2, trim(buf))
+  else
+     call string_copy(buf2, trim(buf))
+  endif
+
   !Check if the file exists.
   success = .true.
   if (string_compare(mode, "read", .true.) .or. string_compare(mode, "append", .true.)) then
-    success = file_exists(buf)
+    success = file_exists(buf2)
     if (.not. success) then
       return
     endif
   endif
 
   !Store properties in the derived type.
-  call string_copy(fileobj%path, trim(buf))
+  call string_copy(fileobj%path, trim(buf2))
   if (present(pelist)) then
     allocate(fileobj%pelist(size(pelist)))
     fileobj%pelist(:) = pelist(:)
