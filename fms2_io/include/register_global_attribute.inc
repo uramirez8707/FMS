@@ -31,11 +31,11 @@ subroutine register_global_attribute_0d(fileobj, &
                              define_mode)
         select type(attribute_value)
             type is (character(len=*))
-                !if (.not. present(str_len)) call error("register_global_attribute_0d: Need to include str length")
+                if (.not. present(str_len)) call error("register_global_attribute_0d: Need to include str length")
                 err = nf90_put_att(fileobj%ncid, &
                                    nf90_global, &
                                    trim(attribute_name), &
-                                   trim(attribute_value))
+                                   trim(attribute_value(1:str_len)))
             type is (integer(kind=int32))
                 err = nf90_put_att(fileobj%ncid, &
                                    nf90_global, &
