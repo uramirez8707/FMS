@@ -69,6 +69,8 @@ if (atm%BCfile_ne_open) then
     call close_file(atm%fileobj_ne)
 endif
 
+call mpi_barrier(mpi_comm_world, err)
+
 !< Now try to read it back!
 atm%var2d = real(999.)
 atm%var3d = real(999.)
