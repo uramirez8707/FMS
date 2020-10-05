@@ -136,8 +136,6 @@ subroutine scatter_data_bc_2d(fileobj, varname, vdata, bc_info, unlim_dim_level)
       endif
 
       !> Scatter the data to the other PE
-      print *, mpp_pe(), " -", trim(varname), ": ", bc_info%pelist, fileobj%is_root
-
       call mpp_scatter(isc+i_add, iec+i_add, jsc+j_add, jec+j_add, bc_info%pelist, &
                        local_buf_real64(i1:i2,j1:j2), global_buf_real64, fileobj%is_root)
 
