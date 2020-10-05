@@ -2099,18 +2099,22 @@ subroutine write_restart_bc(fileobj, unlim_dim_level)
        call netcdf_write_data(fileobj, fileobj%restart_vars(i)%varname, &
                             fileobj%restart_vars(i)%bc_info%globaldata2d_64 , &
                             unlim_dim_level=unlim_dim_level)
+       deallocate(fileobj%restart_vars(i)%bc_info%globaldata2d_64)
     else if (allocated(fileobj%restart_vars(i)%bc_info%globaldata2d_32 )) then
        call netcdf_write_data(fileobj, fileobj%restart_vars(i)%varname, &
                             fileobj%restart_vars(i)%bc_info%globaldata2d_32 , &
                             unlim_dim_level=unlim_dim_level)
+       deallocate(fileobj%restart_vars(i)%bc_info%globaldata2d_32)
     else if (allocated(fileobj%restart_vars(i)%bc_info%globaldata3d_64 )) then
        call netcdf_write_data(fileobj, fileobj%restart_vars(i)%varname, &
                             fileobj%restart_vars(i)%bc_info%globaldata3d_64 , &
                             unlim_dim_level=unlim_dim_level)
+       deallocate(fileobj%restart_vars(i)%bc_info%globaldata3d_64)
     else if (allocated(fileobj%restart_vars(i)%bc_info%globaldata3d_32 )) then
        call netcdf_write_data(fileobj, fileobj%restart_vars(i)%varname, &
                             fileobj%restart_vars(i)%bc_info%globaldata3d_32 , &
                             unlim_dim_level=unlim_dim_level)
+       deallocate(fileobj%restart_vars(i)%bc_info%globaldata3d_32 )
     endif
 
  enddo
