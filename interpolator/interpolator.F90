@@ -856,7 +856,8 @@ if(dimension_exists(fileobj, "time")) then
    ntime_in = 1
    if (ntime > 0) then
       allocate(time_in(ntime), clim_type%time_slice(ntime))
-      allocate(clim_type%clim_times(12,(ntime+11)/12))
+     print *, "HERE L859" 
+     allocate(clim_type%clim_times(12,(ntime+11)/12))
       time_in = 0.0
       clim_type%time_slice = set_time(0,0) + base_time
       clim_type%clim_times = set_time(0,0) + base_time
@@ -971,6 +972,7 @@ if(dimension_exists(fileobj, "time")) then
       enddo
    else
       allocate(time_in(1), clim_type%time_slice(1))
+      print *, "HERE L975"
       allocate(clim_type%clim_times(1,1))
       time_in = 0.0
       clim_type%time_slice = set_time(0,0) + base_time
@@ -3696,6 +3698,13 @@ if (associated (clim_type%pmon_pyear)) then
   deallocate(clim_type%nmon_pyear)
 endif
 
+if (associated(clim_type%clim_times)) deallocate(clim_type%clim_times)
+if (associated(clim_type%indexm)) deallocate(clim_type%indexm)
+if (associated(clim_type%indexp)) deallocate(clim_type%indexp)
+if (associated(clim_type%climatology)) deallocate(clim_type%climatology)
+if (associated(clim_type%out_of_bounds)) deallocate(clim_type%out_of_bounds)
+if (associated(clim_type%vert_interp)) deallocate(clim_type%vert_interp)
+
 !< These are fms_io specific
 if (associated (clim_type%field_type)) deallocate(clim_type%field_type)
 
@@ -3753,6 +3762,7 @@ integer   :: k, km
 ! sjs
 real, allocatable :: climdata(:,:,:), climdata2(:,:,:)
 
+print *, "Reading the data fms2io:"
       allocate(climdata(size(clim_type%lon(:)),size(clim_type%lat(:)), &
                         size(clim_type%levs(:))))
       if(clim_type%has_level(i)) then ! has vertical level
@@ -4878,6 +4888,8 @@ type(time_type), optional, intent(in)  :: Time
 integer   :: k, km
 ! sjs
 real, allocatable :: climdata(:,:,:), climdata2(:,:,:)
+
+print *, "Reading the data: mpp_io"
 
       allocate(climdata(size(clim_type%lon(:)),size(clim_type%lat(:)), &
                         size(clim_type%levs(:))))

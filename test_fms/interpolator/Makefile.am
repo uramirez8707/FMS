@@ -32,10 +32,11 @@ AM_CPPFLAGS = -I${top_builddir}/mpp -I${top_builddir}/fms	\
 LDADD = ${top_builddir}/libFMS/libFMS.la
 
 # Build this test program.
-check_PROGRAMS = test_interpolator
+check_PROGRAMS = test_interpolator test_inter_slices
 
 # This is the source code for the test.
 test_interpolator_SOURCES = test_interpolator.F90
+test_inter_slices_SOURCES = test_inter_slices.F90
 
 # Run the test program.
 TESTS = test_interpolator2.sh
