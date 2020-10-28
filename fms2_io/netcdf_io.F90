@@ -521,9 +521,9 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart, do
     call string_copy(buf, trim(path))
   endif
 
-  !< Add the ens number or the nest number or whatever to the filename
+  !< If it is a restart add the filename_appendix to the filename
   if (is_res) then
-     call magic_filepath_mangle(buf2, trim(buf))
+     call get_instance_filename(trim(buf), buf2)
   else
      call string_copy(buf2, trim(buf))
   endif

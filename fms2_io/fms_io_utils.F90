@@ -49,7 +49,6 @@ public :: get_checksum
 public :: open_check
 public :: string_compare
 public :: restart_filepath_mangle
-public :: magic_filepath_mangle
 public :: get_filename_appendix
 public :: set_filename_appendix
 public :: get_instance_filename
@@ -451,36 +450,6 @@ subroutine restart_filepath_mangle(dest, source)
   call string_copy(dest, source(1:i-1)//".res"//source(i:len_trim(source)))
 end subroutine restart_filepath_mangle
 
-subroutine magic_filepath_mangle(dest, source)
-
-  character(len=*), intent(inout) :: dest
-  character(len=*), intent(in) :: source
-
-  character(len=20) :: filename_append
-  character(len=20) :: buf
-
-  integer :: i
-
-  call get_filename_appendix(buf)
-  if (trim(buf) .eq. '') then
-     call string_copy(dest, source)
-     return
-  endif
-
-  if (has_domain_tile_string(source)) then
-    i = index(trim(source), ".tile", back=.true.)
-  else
-    i = index(trim(source), ".nc", back=.true.)
-    if (i .eq. 0) then
-      call error("file "//trim(source)//" does not contain .nc")
-    endif
-  endif
-
-  filename_append = '.'//trim(buf)
-
-  call string_copy(dest, source(1:i-1)//trim(filename_append)//source(i:len_trim(source)))
-end subroutine magic_filepath_mangle
-
 subroutine open_check(flag, fname)
 
   logical, intent(in) :: flag
@@ -495,7 +464,7 @@ subroutine open_check(flag, fname)
   endif
 end subroutine open_check
 
-!> @brief Save string_out as the filename_appendix
+!> @brief Assings string_out as the filename appendix module variable
 subroutine get_filename_appendix(string_out)
   character(len=*) , intent(out) :: string_out !< String that will be saved as the filename_appendix
 
@@ -503,7 +472,7 @@ subroutine get_filename_appendix(string_out)
 
 end subroutine get_filename_appendix
 
-!> @brief Remove the filename_appendix
+!> @brief Clears the filename_appendix module variable
 subroutine nullify_filename_appendix()
 
   filename_appendix = ''
@@ -531,6 +500,7 @@ subroutine get_instance_filename(name_in,name_out)
   character(len=*), intent(inout) :: name_out !< name_in with the filename_appendix
 
   integer :: length !< Length of name_in
+  integer :: i !< no description 
 
   length = len_trim(name_in)
   name_out = name_in(1:length)
@@ -538,7 +508,10 @@ subroutine get_instance_filename(name_in,name_out)
   !< If the filename_appendix is set append it to name_out before the .nc or at
   !! the end
   if(len_trim(filename_appendix) > 0) then
-     if(name_in(length-2:length) == '.nc') then
+     if (has_domain_tile_string(name_in)) then
+         i = index(trim(name_in), ".tile", back=.true.)
+         name_out = name_in(1:i-1)    //'.'//trim(filename_appendix)//name_in(i:length)
+     else if(name_in(length-2:length) == '.nc') then
         name_out = name_in(1:length-3)//'.'//trim(filename_appendix)//'.nc'
      else
         name_out = name_in(1:length)  //'.'//trim(filename_appendix)

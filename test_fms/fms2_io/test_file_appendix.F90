@@ -34,7 +34,7 @@ implicit none
 
 logical :: test_passed                    !> Flag indicating if the test_passed
 type(FmsNetcdfFile_t) :: fileobj          !> Fms2io file obj
-character(len=20) :: buf                  !> String buffer
+character(len=50) :: buf                  !> String buffer
 
 test_passed = .false.
 
@@ -52,6 +52,12 @@ if (trim(buf) .ne. "nest01") call mpp_error(FATAL, "get_filename_appendix is not
 call get_instance_filename("nestfile.nc", buf)
 if (trim(buf) .ne. "nestfile.nest01.nc") &
     call mpp_error(FATAL, "get_instance_filename does not add the filename appendix")
+
+!< Call get instance_filename where the string send in has tile in the name
+call get_instance_filename("nestfile.tile1.nc", buf)
+print *, buf
+if (trim(buf) .ne. "nestfile.nest01.tile1.nc") &
+    call mpp_error(FATAL, "get_instance_filename does not add the filename appendix before the .tile")
 
 !< Call open_file to check if the filename_appendix was appended to the file created
 if (open_file(fileobj, "nestfile.nc", "overwrite", is_restart=.true.)) then
