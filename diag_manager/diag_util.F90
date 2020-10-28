@@ -72,11 +72,8 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
   USE fms_mod, ONLY: error_mesg, FATAL, WARNING, NOTE, mpp_pe, mpp_root_pe, lowercase, fms_error_handler,&
        & write_version_number, do_cf_compliance
   USE fms_io_mod, ONLY: get_tile_string, return_domain, string
-#ifndef use_mpp_io
-  USE fms2_io_mod, ONLY: get_instance_filename
-#else
-  USE fms_io_mod, ONLY: get_instance_filename
-#endif
+  USE fms2_io_mod, ONLY: fms2_io_get_instance_filename => get_instance_filename
+  USE fms_io_mod, ONLY: mpp_io_get_instance_filename => get_instance_filename
   USE mpp_domains_mod,ONLY: domain1d, domain2d, mpp_get_compute_domain, null_domain1d, null_domain2d,&
        & OPERATOR(.NE.), OPERATOR(.EQ.), mpp_modify_domain, mpp_get_domain_components,&
        & mpp_get_ntile_count, mpp_get_current_ntile, mpp_get_tile_id, mpp_mosaic_defined, mpp_get_tile_npes,&
@@ -1842,7 +1839,11 @@ CONTAINS
 
     ! Add ensemble ID to filename
     fname=base_name
-    call get_instance_filename(fname, base_name)
+    if (use_mpp_io) then
+        call mpp_io_get_instance_filename(fname, base_name)
+    else
+        call fms2_io_get_instance_filename(fname, base_name)
+    endif
 
     ! Set the filename
     filename = TRIM(base_name)//TRIM(suffix)

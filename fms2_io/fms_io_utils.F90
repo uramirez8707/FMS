@@ -29,7 +29,7 @@ use mpp_mod
 implicit none
 private
 
-character(len=32), save :: filename_appendix = '' !< Appendix added to the filename
+character(len=32), save :: filename_appendix = '' !< Appendix added to the restart filename
 
 public :: char_linked_list
 public :: error
@@ -495,42 +495,48 @@ subroutine open_check(flag, fname)
   endif
 end subroutine open_check
 
+!> @brief Save string_out as the filename_appendix
 subroutine get_filename_appendix(string_out)
-  character(len=*) , intent(out) :: string_out
+  character(len=*) , intent(out) :: string_out !< String that will be saved as the filename_appendix
 
   string_out = trim(filename_appendix)
 
-
 end subroutine get_filename_appendix
 
-
+!> @brief Remove the filename_appendix
 subroutine nullify_filename_appendix()
 
   filename_appendix = ''
 
 end subroutine nullify_filename_appendix
 
+!> @brief Save "string_in" as a module variable that will added to the filename
+!! of the restart files
 subroutine set_filename_appendix(string_in)
-  character(len=*) , intent(in) :: string_in
-
-  integer :: index_num
+  character(len=*) , intent(in) :: string_in !< String that will be saved as a module variable
 
   ! Check if string has already been added
-  index_num = index(filename_appendix, string_in)
-  if ( index_num .le. 0 ) then
-     filename_appendix = trim(filename_appendix)//trim(string_in)
-  end if
+  if (len_trim(filename_appendix) > 0) then
+      call error("Set_filename_appendix: The filename appendix has already be set " &
+                 //"call 'nullify_filename_appendix' first")
+  endif
+
+  filename_appendix = trim(string_in)
 
 end subroutine set_filename_appendix
 
+!> @brief Adds the filename_appendix to name_in and sets it as name_out 
 subroutine get_instance_filename(name_in,name_out)
-  character(len=*)  , intent(in)  :: name_in
-  character(len=*), intent(inout) :: name_out
-  integer :: length
+  character(len=*)  , intent(in)  :: name_in  !< Buffer to add the filename_appendix to
+  character(len=*), intent(inout) :: name_out !< name_in with the filename_appendix
+
+  integer :: length !< Length of name_in
 
   length = len_trim(name_in)
   name_out = name_in(1:length)
 
+  !< If the filename_appendix is set append it to name_out before the .nc or at
+  !! the end
   if(len_trim(filename_appendix) > 0) then
      if(name_in(length-2:length) == '.nc') then
         name_out = name_in(1:length-3)//'.'//trim(filename_appendix)//'.nc'
