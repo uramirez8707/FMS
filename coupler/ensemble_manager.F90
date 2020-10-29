@@ -398,7 +398,7 @@ contains
        write( text,'(a,i2.2)' ) 'ens_', ensemble_id
        !Append ensemble_id to the restart filenames
 
-       !< Both calls are needed for cases where both fms2io/fmsio are used 
+       !< Both calls are needed for cases where both fms2io/fmsio are used
        call fms2_io_set_filename_appendix(trim(text))
        call fms_io_set_filename_appendix(trim(text))
     endif

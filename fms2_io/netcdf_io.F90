@@ -49,21 +49,22 @@ integer, private :: fms2_nc_format_param = -1 !< Netcdf format type param used i
 character (len = 10), private :: fms2_nc_format !< Netcdf format type used in netcdf_file_open
 integer, private :: fms2_header_buffer_val = -1  !< value used in NF__ENDDEF
 
+!> @brief information needed fr regional restart variables
 type :: bc_information
-  integer, dimension(:), allocatable :: indices
-  integer, dimension(:), allocatable :: global_size
-  integer, dimension(:), allocatable :: pelist
-  logical :: is_root_pe
-  integer :: x_halo
-  integer :: y_halo
-  integer :: jshift
-  integer :: ishift
+  integer, dimension(:), allocatable :: indices !< Indices for the halo region for the variable
+                                                !! (starting x, ending x, starting y, ending y)
+  integer, dimension(:), allocatable :: global_size !< Size of the variable for each dimension
+  integer, dimension(:), allocatable :: pelist !< List of pelist that have the data for the variable
+  logical :: is_root_pe !< Flag indicating if this is the root_pe from the pelist
+  integer :: x_halo !< Number of halos in x
+  integer :: y_halo !< Number of halos in y
+  integer :: jshift !< Shift in the x axis (from center)
+  integer :: ishift !< Shift in the y axis (from center)
   real(kind=real32), dimension(:,:), allocatable :: globaldata2d_32 !< 2d data pointer.
   real(kind=real32), dimension(:,:,:), allocatable :: globaldata3d_32 !< 3d data pointer.
   real(kind=real64), dimension(:,:), allocatable :: globaldata2d_64 !< 2d data pointer.
   real(kind=real64), dimension(:,:,:), allocatable :: globaldata3d_64 !< 3d data pointer.
-  character(len=32) :: chksum
-  character(len=7) :: dimnames(5)
+  character(len=32) :: chksum !< The variable's checksum
 endtype bc_information
 
 !> @brief Restart variable.
@@ -92,11 +93,15 @@ type :: CompressedDimension_t
   integer :: nelems !< Total size of the dimension.
 endtype CompressedDimension_t
 
+!> @brief information about the current dimensions for regional restart variables
 type :: dimension_information
-  integer, dimension(5) :: xlen
-  integer, dimension(5) :: ylen
-  integer, dimension(5) :: zlen
-  integer, dimension(3) :: cur_dim_len
+  integer, dimension(5) :: xlen !> The size of each unique x dimension
+  integer, dimension(5) :: ylen !> The size of each unique y dimension
+  integer, dimension(5) :: zlen !> The size of each unique z dimension
+  integer, dimension(3) :: cur_dim_len !> Number of unique:
+                                       !! cur_dim_len(1) : x dimensions
+                                       !! cur_dim_len(2) : y dimensions
+                                       !! cur_dim_len(3) : z dimensions
 endtype dimension_information
 
 !> @brief Netcdf file type.
@@ -121,7 +126,7 @@ type, public :: FmsNetcdfFile_t
   integer :: num_compressed_dims !< Number of compressed dimensions.
   logical :: is_diskless !< Flag telling whether this is a diskless file.
   character (len=20) :: time_name
-  type(dimension_information) :: bc_dimensions
+  type(dimension_information) :: bc_dimensions !<information about the current dimensions for regional restart variables
 
 endtype FmsNetcdfFile_t
 
@@ -2035,11 +2040,13 @@ subroutine set_fileobj_time_name (fileobj,time_name)
 !  endif
 end subroutine set_fileobj_time_name
 
+!> @brief Loop through the registered restart variables (including regional
+!! variables) and read them from the netcdf file
 subroutine read_restart_bc(fileobj, unlim_dim_level)
-  class(FmsNetcdfFile_t), intent(inout) :: fileobj
+  class(FmsNetcdfFile_t), intent(inout) :: fileobj !< File object
   integer, intent(in), optional :: unlim_dim_level !< Unlimited dimension
                                                      !! level.
-  integer :: i
+  integer :: i !< No description
 
   if (.not. fileobj%is_restart) then
     call error("file "//trim(fileobj%path)//" is not a restart file.")
@@ -2049,6 +2056,7 @@ subroutine read_restart_bc(fileobj, unlim_dim_level)
     !> Go away if you are not in the pelist!
     if (.not.ANY(mpp_pe().eq.fileobj%restart_vars(i)%bc_info%pelist(:))) cycle
 
+    !> The file's root pe reads the file and scatters it to the rest of the pes
     if (associated(fileobj%restart_vars(i)%data2d)) then
        call scatter_data_bc (fileobj, fileobj%restart_vars(i)%varname, &
                                 fileobj%restart_vars(i)%data2d, &
@@ -2063,11 +2071,13 @@ subroutine read_restart_bc(fileobj, unlim_dim_level)
 
 end subroutine read_restart_bc
 
+!> @brief Loop through the registered restart variables (including regional
+!! variables) and write them to the netcdf file
 subroutine write_restart_bc(fileobj, unlim_dim_level)
-  class(FmsNetcdfFile_t), intent(inout) :: fileobj
+  class(FmsNetcdfFile_t), intent(inout) :: fileobj !< File object
   integer, intent(in), optional :: unlim_dim_level !< Unlimited dimension
                                                      !! level.
-  integer :: i
+  integer :: i !< No description
 
   if (.not. fileobj%is_restart) then
     call error("file "//trim(fileobj%path)//" is not a restart file.")
@@ -2080,7 +2090,7 @@ subroutine write_restart_bc(fileobj, unlim_dim_level)
     !> Go away if this is not a BC variable
     if (.not. fileobj%restart_vars(i)%is_bc_variable) cycle
 
-    !> Gather the data from the pelist and write out the cheksum (all the metadata should be written before the
+    !> Gather the data from the pelist and write out the checksum (all the metadata should be written before the
     !! the actual data ...
     if (associated(fileobj%restart_vars(i)%data2d)) then
         call gather_data_bc(fileobj, fileobj%restart_vars(i)%data2d, fileobj%restart_vars(i)%bc_info)

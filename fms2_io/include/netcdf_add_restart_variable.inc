@@ -539,7 +539,7 @@ subroutine set_dimensions(fileobj, bc_dimensions, dimnames, global_size)
      dimnames(2) = axisname
   endif
 
-  !> If the variable is 3d: 
+  !> If the variable is 3d:
   if (size(global_size) .eq. 3) then
      !> Check to see if a z dimension with the correct size is already registered
      found_index = 0

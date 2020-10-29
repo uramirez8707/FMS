@@ -463,9 +463,9 @@ subroutine open_check(flag, fname)
   endif
 end subroutine open_check
 
-!> @brief Assings string_out as the filename appendix module variable
+!> @brief Writes filename appendix to "string_out"
 subroutine get_filename_appendix(string_out)
-  character(len=*) , intent(out) :: string_out !< String that will be saved as the filename_appendix
+  character(len=*) , intent(out) :: string_out !< String to write the filename_appendix to
 
   string_out = trim(filename_appendix)
 
@@ -493,13 +493,13 @@ subroutine set_filename_appendix(string_in)
 
 end subroutine set_filename_appendix
 
-!> @brief Adds the filename_appendix to name_in and sets it as name_out 
+!> @brief Adds the filename_appendix to name_in and sets it as name_out
 subroutine get_instance_filename(name_in,name_out)
   character(len=*)  , intent(in)  :: name_in  !< Buffer to add the filename_appendix to
   character(len=*), intent(inout) :: name_out !< name_in with the filename_appendix
 
   integer :: length !< Length of name_in
-  integer :: i !< no description 
+  integer :: i !< no description
 
   length = len_trim(name_in)
   name_out = name_in(1:length)

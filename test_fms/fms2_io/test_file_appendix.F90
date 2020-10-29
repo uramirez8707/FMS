@@ -17,7 +17,7 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
-!> @brief  This programs tests calls to 
+!> @brief  This programs tests calls to
 !! set_filename_appendix(string_in) -> sets string_in as a module variable, filename_appendix, in fms2io
 !! nullify_filename_appendix -> Resets the module variable, filename_appendix, in fms2io
 !! get_instance_filename(name_in,name_out) -> Adds the filename_appendix to name_in and sets it as name_out
@@ -73,7 +73,7 @@ call nullify_filename_appendix()
 call get_filename_appendix(buf)
 if (trim(buf) .ne. "") call mpp_error(FATAL, "get_filename_appendix was not removed")
 
-!< Call open file again and check if the expected file: "nestfile.res.nc" was created 
+!< Call open file again and check if the expected file: "nestfile.res.nc" was created
 if (open_file(fileobj, "nestfile.nc", "overwrite", is_restart=.true.)) then
     call close_file(fileobj)
 else
