@@ -55,7 +55,6 @@ if (trim(buf) .ne. "nestfile.nest01.nc") &
 
 !< Call get instance_filename where the string send in has tile in the name
 call get_instance_filename("nestfile.tile1.nc", buf)
-print *, buf
 if (trim(buf) .ne. "nestfile.nest01.tile1.nc") &
     call mpp_error(FATAL, "get_instance_filename does not add the filename appendix before the .tile")
 

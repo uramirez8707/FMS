@@ -446,7 +446,6 @@ subroutine restart_filepath_mangle(dest, source)
       call error("file "//trim(source)//" does not contain .nc")
     endif
   endif
-
   call string_copy(dest, source(1:i-1)//".res"//source(i:len_trim(source)))
 end subroutine restart_filepath_mangle
 
@@ -519,7 +518,6 @@ subroutine get_instance_filename(name_in,name_out)
   end if
 
 end subroutine get_instance_filename
-
 
 include "array_utils.inc"
 include "array_utils_char.inc"

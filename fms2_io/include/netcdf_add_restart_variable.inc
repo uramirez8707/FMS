@@ -344,34 +344,41 @@ subroutine netcdf_add_restart_variable_5d_wrap(fileobj, variable_name, vdata, &
   call netcdf_add_restart_variable(fileobj, variable_name, vdata, dimensions, is_optional)
 end subroutine netcdf_add_restart_variable_5d_wrap
 
+!> @brief Registers a regional 2D variable and stores the information needed
 subroutine register_restart_region_2d(fileobj, variable_name, vdata, indices, global_size, pelist, is_root_pe, &
                          x_halo, y_halo, jshift, ishift, is_optional)
   type(FmsNetcdfFile_t), intent(inout) :: fileobj !< File object.
   character(len=*), intent(in) :: variable_name !< Variable name.
-  class(*), dimension(:,:), intent(in), target :: vdata !< Pointer to
-  integer, dimension(4), intent(in)                 :: indices
-  integer, dimension(:), intent(in)                 :: global_size
-  integer, dimension(:), intent(in)                 :: pelist
-  logical, intent(in)                               :: is_root_pe
-  integer, intent(in), optional :: x_halo
-  integer, intent(in), optional :: y_halo
-  integer, intent(in), optional :: jshift
-  integer, intent(in), optional :: ishift
+  class(*), dimension(:,:), intent(in), target :: vdata !< Pointer to variable data
+  integer, dimension(4), intent(in)                 :: indices!< Indices for the halo region for the variable
+                                                              !! (starting x, ending x, starting y, ending y)
+  integer, dimension(:), intent(in)                 :: global_size !> Global_size(1:2) == size of the variable in (x,y)
+  integer, dimension(:), intent(in)                 :: pelist !> List of pelist that have the data for
+                                                              !! the variable
+  logical, intent(in)                               :: is_root_pe !> Flag indicating if this is the root_pe
+                                                                  !! from the pelist
+  integer, intent(in), optional :: x_halo !< Number of halos in x
+  integer, intent(in), optional :: y_halo !< Number of halos in y
+  integer, intent(in), optional :: jshift !< Shift in the x axis (from center)
+  integer, intent(in), optional :: ishift !< Shift in the y axis (from center)
   logical, intent(in), optional :: is_optional !< Prevent errors in read-only files
                                                !! if a variable does not exist.
 
-  integer :: current_var
-  character(len=7) :: dimnames(5)
+  integer :: current_var !> Current number of registered variables
+  character(len=7) :: dimnames(4) !> Names of the dimensions for the variable_name
 
+  !> If you reading the file and the variable is optional and not in the file, leave
   if (fileobj%is_readonly .and. present(is_optional)) then
     if (is_optional .and. .not. variable_exists(fileobj, variable_name)) then
       return
     endif
   endif
 
+  !> Register the axis for the variable dimension and get the names of the dimensions
   call set_dimensions(fileobj, fileobj%bc_dimensions, dimnames, global_size)
   call netcdf_add_restart_variable_2d(fileobj, variable_name, vdata, dimnames(1:3), is_optional)
 
+  !> Save the boundary conditions information to the bc_info type for the given variable
   current_var = fileobj%num_restart_vars
   fileobj%restart_vars(current_var)%is_bc_variable = .true.
   fileobj%restart_vars(current_var)%bc_info%is_root_pe = is_root_pe
@@ -402,34 +409,41 @@ subroutine register_restart_region_2d(fileobj, variable_name, vdata, indices, gl
 
 end subroutine register_restart_region_2d
 
+!> @brief Registers a regional 3D variable and stores the information needed
 subroutine register_restart_region_3d(fileobj, variable_name, vdata, indices, global_size, pelist, is_root_pe, &
                          x_halo, y_halo, jshift, ishift, is_optional)
   type(FmsNetcdfFile_t), intent(inout) :: fileobj !< File object.
   character(len=*), intent(in) :: variable_name !< Variable name.
-  class(*), dimension(:,:,:), intent(in), target :: vdata !< Pointer to
-  integer, dimension(4), intent(in)                 :: indices
-  integer, dimension(:), intent(in)                 :: global_size
-  integer, dimension(:), intent(in)                 :: pelist
-  logical, intent(in)                               :: is_root_pe
-  integer, intent(in), optional :: x_halo
-  integer, intent(in), optional :: y_halo
-  integer, intent(in), optional :: jshift
-  integer, intent(in), optional :: ishift
+  class(*), dimension(:,:,:), intent(in), target :: vdata !< Pointer to variable data
+  integer, dimension(4), intent(in)                 :: indices !< Indices for the halo region for the variable
+                                                               !! (starting x, ending x, starting y, ending y)
+  integer, dimension(:), intent(in)                 :: global_size !> Global_size(1:3) == size of the variable in (x,y,z)
+  integer, dimension(:), intent(in)                 :: pelist !> List of pelist that have the data for
+                                                              !! the variable
+  logical, intent(in)                               :: is_root_pe !> Flag indicating if this is the root_pe
+                                                                  !! from the pelist
+  integer, intent(in), optional :: x_halo !< Number of halos in x
+  integer, intent(in), optional :: y_halo !< Number of halos in y
+  integer, intent(in), optional :: jshift !< Shift in the y axis (from center)
+  integer, intent(in), optional :: ishift !< Shift in the x axis (from center)
   logical, intent(in), optional :: is_optional !< Prevent errors in read-only files
                                                !! if a variable does not exist.
 
-  integer :: current_var
-  character(len=7) :: dimnames(5)
+  integer :: current_var !> Current number of registered variables
+  character(len=7) :: dimnames(4) !> Names of the dimensions for the variable_name
 
+  !> If you reading the file and the variable is optional and not in the file, leave
   if (fileobj%is_readonly .and. present(is_optional)) then
     if (is_optional .and. .not. variable_exists(fileobj, variable_name)) then
       return
     endif
   endif
 
+  !> Register the axis for the variable dimension and get the names of the dimensions
   call set_dimensions(fileobj, fileobj%bc_dimensions, dimnames, global_size)
   call netcdf_add_restart_variable_3d(fileobj, variable_name, vdata, dimnames(1:4), is_optional)
 
+  !> Save the boundary conditions information to the bc_info type for the given variable
   current_var = fileobj%num_restart_vars
   fileobj%restart_vars(current_var)%is_bc_variable = .true.
   fileobj%restart_vars(current_var)%bc_info%is_root_pe = is_root_pe
@@ -460,19 +474,28 @@ subroutine register_restart_region_3d(fileobj, variable_name, vdata, indices, gl
 
 end subroutine register_restart_region_3d
 
+!> @brief Updates the dimension information (bc_dimensions) for the give fileobj and outputs the
+!! dimensions name of the variable
 subroutine set_dimensions(fileobj, bc_dimensions, dimnames, global_size)
-  type(FmsNetcdfFile_t), intent(inout) :: fileobj !< File object.
-  type(dimension_information), intent(inout) :: bc_dimensions
-  character(len=7), intent(inout) :: dimnames(5)
-  integer, dimension(:), intent(in) :: global_size
+  type(FmsNetcdfFile_t), intent(inout) :: fileobj !> File object.
+  type(dimension_information), intent(inout) :: bc_dimensions !> Dimension information for the file
+  character(len=7), intent(inout) :: dimnames(4) !> List of the dimension names for the variable
+                                                 !! dimnames(1): Name of the x dimension
+                                                 !! dimnames(2): Name of the y dimension
+                                                 !! dimnames(3): Name of the z dimension (or time if 2d)
+                                                 !! dimnames(4): Name of the Time dimension (if 3d variable)
+  integer, dimension(:), intent(in) :: global_size !> Size of the variable for each dimension
+                                                   !! global_size(1): Size of the x dimension
+                                                   !! global_size(2): Size of the y dimension
+                                                   !! global_size(3): Size of the z dimension (if it exists)
+  character(len=1) :: suffix   !> Axis number converted to a string
+  character(len=7) :: axisname !> Name of the axis
+  integer          :: i, found_index !> no description
 
-  character(len=1) :: suffix
-  character(len=7) :: axisname
-  integer          :: i, found_index
-
-  if (sum(bc_dimensions%cur_dim_len) .eq. 0) call netcdf_add_dimension(fileobj, "Time", unlimited)
+  if (.not. dimension_exists(fileobj, "Time")) call netcdf_add_dimension(fileobj, "Time", unlimited)
   dimnames(size(global_size)+1) = "Time"
 
+  !> Check to see if a x dimension with the correct size is already registered
   found_index = 0
   do i = 1, bc_dimensions%cur_dim_len(1)
      if (bc_dimensions%xlen(i) .eq. global_size(1)) then
@@ -484,6 +507,7 @@ subroutine set_dimensions(fileobj, bc_dimensions, dimnames, global_size)
       endif
   enddo
 
+  !> If the x dimension doesn't already exist, register it
   if (found_index .eq. 0) then
      bc_dimensions%cur_dim_len(1) = bc_dimensions%cur_dim_len(1) + 1
      bc_dimensions%xlen(bc_dimensions%cur_dim_len(1)) = global_size(1)
@@ -493,6 +517,7 @@ subroutine set_dimensions(fileobj, bc_dimensions, dimnames, global_size)
      dimnames(1) = axisname
   endif
 
+  !> Check to see if a y dimension with the correct size is already registered
   found_index = 0
   do i = 1, bc_dimensions%cur_dim_len(2)
      if (bc_dimensions%ylen(i) .eq. global_size(2)) then
@@ -504,6 +529,7 @@ subroutine set_dimensions(fileobj, bc_dimensions, dimnames, global_size)
       endif
   enddo
 
+  !> If the y dimension doesn't already exist, register it
   if (found_index .eq. 0) then
      bc_dimensions%cur_dim_len(2) = bc_dimensions%cur_dim_len(2) + 1
      bc_dimensions%ylen(bc_dimensions%cur_dim_len(2)) = global_size(2)
@@ -513,7 +539,9 @@ subroutine set_dimensions(fileobj, bc_dimensions, dimnames, global_size)
      dimnames(2) = axisname
   endif
 
+  !> If the variable is 3d: 
   if (size(global_size) .eq. 3) then
+     !> Check to see if a z dimension with the correct size is already registered
      found_index = 0
      do i = 1, bc_dimensions%cur_dim_len(3)
         if (bc_dimensions%zlen(i) .eq. global_size(3)) then
@@ -525,6 +553,7 @@ subroutine set_dimensions(fileobj, bc_dimensions, dimnames, global_size)
         endif
      enddo
 
+     !> If the z dimension doesn't already exist, register it
      if (found_index .eq. 0) then
         bc_dimensions%cur_dim_len(3) = bc_dimensions%cur_dim_len(3) + 1
         bc_dimensions%zlen(bc_dimensions%cur_dim_len(3)) = global_size(3)
