@@ -97,9 +97,9 @@ atm%BCfile_ne_open = .false.
 
 !< Try to read the boundary condition restart back
 atm%BCfile_sw_open = open_file(atm%fileobj_sw, "BCfile_sw.nc", "read", is_restart=.true., pelist=all_pelist)
-!atm%BCfile_ne_open = open_file(atm%fileobj_ne, "BCfile_ne.nc", "read", is_restart=.true., pelist=all_pelist)
+atm%BCfile_ne_open = open_file(atm%fileobj_ne, "BCfile_ne.nc", "read", is_restart=.true., pelist=all_pelist)
 
-!call register_bcs_2d(atm, atm%fileobj_ne, atm%fileobj_sw, "sst", layout)
+call register_bcs_2d(atm, atm%fileobj_ne, atm%fileobj_sw, "sst", layout)
 
 if (atm%BCfile_sw_open) then
     call read_restart_bc(atm%fileobj_sw)
