@@ -229,9 +229,9 @@ subroutine register_bcs_2d(atm, fileobj_ne, fileobj_sw, var_name, layout, istag,
   is_root_pe = .FALSE.
   if (is.eq.1 .and. js.eq.1) is_root_pe = .TRUE.
 
-  !if (atm%BCfile_sw_open) call register_restart_field(fileobj_sw, trim(var_name)//'south', atm%var2d, &
-  !                                              indices, global_size(1:2), x2_pelist, &
-  !                                              is_root_pe, x_halo=x_halo_ns)
+  if (atm%BCfile_sw_open) call register_restart_field(fileobj_sw, trim(var_name)//'south', atm%var2d, &
+                                                indices, global_size(1:2), x2_pelist, &
+                                                is_root_pe, x_halo=x_halo_ns)
   !if (atm%BCfile_sw_open) call register_restart_field(fileobj_sw, trim(var_name)//'3d_south', atm%var3d, &
   !                                              indices, global_size(1:3), x2_pelist, &
   !                                              is_root_pe, x_halo=x_halo_ns)
