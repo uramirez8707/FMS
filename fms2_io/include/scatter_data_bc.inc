@@ -96,7 +96,7 @@ subroutine scatter_data_bc_2d(fileobj, varname, vdata, bc_info, unlim_dim_level)
 
       !> Return if fileobj's root is not the same as the variable's root
       if (fileobj%is_root .and. .not. bc_info%data_on_file_root) then
-          deallocate(local_buf_real64)
+          deallocate(local_buf_real32)
           return
       endif
 
@@ -240,7 +240,7 @@ subroutine scatter_data_bc_3d(fileobj, varname, vdata, bc_info, unlim_dim_level)
 
       !> Return if fileobj's root is not the same as the variable's root
       if (fileobj%is_root .and. .not. bc_info%data_on_file_root) then
-          deallocate(local_buf_real64)
+          deallocate(local_buf_real32)
           return
       endif
 
