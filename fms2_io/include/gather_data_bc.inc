@@ -53,7 +53,7 @@ subroutine gather_data_bc_2d(fileobj, vdata, bc_info)
   select type(vdata)
     type is (real(kind=real32))
        !> If the fileobj's root is not the same as the variable's root
-       if (fileobj%is_root .and. .not. bc_info%is_root_pe) then
+       if ( .not. bc_info%data_on_file_root) then
            !> Allocate global_buf_real32 to be one size bigger, global_buf_real32(i_glob+1,,:) is just dummy data
           allocate(global_buf_real32(i_glob+1, j_glob))
           !> Allocate a temp local buffer to the fileobj's root. This is needed because the data needs to be send
@@ -86,7 +86,7 @@ subroutine gather_data_bc_2d(fileobj, vdata, bc_info)
        endif
     type is (real(kind=real64))
        !> If the fileobj's root is not the same as the variable's root
-       if (fileobj%is_root .and. .not. bc_info%is_root_pe) then
+       if ( .not. bc_info%data_on_file_root) then
           !> Allocate global_buf_real64 to be one size bigger, global_buf_real64(i_glob+1,,:) is just dummy data
           allocate(global_buf_real64(i_glob+1, j_glob))
           !> Allocate a temp local buffer to the fileobj's root. This is needed because the data needs to be send
@@ -167,7 +167,7 @@ subroutine gather_data_bc_3d(fileobj, vdata, bc_info)
   select type(vdata)
     type is (real(kind=real32))
        !> If the fileobj's root is not the same as the variable's root
-       if (fileobj%is_root .and. .not. bc_info%is_root_pe) then
+       if ( .not. bc_info%data_on_file_root) then
           !> Allocate global_buf_real64 to be one size bigger, global_buf_real64(i_glob+1,,:) is just dummy data
           allocate(global_buf_real32(i_glob+1, j_glob, bc_info%global_size(3)))
           !> Allocate a temp local buffer to the fileobj's root. This is needed because the data needs to be send
@@ -199,7 +199,7 @@ subroutine gather_data_bc_3d(fileobj, vdata, bc_info)
        endif
     type is (real(kind=real64))
        !> If the fileobj's root is not the same as the variable's root
-       if (fileobj%is_root .and. .not. bc_info%is_root_pe) then
+       if ( .not. bc_info%data_on_file_root) then
           !> Allocate global_buf_real64 to be one size bigger, global_buf_real64(i_glob+1,,:) is just dummy data
           allocate(global_buf_real64(i_glob+1, j_glob, bc_info%global_size(3)))
           !> Allocate a temp local buffer to the fileobj's root. This is needed because the data needs to be send

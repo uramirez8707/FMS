@@ -81,7 +81,7 @@ subroutine scatter_data_bc_2d(fileobj, varname, vdata, bc_info, unlim_dim_level)
 
       !> If the fileobj's root is not the same as the variable's root, then no data will be read for the
       !! file root
-      if (fileobj%is_root .and. .not. bc_info%is_root_pe) then
+      if (.not. bc_info%data_on_file_root) then
           allocate(local_buf_real32(1,1))
           local_buf_real32 = 0.
           isc = 1; i_add=0; iec=1; jsc=1; j_add=0; jec=1
@@ -95,7 +95,10 @@ subroutine scatter_data_bc_2d(fileobj, varname, vdata, bc_info, unlim_dim_level)
                        local_buf_real32(i1:i2,j1:j2), global_buf_real32, fileobj%is_root)
 
       !> Return if fileobj's root is not the same as the variable's root
-      if (fileobj%is_root .and. .not. bc_info%is_root_pe) return
+      if (.not. bc_info%data_on_file_root) then
+          deallocate(local_buf_real64)
+          return
+      endif
 
       !> Set vdata to equal the scattered data
       vdata(i1:i2,j1:j2) = local_buf_real32(i1:i2,j1:j2)
@@ -126,7 +129,7 @@ subroutine scatter_data_bc_2d(fileobj, varname, vdata, bc_info, unlim_dim_level)
 
       !> If the fileobj's root is not the same as the variable's root, then no data will be read for the
       !! file root
-      if (fileobj%is_root .and. .not. bc_info%is_root_pe) then
+      if (.not. bc_info%data_on_file_root) then
           allocate(local_buf_real64(1,1))
           local_buf_real64 = 0.
           isc = 1; i_add=0; iec=1; jsc=1; j_add=0; jec=1
@@ -140,7 +143,10 @@ subroutine scatter_data_bc_2d(fileobj, varname, vdata, bc_info, unlim_dim_level)
                        local_buf_real64(i1:i2,j1:j2), global_buf_real64, fileobj%is_root)
 
       !> Return if fileobj's root is not the same as the variable's root
-      if (fileobj%is_root .and. .not. bc_info%is_root_pe) return
+      if (.not. bc_info%data_on_file_root) then
+          deallocate(local_buf_real64)
+          return
+      endif
 
       !> Set vdata to equal the scattered data
       vdata(i1:i2,j1:j2) = local_buf_real64(i1:i2,j1:j2)
@@ -219,7 +225,7 @@ subroutine scatter_data_bc_3d(fileobj, varname, vdata, bc_info, unlim_dim_level)
 
       !> If the fileobj's root is not the same as the variable's root, then no data will be read for the
       !! file root
-      if (fileobj%is_root .and. .not. bc_info%is_root_pe) then
+      if (.not. bc_info%data_on_file_root) then
           allocate(local_buf_real32(1,1,1))
           local_buf_real32 = 0.
           isc = 1; i_add=0; iec=1; jsc=1; j_add=0; jec=1
@@ -233,7 +239,10 @@ subroutine scatter_data_bc_3d(fileobj, varname, vdata, bc_info, unlim_dim_level)
                        local_buf_real32(i1:i2,j1:j2,:), global_buf_real32, fileobj%is_root)
 
       !> Return if fileobj's root is not the same as the variable's root
-      if (fileobj%is_root .and. .not. bc_info%is_root_pe) return
+      if (.not. bc_info%data_on_file_root) then
+          deallocate(local_buf_real64)
+          return
+      endif
 
       !> Set vdata to equal the scattered data
       vdata(i1:i2,j1:j2,:) = local_buf_real32(i1:i2,j1:j2,:)
@@ -264,7 +273,7 @@ subroutine scatter_data_bc_3d(fileobj, varname, vdata, bc_info, unlim_dim_level)
 
       !> If the fileobj's root is not the same as the variable's root, then no data will be read for the
       !! file root
-      if (fileobj%is_root .and. .not. bc_info%is_root_pe) then
+      if (.not. bc_info%data_on_file_root) then
           allocate(local_buf_real64(1,1,1))
           local_buf_real64 = 0.
           isc = 1; i_add=0; iec=1; jsc=1; j_add=0; jec=1
@@ -278,7 +287,10 @@ subroutine scatter_data_bc_3d(fileobj, varname, vdata, bc_info, unlim_dim_level)
                        local_buf_real64(i1:i2,j1:j2,:), global_buf_real64, fileobj%is_root)
 
       !> Return if fileobj's root is not the same as the variable's root
-      if (fileobj%is_root .and. .not. bc_info%is_root_pe) return
+      if (.not. bc_info%data_on_file_root) then
+          deallocate(local_buf_real64)
+          return
+      endif
 
       !> Set vdata to equal the scattered data
       vdata(i1:i2,j1:j2,:) = local_buf_real64(i1:i2,j1:j2,:)
