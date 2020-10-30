@@ -65,8 +65,8 @@ type :: bc_information
   real(kind=real64), dimension(:,:), allocatable :: globaldata2d_64 !< 2d data pointer.
   real(kind=real64), dimension(:,:,:), allocatable :: globaldata3d_64 !< 3d data pointer.
   character(len=32) :: chksum !< The variable's checksum
-  logical :: data_on_file_root = !< Flag indicating if the file root is part of the pelist that
-                                 !!contains data
+  logical :: data_on_file_root !< Flag indicating if the file root is part of the pelist that
+                               !!contains data
 endtype bc_information
 
 !> @brief Restart variable.
