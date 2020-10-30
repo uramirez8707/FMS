@@ -244,10 +244,10 @@ subroutine register_bcs_2d(atm, fileobj_ne, fileobj_sw, var_name, layout, istag,
   indices(3) = jed-y_halo+1+j_stag
   indices(4) = jed+j_stag
 
-  !if (atm%BCfile_ne_open) call register_restart_field(fileobj_ne, trim(var_name)//'north', atm%var2d, &
-  !                                              indices, global_size(1:2), x1_pelist, &
-  !                                              is_root_pe, x_halo=x_halo_ns, &
-  !                                              y_halo=(size(atm%var2d,2)-y_halo), jshift=-(je+j_stag))
+  if (atm%BCfile_ne_open) call register_restart_field(fileobj_ne, trim(var_name)//'north', atm%var2d, &
+                                                indices, global_size(1:2), x1_pelist, &
+                                                is_root_pe, x_halo=x_halo_ns, &
+                                                y_halo=(size(atm%var2d,2)-y_halo), jshift=-(je+j_stag))
   !if (atm%BCfile_ne_open) call register_restart_field(fileobj_ne, trim(var_name)//'3d_north', atm%var3d, &
   !                                              indices, global_size(1:3), x1_pelist, &
   !                                              is_root_pe, x_halo=x_halo_ns, &
