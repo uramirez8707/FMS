@@ -190,9 +190,9 @@ subroutine register_bcs_2d(atm, fileobj_ne, fileobj_sw, var_name, layout, istag,
   if (atm%BCfile_sw_open) call register_restart_field(fileobj_sw, trim(var_name)//'_west', atm%var2d, &
                                                 indices, global_size(1:2), y2_pelist, &
                                                 is_root_pe, jshift=y_halo)
-  !if (atm%BCfile_sw_open) call register_restart_field(fileobj_sw, trim(var_name)//'3d_west', atm%var3d, &
-  !                                              indices, global_size(1:3), y2_pelist, &
-  !                                              is_root_pe, jshift=y_halo)
+  if (atm%BCfile_sw_open) call register_restart_field(fileobj_sw, trim(var_name)//'3d_west', atm%var3d, &
+                                                indices, global_size(1:3), y2_pelist, &
+                                                is_root_pe, jshift=y_halo)
 
   !< Define east root_pe
   is_root_pe = .FALSE.
@@ -232,9 +232,9 @@ subroutine register_bcs_2d(atm, fileobj_ne, fileobj_sw, var_name, layout, istag,
   if (atm%BCfile_sw_open) call register_restart_field(fileobj_sw, trim(var_name)//'south', atm%var2d, &
                                                 indices, global_size(1:2), x2_pelist, &
                                                 is_root_pe, x_halo=x_halo_ns)
-  !if (atm%BCfile_sw_open) call register_restart_field(fileobj_sw, trim(var_name)//'3d_south', atm%var3d, &
-  !                                              indices, global_size(1:3), x2_pelist, &
-  !                                              is_root_pe, x_halo=x_halo_ns)
+  if (atm%BCfile_sw_open) call register_restart_field(fileobj_sw, trim(var_name)//'3d_south', atm%var3d, &
+                                                indices, global_size(1:3), x2_pelist, &
+                                                is_root_pe, x_halo=x_halo_ns)
 
   !< Define north root_pe
   is_root_pe = .FALSE.
