@@ -206,10 +206,10 @@ subroutine register_bcs_2d(atm, fileobj_ne, fileobj_sw, var_name, layout, istag,
                                                 indices, global_size(1:2), y1_pelist, &
                                                 is_root_pe, jshift=y_halo, &
                                                 x_halo=(size(atm%var2d,1)-x_halo), ishift=-(ie+i_stag))
-  !if (atm%BCfile_ne_open) call register_restart_field(fileobj_ne, trim(var_name)//'3d_east', atm%var3d, &
-  !                                              indices, global_size(1:3), y1_pelist, &
-  !                                              is_root_pe, jshift=y_halo, &
-  !                                              x_halo=(size(atm%var3d,1)-x_halo), ishift=-(ie+i_stag))
+  if (atm%BCfile_ne_open) call register_restart_field(fileobj_ne, trim(var_name)//'3d_east', atm%var3d, &
+                                                indices, global_size(1:3), y1_pelist, &
+                                                is_root_pe, jshift=y_halo, &
+                                                x_halo=(size(atm%var3d,1)-x_halo), ishift=-(ie+i_stag))
   !< NORTH & SOUTH
   !< set defaults for north/south halo regions
   indices(1) = isd
@@ -248,10 +248,10 @@ subroutine register_bcs_2d(atm, fileobj_ne, fileobj_sw, var_name, layout, istag,
                                                 indices, global_size(1:2), x1_pelist, &
                                                 is_root_pe, x_halo=x_halo_ns, &
                                                 y_halo=(size(atm%var2d,2)-y_halo), jshift=-(je+j_stag))
-  !if (atm%BCfile_ne_open) call register_restart_field(fileobj_ne, trim(var_name)//'3d_north', atm%var3d, &
-  !                                              indices, global_size(1:3), x1_pelist, &
-  !                                              is_root_pe, x_halo=x_halo_ns, &
-  !                                              y_halo=(size(atm%var3d,2)-y_halo), jshift=-(je+j_stag))
+  if (atm%BCfile_ne_open) call register_restart_field(fileobj_ne, trim(var_name)//'3d_north', atm%var3d, &
+                                                indices, global_size(1:3), x1_pelist, &
+                                                is_root_pe, x_halo=x_halo_ns, &
+                                                y_halo=(size(atm%var3d,2)-y_halo), jshift=-(je+j_stag))
 
 end subroutine register_bcs_2d
 
