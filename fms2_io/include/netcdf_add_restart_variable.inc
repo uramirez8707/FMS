@@ -459,9 +459,11 @@ subroutine register_restart_region_3d(fileobj, variable_name, vdata, indices, gl
   if (any(fileobj%io_root .eq. pelist(:))) then
       allocate(fileobj%restart_vars(current_var)%bc_info%pelist(size(pelist)))
       fileobj%restart_vars(current_var)%bc_info%pelist = pelist
+      fileobj%restart_vars(current_var)%bc_info%data_on_file_root = .true.
   else
       allocate(fileobj%restart_vars(current_var)%bc_info%pelist(size(pelist)+1))
       fileobj%restart_vars(current_var)%bc_info%pelist = (/ fileobj%io_root, pelist(:) /)
+      fileobj%restart_vars(current_var)%bc_info%data_on_file_root = .false.
   endif
 
   fileobj%restart_vars(current_var)%bc_info%x_halo = 0
