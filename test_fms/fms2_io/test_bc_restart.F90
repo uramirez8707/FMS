@@ -1,11 +1,28 @@
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
+
+!> @brief  This programs tests the functionality that writes the boundary
+!conditions restarts
 program test_bc_restart
 
-use   mpp_mod
-use   fms2_io_mod
-use   mpp_domains_mod
-use   mpi
-use   netcdf
-use,  intrinsic :: iso_fortran_env, only : real64, real32
+use   mpp_mod,         only : mpp_init, mpp_exit, mpp_pe, mpp_root_pe, mpp_sync
+use   fms2_io_mod,     only : FmsNetcdfFile_t, fms2_io_init, open_file, register_restart_field, &
+                              read_restart_bc, write_restart_bc, close_file
+use   mpp_domains_mod, only : mpp_get_global_domain, mpp_get_data_domain, mpp_get_compute_domain, &
+                              mpp_define_domains, mpp_get_global_domain, domain2d, CORNER
 
 implicit none
 
@@ -17,8 +34,8 @@ type atm_type
    logical                            :: BCfile_ne_open   !< flag indicating if the sourth west file is
                                                           !! opened
    type(domain2d)                     :: Domain           !< Domain with halos
-   real, allocatable, dimension(:,:)  :: var2d
-   real, allocatable, dimension(:,:,:):: var3d
+   real, allocatable, dimension(:,:)  :: var2d            !< 2d variable data
+   real, allocatable, dimension(:,:,:):: var3d            !< 3d variable data
 end type
 
 integer, dimension(2)                 :: layout = (/4,4/) !< Domain layout
@@ -26,9 +43,9 @@ integer                               :: nlon             !< Number of points in
 integer                               :: nlat             !< Number of points in y axis
 integer                               :: isd, jsd         !< Starting x/y index (data_domain)
 integer                               :: ied, jed         !< Ending x/y index (data_domain)
-integer, allocatable, dimension(:)    :: all_pelist
-integer   :: err, n
-type(atm_type)                        :: atm
+integer, allocatable, dimension(:)    :: all_pelist       !< List of pelist associated with the test
+integer                               :: err, n           !< No description
+type(atm_type)                        :: atm              !< No description
 
 call mpp_init
 call fms2_io_init
@@ -54,8 +71,9 @@ end do
 atm%BCfile_sw_open = .false.
 atm%BCfile_ne_open = .false.
 
+!< Try to write a BC restart file:
 atm%BCfile_sw_open = open_file(atm%fileobj_sw, "BCfile_sw.nc", "overwrite", is_restart=.true., pelist=all_pelist)
-atm%BCfile_ne_open = open_file(atm%fileobj_ne, "BCfile_ne.nc", "overwrite", is_restart=.true., pelist=all_pelist)
+!atm%BCfile_ne_open = open_file(atm%fileobj_ne, "BCfile_ne.nc", "overwrite", is_restart=.true., pelist=all_pelist)
 
 call register_bcs_2d(atm, atm%fileobj_ne, atm%fileobj_sw, "sst", layout)
 
@@ -69,19 +87,19 @@ if (atm%BCfile_ne_open) then
     call close_file(atm%fileobj_ne)
 endif
 
-call mpi_barrier(mpi_comm_world, err)
+call mpp_sync()
 
-!< Now try to read it back!
 atm%var2d = real(999.)
 atm%var3d = real(999.)
 
 atm%BCfile_sw_open = .false.
 atm%BCfile_ne_open = .false.
 
-atm%BCfile_sw_open = open_file(atm%fileobj_sw, "BCfile_sw.nc", "read", is_restart=.true., pelist=all_pelist)
-atm%BCfile_ne_open = open_file(atm%fileobj_ne, "BCfile_ne.nc", "read", is_restart=.true., pelist=all_pelist)
+!< Try to read the boundary condition restart back
+!atm%BCfile_sw_open = open_file(atm%fileobj_sw, "BCfile_sw.nc", "read", is_restart=.true., pelist=all_pelist)
+!atm%BCfile_ne_open = open_file(atm%fileobj_ne, "BCfile_ne.nc", "read", is_restart=.true., pelist=all_pelist)
 
-call register_bcs_2d(atm, atm%fileobj_ne, atm%fileobj_sw, "sst", layout)
+!call register_bcs_2d(atm, atm%fileobj_ne, atm%fileobj_sw, "sst", layout)
 
 if (atm%BCfile_sw_open) then
     call read_restart_bc(atm%fileobj_sw)
@@ -93,7 +111,7 @@ if (atm%BCfile_ne_open) then
     call close_file(atm%fileobj_ne)
 endif
 
-call mpi_barrier(mpi_comm_world, err)
+call mpp_sync()
 call mpp_exit()
 
 contains
@@ -172,9 +190,9 @@ subroutine register_bcs_2d(atm, fileobj_ne, fileobj_sw, var_name, layout, istag,
   if (atm%BCfile_sw_open) call register_restart_field(fileobj_sw, trim(var_name)//'_west', atm%var2d, &
                                                 indices, global_size(1:2), y2_pelist, &
                                                 is_root_pe, jshift=y_halo)
-  if (atm%BCfile_sw_open) call register_restart_field(fileobj_sw, trim(var_name)//'3d_west', atm%var3d, &
-                                                indices, global_size(1:3), y2_pelist, &
-                                                is_root_pe, jshift=y_halo)
+  !if (atm%BCfile_sw_open) call register_restart_field(fileobj_sw, trim(var_name)//'3d_west', atm%var3d, &
+  !                                              indices, global_size(1:3), y2_pelist, &
+  !                                              is_root_pe, jshift=y_halo)
 
   !< Define east root_pe
   is_root_pe = .FALSE.
@@ -211,12 +229,12 @@ subroutine register_bcs_2d(atm, fileobj_ne, fileobj_sw, var_name, layout, istag,
   is_root_pe = .FALSE.
   if (is.eq.1 .and. js.eq.1) is_root_pe = .TRUE.
 
-  if (atm%BCfile_sw_open) call register_restart_field(fileobj_sw, trim(var_name)//'south', atm%var2d, &
-                                                indices, global_size(1:2), x2_pelist, &
-                                                is_root_pe, x_halo=x_halo_ns)
-  if (atm%BCfile_sw_open) call register_restart_field(fileobj_sw, trim(var_name)//'3d_south', atm%var3d, &
-                                                indices, global_size(1:3), x2_pelist, &
-                                                is_root_pe, x_halo=x_halo_ns)
+  !if (atm%BCfile_sw_open) call register_restart_field(fileobj_sw, trim(var_name)//'south', atm%var2d, &
+  !                                              indices, global_size(1:2), x2_pelist, &
+  !                                              is_root_pe, x_halo=x_halo_ns)
+  !if (atm%BCfile_sw_open) call register_restart_field(fileobj_sw, trim(var_name)//'3d_south', atm%var3d, &
+  !                                              indices, global_size(1:3), x2_pelist, &
+  !                                              is_root_pe, x_halo=x_halo_ns)
 
   !< Define north root_pe
   is_root_pe = .FALSE.
