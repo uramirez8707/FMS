@@ -72,7 +72,7 @@ atm%BCfile_sw_open = .false.
 atm%BCfile_ne_open = .false.
 
 !< Try to write a BC restart file:
-!atm%BCfile_sw_open = open_file(atm%fileobj_sw, "BCfile_sw.nc", "overwrite", is_restart=.true., pelist=all_pelist)
+atm%BCfile_sw_open = open_file(atm%fileobj_sw, "BCfile_sw.nc", "overwrite", is_restart=.true., pelist=all_pelist)
 atm%BCfile_ne_open = open_file(atm%fileobj_ne, "BCfile_ne.nc", "overwrite", is_restart=.true., pelist=all_pelist)
 
 call register_bcs_2d(atm, atm%fileobj_ne, atm%fileobj_sw, "sst", layout)
@@ -96,7 +96,7 @@ atm%BCfile_sw_open = .false.
 atm%BCfile_ne_open = .false.
 
 !< Try to read the boundary condition restart back
-!atm%BCfile_sw_open = open_file(atm%fileobj_sw, "BCfile_sw.nc", "read", is_restart=.true., pelist=all_pelist)
+atm%BCfile_sw_open = open_file(atm%fileobj_sw, "BCfile_sw.nc", "read", is_restart=.true., pelist=all_pelist)
 atm%BCfile_ne_open = open_file(atm%fileobj_ne, "BCfile_ne.nc", "read", is_restart=.true., pelist=all_pelist)
 
 call register_bcs_2d(atm, atm%fileobj_ne, atm%fileobj_sw, "sst", layout)

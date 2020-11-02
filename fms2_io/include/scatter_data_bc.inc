@@ -25,8 +25,8 @@ subroutine scatter_data_bc_2d(fileobj, varname, vdata, bc_info, unlim_dim_level)
   integer, intent(in), optional :: unlim_dim_level !< Unlimited dimension
                                                      !! level.
 
-  real(kind=real64), dimension(:,:), allocatable, target :: global_buf_real64, local_buf_real64
-  real(kind=real32), dimension(:,:), allocatable, target :: global_buf_real32, local_buf_real32
+  real(kind=real64), dimension(:,:), allocatable :: global_buf_real64, local_buf_real64
+  real(kind=real32), dimension(:,:), allocatable :: global_buf_real32, local_buf_real32
 
   integer(kind=int64) :: chksum_val
   character(len=32) :: chksum, chksum_read
@@ -167,8 +167,8 @@ subroutine scatter_data_bc_3d(fileobj, varname, vdata, bc_info, unlim_dim_level)
   integer, intent(in), optional :: unlim_dim_level !< Unlimited dimension
                                                      !! level.
 
-  real(kind=real64), dimension(:,:,:), allocatable, target :: global_buf_real64, local_buf_real64
-  real(kind=real32), dimension(:,:,:), allocatable, target :: global_buf_real32, local_buf_real32
+  real(kind=real64), dimension(:,:,:), allocatable :: global_buf_real64, local_buf_real64
+  real(kind=real32), dimension(:,:,:), allocatable :: global_buf_real32, local_buf_real32
 
   integer(kind=int64) :: chksum_val
   character(len=32) :: chksum, chksum_read
@@ -226,7 +226,7 @@ subroutine scatter_data_bc_3d(fileobj, varname, vdata, bc_info, unlim_dim_level)
       !> If the fileobj's root is not the same as the variable's root, then no data will be read for the
       !! file root
       if (fileobj%is_root .and. .not. bc_info%data_on_file_root) then
-          allocate(local_buf_real32(1,1,1))
+          allocate(local_buf_real32(1,1,k_glob))
           local_buf_real32 = 0.
           isc = 1; i_add=0; iec=1; jsc=1; j_add=0; jec=1
           i1=1; i2=1; j1=1; j2=1
@@ -274,10 +274,10 @@ subroutine scatter_data_bc_3d(fileobj, varname, vdata, bc_info, unlim_dim_level)
       !> If the fileobj's root is not the same as the variable's root, then no data will be read for the
       !! file root
       if (fileobj%is_root .and. .not. bc_info%data_on_file_root) then
-          allocate(local_buf_real64(1,1,1))
+          allocate(local_buf_real64(1,1,k_glob))
           local_buf_real64 = 0.
           isc = 1; i_add=0; iec=1; jsc=1; j_add=0; jec=1
-          i1=1; i2=1; j1=1; j2=1
+          i1=1; i2=1; j1=1; j2=1;
       else
           allocate(local_buf_real64(i1:i2,j1:j2,k_glob))
       endif
