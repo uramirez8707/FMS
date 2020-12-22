@@ -158,7 +158,7 @@ use stock_constants_mod, only: ISTOCK_TOP, ISTOCK_BOTTOM, ISTOCK_SIDE, STOCK_NAM
 use gradient_mod,        only: gradient_cubic
 use fms2_io_mod,         only: FmsNetcdfFile_t, open_file, variable_exists, close_file
 use fms2_io_mod,         only: FmsNetcdfDomainFile_t, read_data, get_dimension_size
-use fms2_io_mod,         only: get_variable_units
+use fms2_io_mod,         only: get_variable_units, dimension_exists
 
 use mpp_io_mod,          only: mpp_open, MPP_MULTI, MPP_SINGLE, MPP_OVERWR !< use_mpp_io
 use fms_mod,             only: read_data, file_exist, field_exist, field_size, & !<use_mpp_io
@@ -573,7 +573,7 @@ subroutine xgrid_init(remap_method)
   if ( mpp_pe() == mpp_root_pe() ) write (unit,nml=xgrid_nml)
 
   if (use_mpp_io) then
-! Tell user which IO they are using 
+! Tell user which IO they are using
         call error_mesg('xgrid_init', "Using mpp_io in xgrid_mod",NOTE)
         if ( mpp_pe() == mpp_root_pe() ) write (unit,'(a)')"Using mpp_io in xgrid_mod"
   else
@@ -706,7 +706,10 @@ logical,        intent(in)             :: use_higher_order
 
   select case(xmap%version)
   case(VERSION1)
-     call get_dimension_size(fileobj, 'i_'//lowercase(grid1_id)//'X'//lowercase(grid_id), nxgrid)
+     nxgrid = 0
+     if (dimension_exists(fileobj, 'i_'//lowercase(grid1_id)//'X'//lowercase(grid_id))) then
+         call get_dimension_size(fileobj, 'i_'//lowercase(grid1_id)//'X'//lowercase(grid_id), nxgrid)
+     endif
      if(nxgrid .LE. 0) return
   case(VERSION2)
      !--- max_size is the exchange grid size between super grid.
