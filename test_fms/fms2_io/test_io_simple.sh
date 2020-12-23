@@ -28,7 +28,7 @@
 . ../test_common.sh
 
 # make an input.nml for mpp_init to read
-printf "EOF\n&dummy\nEOF" | cat > input.nml
+touch input.nml
 
 # run the tests
 run_test test_io_simple 6
