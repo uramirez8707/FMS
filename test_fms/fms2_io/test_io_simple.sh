@@ -31,11 +31,14 @@
 touch input.nml
 
 # run the tests
-run_test test_io_simple 6
+#run_test test_io_simple 6
 
-echo "Test the get_mosaic_tile_grid functionality"
-run_test test_get_mosaic_tile_grid 6
+#echo "Test the get_mosaic_tile_grid functionality"
+#run_test test_get_mosaic_tile_grid 6
 
-echo "Test the get_valid is_valid functionality"
-run_test test_get_is_valid 1
-run_test test_get_is_valid 2
+#echo "Test the get_valid is_valid functionality"
+#run_test test_get_is_valid 1
+#run_test test_get_is_valid 2
+
+echo "Test the register_axis functionality"
+run_test test_register_axis 2
