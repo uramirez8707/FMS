@@ -79,11 +79,12 @@ end subroutine mpi_check
 
 
 !> @brief Initial setup for tests.
-subroutine init(test_params, ntiles)
+subroutine init(test_params, ntiles, nx, ny)
 
   type(Params), intent(out) :: test_params
   integer, intent(in) :: ntiles
-
+  integer, intent(in), optional :: nx !< Number of grid points in y direction
+  integer, intent(in), optional :: ny !< Number of grid points in x direction
   integer :: my_rank
   integer :: npes
   type(Parser_t) :: parser
@@ -154,6 +155,9 @@ subroutine init(test_params, ntiles)
   if (trim(buf) .eq. "present") then
     test_params%debug = .true.
   endif
+
+  if (present(nx)) test_params%nx = nx
+  if (present(ny)) test_params%ny = ny
 
   !Prepare for domains creation.
   call mpp_domains_init()

@@ -29,7 +29,7 @@ AM_CPPFLAGS = -I${top_builddir}/.mod
 LDADD = ${top_builddir}/libFMS/libFMS.la
 
 # Build this test program.
-check_PROGRAMS = test_register_axis test_get_is_valid test_fms2_io test_atmosphere_io test_io_simple test_io_with_mask test_global_att \
+check_PROGRAMS = test_register_axis_domain test_register_axis test_get_is_valid test_fms2_io test_atmosphere_io test_io_simple test_io_with_mask test_global_att \
                  test_get_mosaic_tile_grid
 
 # This is the source code for the test.
@@ -45,6 +45,7 @@ test_global_att_SOURCES = test_global_att.F90
 test_io_with_mask_SOURCES=test_io_with_mask.F90
 test_get_mosaic_tile_grid_SOURCES=test_get_mosaic_tile_grid.F90
 test_register_axis_SOURCES=test_register_axis.F90
+test_register_axis_domain_SOURCES=test_register_axis_domain.F90 argparse.F90 setup.F90
 
 EXTRA_DIST = test_fms2_io.sh test_atmosphere_io.sh test_io_simple.sh test_global_att.sh test_io_with_mask.sh
 
@@ -54,9 +55,10 @@ setup.$(OBJEXT): argparse.mod
 test_atmosphere_io.$(OBJEXT): setup.mod
 test_io_simple.$(OBJEXT): setup.mod
 test_fms2_io.$(OBJEXT): argparse.mod
+test_register_axis_domain.$(OBJEXT): setup.mod
 
 # Run the test program.
-TESTS = test_fms2_io.sh test_atmosphere_io.sh test_io_simple.sh test_io_with_mask.sh test_global_att.sh
+TESTS = test_io_simple.sh test_fms2_io.sh test_atmosphere_io.sh test_io_simple.sh test_io_with_mask.sh test_global_att.sh
 
 # skips tests that fail if using netCDF 4.7.4
 if SKIP_FMS2_IO_TESTS

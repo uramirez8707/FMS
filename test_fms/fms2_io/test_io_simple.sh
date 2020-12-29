@@ -43,3 +43,27 @@ run_test test_get_is_valid 2
 echo "Test the register_axis functionality"
 run_test test_register_axis 1
 run_test test_register_axis 2
+
+echo "Running test_register_axis_domain with io_layout = 1,1"
+[ ! -d "OUTPUT" ] && mkdir -p "OUTPUT"
+printf "&test_register_axis_domain_nml \n layout=2,3 \n io_layout=1,1\n/" | cat > input.nml
+run_test test_register_axis_domain 6
+rm -rf "OUTPUT"
+
+echo "Running test_register_axis_domain with io_layout = 2,3, this creates 6 files"
+mkdir "OUTPUT"
+printf "&test_register_axis_domain_nml \n layout=2,3 \n io_layout=2,3\n/" | cat > input.nml
+run_test test_register_axis_domain 6
+rm -rf "OUTPUT"
+
+echo "Running test_register_axis_domain with a 6 tile cubesphere and an io_layout=1,1"
+mkdir "OUTPUT"
+printf "&test_register_axis_domain_nml \n csphere=.true.\n/" | cat > input.nml
+run_test test_register_axis_domain 6
+rm -rf "OUTPUT"
+
+echo "Running test_register_axis_domain with a 6 tile cubesphere and an io_layout=1,2"
+mkdir "OUTPUT"
+printf "&test_register_axis_domain_nml \n csphere=.true. \n io_layout=1,2\n/" | cat > input.nml
+run_test test_register_axis_domain 12
+rm -rf "OUTPUT"
