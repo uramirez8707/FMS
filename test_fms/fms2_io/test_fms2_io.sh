@@ -29,5 +29,7 @@
 . ../test_common.sh
 # make a dummy file for mpp_init to read
 printf "EOF\n&dummy\nEOF" | cat > input.nml
+oooops
+
 # run the tests
 run_test test_fms2_io 6 $netcdf_version_skip
