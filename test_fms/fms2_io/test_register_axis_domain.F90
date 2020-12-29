@@ -79,6 +79,8 @@ else
     call mpp_error(FATAL, "test_register_axis_domain: error opening the file for writting")
 endif
 
+call system('ls OUTPUT > fileContents.txt')
+
 !< Error checking
 if (open_file(fileobj, "OUTPUT/test_register_axis_domain.nc", "read", domain)) then
    call get_dimension_size(fileobj, "lat", dim_size)

@@ -60,6 +60,7 @@ echo "Running test_register_axis_domain with a 6 tile cubesphere and an io_layou
 mkdir "OUTPUT"
 printf "&test_register_axis_domain_nml \n csphere=.true.\n/" | cat > input.nml
 run_test test_register_axis_domain 6
+cat fileContents.txt
 rm -rf "OUTPUT"
 
 echo "Running test_register_axis_domain with a 6 tile cubesphere and an io_layout=1,2"
