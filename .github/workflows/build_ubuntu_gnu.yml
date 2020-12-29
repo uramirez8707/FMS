@@ -18,6 +18,7 @@ jobs:
       image: underwoo/ubuntu_libfms_gnu
       env:
         FCFLAGS: "${{ matrix.fcflags }}"
+        VERBOSE: 1
 
     steps:
     - name: Checkout code
@@ -30,5 +31,3 @@ jobs:
         DISTCHECK_CONFIGURE_FLAGS: "${{ matrix.distcheck-conf-flags }}"
     - name: Build the library
       run: make -j distcheck
-      name: wut
-      run: cat /__w/FMS/FMS/FMS-2020.04/_build/sub/test_fms/fms2_io/test-suite.log
