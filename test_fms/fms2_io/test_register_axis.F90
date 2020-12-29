@@ -29,7 +29,7 @@ use   fms2_io_mod,     only: open_file, close_file, FmsNetcdfFile_t, &
                              get_dimension_size
 use   fms_mod,         only: fms_init, fms_end
 use   mpp_mod,         only: mpp_npes, mpp_get_current_pelist, mpp_pe, &
-                             mpp_error, FATAL
+                             mpp_error, FATAL, mpp_sync
 implicit none
 
 type(FmsNetcdfFile_t)              :: fileobj         !< fms2io fileobj
@@ -62,6 +62,9 @@ if (open_file(fileobj, "test_register_axis.nc", "overwrite", pelist=all_pelist))
 
    call close_file(fileobj)
 endif
+
+!> Wait for the pes to catch up
+call mpp_sync()
 
 !< Error checking:
 if (open_file(fileobj, "test_register_axis.nc", "read", pelist=all_pelist)) then

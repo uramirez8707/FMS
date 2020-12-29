@@ -22,7 +22,7 @@ program test_register_axis_domain
 use   fms2_io_mod,     only: open_file, close_file, FmsNetcdfDomainFile_t, &
                              register_axis, get_dimension_size
 use   fms_mod,         only: fms_init, fms_end
-use   mpp_mod,         only: mpp_npes, mpp_pe, mpp_error, FATAL, input_nml_file
+use   mpp_mod,         only: mpp_npes, mpp_pe, mpp_error, FATAL, input_nml_file, mpp_sync
 use   mpp_domains_mod, only: mpp_define_domains, mpp_define_io_domain, &
                              mpp_get_global_domain,domain2d, NORTH, EAST, &
                              mpp_get_io_domain
@@ -78,6 +78,9 @@ if (open_file(fileobj, "OUTPUT/test_register_axis_domain.nc", "overwrite", domai
 else
     call mpp_error(FATAL, "test_register_axis_domain: error opening the file for writting")
 endif
+
+!> Wait for the pes to catch up!
+call mpp_sync()
 
 !< Error checking
 if (open_file(fileobj, "OUTPUT/test_register_axis_domain.nc", "read", domain)) then
