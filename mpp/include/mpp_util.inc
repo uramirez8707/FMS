@@ -123,7 +123,7 @@
        write(this_pe,'(a,i6.6,a)') '.',pe,'.out'
        inquire( file=trim(configfile)//this_pe, opened=opened )
        if( opened )then
-          call FLUSH(log_unit)
+          FLUSH(log_unit)
        else
           log_unit=get_unit()
           open( unit=log_unit, status='UNKNOWN', file=trim(configfile)//this_pe, position='APPEND', err=10 )
@@ -132,7 +132,7 @@
     else
        inquire( unit=etc_unit, opened=opened )
        if( opened )then
-          call FLUSH(etc_unit)
+          FLUSH(etc_unit)
        else
           open( unit=etc_unit, status='UNKNOWN', file=trim(etcfile), position='APPEND', err=11 )
        end if
@@ -853,7 +853,7 @@ end function rarray_to_char
   !#####################################################################
   subroutine mpp_clock_end(id)
     integer, intent(in) :: id
-    integer(LONG_KIND)  :: delta
+    integer(i8_kind)  :: delta
     integer             :: errunit
 
     if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_CLOCK_END: You must first call mpp_init.' )
@@ -905,7 +905,7 @@ end function rarray_to_char
     integer,           intent(in) :: event_id
     integer, intent(in), optional :: bytes
     integer                       :: n
-    integer(LONG_KIND)            :: delta
+    integer(i8_kind)            :: delta
     integer                       :: errunit
 
     if( .not. mpp_record_timing_data )return
