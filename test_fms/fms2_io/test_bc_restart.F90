@@ -44,7 +44,7 @@ integer                               :: nlat             !< Number of points in
 integer                               :: isd, jsd         !< Starting x/y index (data_domain)
 integer                               :: ied, jed         !< Ending x/y index (data_domain)
 integer, allocatable, dimension(:)    :: all_pelist       !< List of pelist associated with the test
-integer                               :: err, n           !< No description
+integer                               :: n                !< No description
 type(atm_type)                        :: atm              !< No description
 
 call mpp_init
@@ -75,7 +75,7 @@ atm%BCfile_ne_open = .false.
 atm%BCfile_sw_open = open_file(atm%fileobj_sw, "BCfile_sw.nc", "overwrite", is_restart=.true., pelist=all_pelist)
 atm%BCfile_ne_open = open_file(atm%fileobj_ne, "BCfile_ne.nc", "overwrite", is_restart=.true., pelist=all_pelist)
 
-call register_bcs_2d(atm, atm%fileobj_ne, atm%fileobj_sw, "sst", layout)
+call register_bcs(atm, atm%fileobj_ne, atm%fileobj_sw, "sst", layout)
 
 if (atm%BCfile_sw_open) then
     call write_restart_bc(atm%fileobj_sw)
@@ -99,7 +99,7 @@ atm%BCfile_ne_open = .false.
 atm%BCfile_sw_open = open_file(atm%fileobj_sw, "BCfile_sw.nc", "read", is_restart=.true., pelist=all_pelist)
 atm%BCfile_ne_open = open_file(atm%fileobj_ne, "BCfile_ne.nc", "read", is_restart=.true., pelist=all_pelist)
 
-call register_bcs_2d(atm, atm%fileobj_ne, atm%fileobj_sw, "sst", layout)
+call register_bcs(atm, atm%fileobj_ne, atm%fileobj_sw, "sst", layout)
 
 if (atm%BCfile_sw_open) then
     call read_restart_bc(atm%fileobj_sw)
@@ -116,11 +116,13 @@ call mpp_exit()
 
 contains
 
-subroutine register_bcs_2d(atm, fileobj_ne, fileobj_sw, var_name, layout, istag, jstag)
+!> @brief Dummy wrapper for the register_restart_variable calls for boundary
+!! condition restarts
+subroutine register_bcs(atm, fileobj_ne, fileobj_sw, var_name, layout, istag, jstag)
   type(atm_type), intent(inout) :: atm
   type(FmsNetcdfFile_t), intent(inout) :: fileobj_sw  !< fms2io netcdf file obj for south west bc
   type(FmsNetcdfFile_t), intent(inout) :: fileobj_ne  !< fms2io netcdf file obj for north east bc
-  character(len=*),         intent(in) :: var_name
+  character(len=*),         intent(in) :: var_name    !< Name of the variable
   integer, dimension(2),    intent(in) :: layout      !< Domain layout
 
   integer,                  intent(in), optional :: istag, jstag
@@ -132,13 +134,30 @@ subroutine register_bcs_2d(atm, fileobj_ne, fileobj_sw, var_name, layout, istag,
   integer                              :: i_stag, j_stag   !< Extra x/y?
   integer                              :: npx, npy         !< Number of points in x/y (global_domain)
   integer                              :: x_halo, y_halo   !< Number of halos in x and y
-  integer                              :: x_halo_ns
-  integer, allocatable, dimension(:)   :: x1_pelist, y1_pelist
-  integer, allocatable, dimension(:)   :: x2_pelist, y2_pelist
-  integer                              :: n
-  integer, dimension(3)                :: global_size
-  integer, dimension(4)                :: indices
-  logical                              :: is_root_pe
+  integer                              :: x_halo_ns        !< Halo for north and south variables
+  integer, allocatable, dimension(:)   :: x1_pelist        !< Pelist corresponding to the bottom region
+                                                           !! of the domain
+  integer, allocatable, dimension(:)   :: y1_pelist        !< Pelist corresponding to the right region
+                                                           !! of the domain
+  integer, allocatable, dimension(:)   :: x2_pelist        !< Pelist corresponding to the top region
+                                                           !! of the domain
+  integer, allocatable, dimension(:)   :: y2_pelist        !< Pelist corresponding to the left region
+                                                           !! of the domain
+  integer                              :: n                !< No description
+  integer, dimension(3)                :: global_size      !< Size of the domain
+  integer, dimension(4)                :: indices          !< Starting/Ending indices of the current
+  logical                              :: is_root_pe       !< Flag indicating if this is the root pe
+
+  !< .----.----.----.----.
+  !< |PE 0|PE 1|PE 2|PE 3| <- x2_pelist
+  !< .----.----.----.----.
+  !< |PE 4|PE 5|PE 6|PE 7|
+  !< .----.----.----.----.
+  !< |PE 8|PE 9|PE10|PE11|
+  !< .----.----.----.----.
+  !< |PE12|PE13|PE14|PE15| <- x1_pelist
+  !< .----.----.----.----.
+  !<    ^y2_pelist     ^y1_pelist
 
   i_stag = 0
   j_stag = 0
@@ -253,18 +272,6 @@ subroutine register_bcs_2d(atm, fileobj_ne, fileobj_sw, var_name, layout, istag,
                                                 is_root_pe, x_halo=x_halo_ns, &
                                                 y_halo=(size(atm%var3d,2)-y_halo), jshift=-(je+j_stag))
 
-end subroutine register_bcs_2d
+end subroutine register_bcs
 
 end program test_bc_restart
-
-!< .----.----.----.----.
-!< |PE 0|PE 1|PE 2|PE 3| <- x2_pelist
-!< .----.----.----.----.
-!< |PE 4|PE 5|PE 6|PE 7|
-!< .----.----.----.----.
-!< |PE 8|PE 9|PE10|PE11|
-!< .----.----.----.----.
-!< |PE12|PE13|PE14|PE15| <- x1_pelist
-!< .----.----.----.----.
-!<    ^y2_pelist     ^y1_pelist
-

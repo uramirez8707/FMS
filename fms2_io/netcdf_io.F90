@@ -61,10 +61,10 @@ type :: bc_information
   integer :: y_halo !< Number of halos in y
   integer :: jshift !< Shift in the x axis (from center)
   integer :: ishift !< Shift in the y axis (from center)
-  real(kind=real32), dimension(:,:), allocatable :: globaldata2d_32 !< 2d data pointer.
-  real(kind=real32), dimension(:,:,:), allocatable :: globaldata3d_32 !< 3d data pointer.
-  real(kind=real64), dimension(:,:), allocatable :: globaldata2d_64 !< 2d data pointer.
-  real(kind=real64), dimension(:,:,:), allocatable :: globaldata3d_64 !< 3d data pointer.
+  real(kind=r4_kind), dimension(:,:), allocatable :: globaldata2d_r4 !< 2d data pointer.
+  real(kind=r4_kind), dimension(:,:,:), allocatable :: globaldata3d_r4 !< 3d data pointer.
+  real(kind=r8_kind), dimension(:,:), allocatable :: globaldata2d_r8 !< 2d data pointer.
+  real(kind=r8_kind), dimension(:,:,:), allocatable :: globaldata3d_r8 !< 3d data pointer.
   character(len=32) :: chksum !< The variable's checksum
   logical :: data_on_file_root !< Flag indicating if the file root is part of the pelist that
                                !!contains data
@@ -2115,26 +2115,26 @@ subroutine write_restart_bc(fileobj, unlim_dim_level)
 
  !> Write the data to the netcdf file
  do i = 1, fileobj%num_restart_vars
-    if (allocated(fileobj%restart_vars(i)%bc_info%globaldata2d_64 )) then
+    if (allocated(fileobj%restart_vars(i)%bc_info%globaldata2d_r8 )) then
        call netcdf_write_data(fileobj, fileobj%restart_vars(i)%varname, &
-                            fileobj%restart_vars(i)%bc_info%globaldata2d_64 , &
+                            fileobj%restart_vars(i)%bc_info%globaldata2d_r8 , &
                             unlim_dim_level=unlim_dim_level)
-       deallocate(fileobj%restart_vars(i)%bc_info%globaldata2d_64)
-    else if (allocated(fileobj%restart_vars(i)%bc_info%globaldata2d_32 )) then
+       deallocate(fileobj%restart_vars(i)%bc_info%globaldata2d_r8)
+    else if (allocated(fileobj%restart_vars(i)%bc_info%globaldata2d_r4 )) then
        call netcdf_write_data(fileobj, fileobj%restart_vars(i)%varname, &
-                            fileobj%restart_vars(i)%bc_info%globaldata2d_32 , &
+                            fileobj%restart_vars(i)%bc_info%globaldata2d_r4 , &
                             unlim_dim_level=unlim_dim_level)
-       deallocate(fileobj%restart_vars(i)%bc_info%globaldata2d_32)
-    else if (allocated(fileobj%restart_vars(i)%bc_info%globaldata3d_64 )) then
+       deallocate(fileobj%restart_vars(i)%bc_info%globaldata2d_r4)
+    else if (allocated(fileobj%restart_vars(i)%bc_info%globaldata3d_r8 )) then
        call netcdf_write_data(fileobj, fileobj%restart_vars(i)%varname, &
-                            fileobj%restart_vars(i)%bc_info%globaldata3d_64 , &
+                            fileobj%restart_vars(i)%bc_info%globaldata3d_r8 , &
                             unlim_dim_level=unlim_dim_level)
-       deallocate(fileobj%restart_vars(i)%bc_info%globaldata3d_64)
-    else if (allocated(fileobj%restart_vars(i)%bc_info%globaldata3d_32 )) then
+       deallocate(fileobj%restart_vars(i)%bc_info%globaldata3d_r8)
+    else if (allocated(fileobj%restart_vars(i)%bc_info%globaldata3d_r4 )) then
        call netcdf_write_data(fileobj, fileobj%restart_vars(i)%varname, &
-                            fileobj%restart_vars(i)%bc_info%globaldata3d_32 , &
+                            fileobj%restart_vars(i)%bc_info%globaldata3d_r4 , &
                             unlim_dim_level=unlim_dim_level)
-       deallocate(fileobj%restart_vars(i)%bc_info%globaldata3d_32 )
+       deallocate(fileobj%restart_vars(i)%bc_info%globaldata3d_r4 )
     endif
 
  enddo

@@ -17,22 +17,30 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
+!< Root pe reads the data in the netcdf file and scatters it to the other pes
 subroutine scatter_data_bc_2d(fileobj, varname, vdata, bc_info, unlim_dim_level)
-  class(FmsNetcdfFile_t), intent(inout) :: fileobj
+  class(FmsNetcdfFile_t), intent(inout) :: fileobj !< Fms2io netcdf fileobj
   character(len=*), intent(in) :: varname !< Variable name.
-  class(*), dimension(:,:), intent(inout) :: vdata
-  type(bc_information), intent(inout) :: bc_info
+  class(*), dimension(:,:), intent(inout) :: vdata !< scattered data
+  type(bc_information), intent(inout) :: bc_info !< information about the boundary condition variable
   integer, intent(in), optional :: unlim_dim_level !< Unlimited dimension
                                                      !! level.
 
-  real(kind=real64), dimension(:,:), allocatable :: global_buf_real64, local_buf_real64
-  real(kind=real32), dimension(:,:), allocatable :: global_buf_real32, local_buf_real32
+  real(kind=r8_kind), dimension(:,:), allocatable :: global_buf_r8_kind !< buffer with a data read in from file
+  real(kind=r8_kind), dimension(:,:), allocatable :: local_buf_r8_kind !< current pe's portion of the data
+  real(kind=r4_kind), dimension(:,:), allocatable :: global_buf_r4_kind !< buffer with a data read in from file
+  real(kind=r4_kind), dimension(:,:), allocatable :: local_buf_r4_kind !< current pe's portion of the data
 
-  integer(kind=int64) :: chksum_val
-  character(len=32) :: chksum, chksum_read
+  integer(kind=i8_kind) :: chksum_val !< Checksum value calculated from the read data
+  character(len=32) :: chksum !< Cheksum value converted to a string
+  character(len=32) :: chksum_read !< String checksum read in from file
 
-  integer :: isc, iec, jsc, jec, i1, i2, j1, j2, i_add, j_add
-  integer :: i_glob, j_glob
+  integer :: isc, iec, jsc, jec !< current PE's indices
+  integer :: i1, i2, j1, j2 !< current PE's indices relative to the global domain
+  integer :: i_add, j_add !< current PE's shift
+
+  integer :: i_glob !< Size of the global domain in x
+  integer :: j_glob !< Size of the global domain in y
 
   !> Set the indices
   isc = bc_info%indices(1)
@@ -40,7 +48,7 @@ subroutine scatter_data_bc_2d(fileobj, varname, vdata, bc_info, unlim_dim_level)
   jsc = bc_info%indices(3)
   jec = bc_info%indices(4)
 
-  !> This is the section of the PE that will actually be read to the global_buffer
+  !> This is the section of the PE that will actually be read from the global_buffer
   i1 = 1 + bc_info%x_halo
   i2 = i1 + (iec-isc)
   j1 = 1 + bc_info%y_halo
@@ -56,21 +64,19 @@ subroutine scatter_data_bc_2d(fileobj, varname, vdata, bc_info, unlim_dim_level)
   endif
 
   select type(vdata)
-    type is (real(kind=real32))
+    type is (real(kind=r4_kind))
       if (fileobj%is_root) then
          !> If you are the file root, read in the data
-         allocate(global_buf_real32(i_glob, j_glob))
+         allocate(global_buf_r4_kind(i_glob, j_glob))
 
          call netcdf_read_data(fileobj, varname, &
-                              global_buf_real32, &
+                              global_buf_r4_kind, &
                               unlim_dim_level=unlim_dim_level, &
                               broadcast=.false.)
          !> If the checksum exists read it and compare it with the calculated from the data that was read
          if (variable_att_exists(fileobj, varname, "checksum", broadcast=.false.)) then
             call get_variable_attribute(fileobj, varname, "checksum", chksum_read, broadcast=.false.)
-#ifdef OVERLOAD_R4
-            chksum_val = mpp_chksum(global_buf_real32, (/mpp_pe()/))
-#endif
+            chksum_val = mpp_chksum(global_buf_r4_kind, (/mpp_pe()/))
             chksum = ""
             write(chksum, "(Z16)") chksum_val
             if (.not. string_compare(adjustl(chksum), adjustl(chksum_read))) then
@@ -82,43 +88,43 @@ subroutine scatter_data_bc_2d(fileobj, varname, vdata, bc_info, unlim_dim_level)
       !> If the fileobj's root is not the same as the variable's root, then no data will be read for the
       !! file root
       if (fileobj%is_root .and. .not. bc_info%data_on_file_root) then
-          allocate(local_buf_real32(1,1))
-          local_buf_real32 = 0.
+          allocate(local_buf_r4_kind(1,1))
+          local_buf_r4_kind = 0.
           isc = 1; i_add=0; iec=1; jsc=1; j_add=0; jec=1
           i1=1; i2=1; j1=1; j2=1
       else
-          allocate(local_buf_real32(i1:i2,j1:j2))
+          allocate(local_buf_r4_kind(i1:i2,j1:j2))
       endif
 
       !> Scatter the data to the other PE
       call mpp_scatter(isc+i_add, iec+i_add, jsc+j_add, jec+j_add, bc_info%pelist, &
-                       local_buf_real32(i1:i2,j1:j2), global_buf_real32, fileobj%is_root)
+                       local_buf_r4_kind(i1:i2,j1:j2), global_buf_r4_kind, fileobj%is_root)
 
       !> Return if fileobj's root is not the same as the variable's root
       if (fileobj%is_root .and. .not. bc_info%data_on_file_root) then
-          deallocate(local_buf_real32)
+          deallocate(local_buf_r4_kind)
           return
       endif
 
       !> Set vdata to equal the scattered data
-      vdata(i1:i2,j1:j2) = local_buf_real32(i1:i2,j1:j2)
+      vdata(i1:i2,j1:j2) = local_buf_r4_kind(i1:i2,j1:j2)
 
-      deallocate(local_buf_real32)
-      if (fileobj%is_root) deallocate(global_buf_real32)
+      deallocate(local_buf_r4_kind)
+      if (fileobj%is_root) deallocate(global_buf_r4_kind)
 
-    type is (real(kind=real64))
+    type is (real(kind=r8_kind))
       if (fileobj%is_root) then
          !> If you are the file root, read in the data
-         allocate(global_buf_real64(i_glob, j_glob))
+         allocate(global_buf_r8_kind(i_glob, j_glob))
 
          call netcdf_read_data(fileobj, varname, &
-                              global_buf_real64, &
+                              global_buf_r8_kind, &
                               unlim_dim_level=unlim_dim_level, &
                               broadcast=.false.)
          !> If the checksum exists read it and compare it with the calculated from the data that was read
          if (variable_att_exists(fileobj, varname, "checksum", broadcast=.false.)) then
             call get_variable_attribute(fileobj, varname, "checksum", chksum_read, broadcast=.false.)
-            chksum_val = mpp_chksum(global_buf_real64, (/mpp_pe()/))
+            chksum_val = mpp_chksum(global_buf_r8_kind, (/mpp_pe()/))
             chksum = ""
             write(chksum, "(Z16)") chksum_val
             if (.not. string_compare(adjustl(chksum), adjustl(chksum_read))) then
@@ -130,51 +136,60 @@ subroutine scatter_data_bc_2d(fileobj, varname, vdata, bc_info, unlim_dim_level)
       !> If the fileobj's root is not the same as the variable's root, then no data will be read for the
       !! file root
       if (fileobj%is_root .and. .not. bc_info%data_on_file_root) then
-          allocate(local_buf_real64(1,1))
-          local_buf_real64 = 0.
+          allocate(local_buf_r8_kind(1,1))
+          local_buf_r8_kind = 0.
           isc = 1; i_add=0; iec=1; jsc=1; j_add=0; jec=1
           i1=1; i2=1; j1=1; j2=1
       else
-          allocate(local_buf_real64(i1:i2,j1:j2))
+          allocate(local_buf_r8_kind(i1:i2,j1:j2))
       endif
 
       !> Scatter the data to the other PE
       call mpp_scatter(isc+i_add, iec+i_add, jsc+j_add, jec+j_add, bc_info%pelist, &
-                       local_buf_real64(i1:i2,j1:j2), global_buf_real64, fileobj%is_root)
+                       local_buf_r8_kind(i1:i2,j1:j2), global_buf_r8_kind, fileobj%is_root)
 
       !> Return if fileobj's root is not the same as the variable's root
       if (fileobj%is_root .and. .not. bc_info%data_on_file_root) then
-          deallocate(local_buf_real64)
+          deallocate(local_buf_r8_kind)
           return
       endif
 
       !> Set vdata to equal the scattered data
-      vdata(i1:i2,j1:j2) = local_buf_real64(i1:i2,j1:j2)
+      vdata(i1:i2,j1:j2) = local_buf_r8_kind(i1:i2,j1:j2)
 
-      deallocate(local_buf_real64)
-      if (fileobj%is_root) deallocate(global_buf_real64)
+      deallocate(local_buf_r8_kind)
+      if (fileobj%is_root) deallocate(global_buf_r8_kind)
 
       class default
          call error("unsupported type.")
     end select
 end subroutine scatter_data_bc_2d
 
+!< Root pe reads the data in the netcdf file and scatters it to the other pes
 subroutine scatter_data_bc_3d(fileobj, varname, vdata, bc_info, unlim_dim_level)
-  class(FmsNetcdfFile_t), intent(inout) :: fileobj
+  class(FmsNetcdfFile_t), intent(inout) :: fileobj !< Fms2io netcdf fileobj
   character(len=*), intent(in) :: varname !< Variable name.
-  class(*), dimension(:,:,:), intent(inout) :: vdata
-  type(bc_information), intent(inout) :: bc_info
+  class(*), dimension(:,:,:), intent(inout) :: vdata !< scattered data
+  type(bc_information), intent(inout) :: bc_info !< information about the boundary condition variable
   integer, intent(in), optional :: unlim_dim_level !< Unlimited dimension
                                                      !! level.
 
-  real(kind=real64), dimension(:,:,:), allocatable :: global_buf_real64, local_buf_real64
-  real(kind=real32), dimension(:,:,:), allocatable :: global_buf_real32, local_buf_real32
+  real(kind=r8_kind), dimension(:,:,:), allocatable :: global_buf_r8_kind !< buffer with a data read in from file
+  real(kind=r8_kind), dimension(:,:,:), allocatable :: local_buf_r8_kind !< current pe's portion of the data
+  real(kind=r4_kind), dimension(:,:,:), allocatable :: global_buf_r4_kind !< buffer with a data read in from file
+  real(kind=r4_kind), dimension(:,:,:), allocatable :: local_buf_r4_kind !< current pe's portion of the data
 
-  integer(kind=int64) :: chksum_val
-  character(len=32) :: chksum, chksum_read
+  integer(kind=i8_kind) :: chksum_val !< Checksum value calculated from the read data
+  character(len=32) :: chksum !< Cheksum value converted to a string
+  character(len=32) :: chksum_read !< String checksum read in from file
 
-  integer :: isc, iec, jsc, jec, i1, i2, j1, j2, i_add, j_add
-  integer :: i_glob, j_glob, k_glob
+  integer :: isc, iec, jsc, jec !< current PE's indices
+  integer :: i1, i2, j1, j2 !< current PE's indices relative to the global domain
+  integer :: i_add, j_add !< current PE's shift
+
+  integer :: i_glob !< Size of the global domain in x
+  integer :: j_glob !< Size of the global domain in y
+  integer :: k_glob !< Size of the z axis
 
   !> Set the indices
   isc = bc_info%indices(1)
@@ -182,7 +197,7 @@ subroutine scatter_data_bc_3d(fileobj, varname, vdata, bc_info, unlim_dim_level)
   jsc = bc_info%indices(3)
   jec = bc_info%indices(4)
 
-  !> This is the section of the PE that will actually be read to the global_buffer
+  !> This is the section of the PE that will actually be read from the global_buffer
   i1 = 1 + bc_info%x_halo
   i2 = i1 + (iec-isc)
   j1 = 1 + bc_info%y_halo
@@ -200,21 +215,19 @@ subroutine scatter_data_bc_3d(fileobj, varname, vdata, bc_info, unlim_dim_level)
   k_glob = bc_info%global_size(3)
 
   select type(vdata)
-    type is (real(kind=real32))
+    type is (real(kind=r4_kind))
       if (fileobj%is_root) then
          !> If you are the file root, read in the data
-         allocate(global_buf_real32(i_glob, j_glob, k_glob))
+         allocate(global_buf_r4_kind(i_glob, j_glob, k_glob))
 
          call netcdf_read_data(fileobj, varname, &
-                              global_buf_real32, &
+                              global_buf_r4_kind, &
                               unlim_dim_level=unlim_dim_level, &
                               broadcast=.false.)
          !> If the checksum exists read it and compare it with the calculated from the data that was read
          if (variable_att_exists(fileobj, varname, "checksum", broadcast=.false.)) then
             call get_variable_attribute(fileobj, varname, "checksum", chksum_read, broadcast=.false.)
-#ifdef OVERLOAD_R4
-            chksum_val = mpp_chksum(global_buf_real32, (/mpp_pe()/))
-#endif
+            chksum_val = mpp_chksum(global_buf_r4_kind, (/mpp_pe()/))
             chksum = ""
             write(chksum, "(Z16)") chksum_val
             if (.not. string_compare(adjustl(chksum), adjustl(chksum_read))) then
@@ -226,43 +239,43 @@ subroutine scatter_data_bc_3d(fileobj, varname, vdata, bc_info, unlim_dim_level)
       !> If the fileobj's root is not the same as the variable's root, then no data will be read for the
       !! file root
       if (fileobj%is_root .and. .not. bc_info%data_on_file_root) then
-          allocate(local_buf_real32(1,1,k_glob))
-          local_buf_real32 = 0.
+          allocate(local_buf_r4_kind(1,1,k_glob))
+          local_buf_r4_kind = 0.
           isc = 1; i_add=0; iec=1; jsc=1; j_add=0; jec=1
           i1=1; i2=1; j1=1; j2=1
       else
-          allocate(local_buf_real32(i1:i2,j1:j2,k_glob))
+          allocate(local_buf_r4_kind(i1:i2,j1:j2,k_glob))
       endif
 
       !> Scatter the data to the other PE
       call mpp_scatter(isc+i_add, iec+i_add, jsc+j_add, jec+j_add, k_glob, bc_info%pelist, &
-                       local_buf_real32(i1:i2,j1:j2,:), global_buf_real32, fileobj%is_root)
+                       local_buf_r4_kind(i1:i2,j1:j2,:), global_buf_r4_kind, fileobj%is_root)
 
       !> Return if fileobj's root is not the same as the variable's root
       if (fileobj%is_root .and. .not. bc_info%data_on_file_root) then
-          deallocate(local_buf_real32)
+          deallocate(local_buf_r4_kind)
           return
       endif
 
       !> Set vdata to equal the scattered data
-      vdata(i1:i2,j1:j2,:) = local_buf_real32(i1:i2,j1:j2,:)
+      vdata(i1:i2,j1:j2,:) = local_buf_r4_kind(i1:i2,j1:j2,:)
 
-      deallocate(local_buf_real32)
-      if (fileobj%is_root) deallocate(global_buf_real32)
+      deallocate(local_buf_r4_kind)
+      if (fileobj%is_root) deallocate(global_buf_r4_kind)
 
-    type is (real(kind=real64))
+    type is (real(kind=r8_kind))
       if (fileobj%is_root) then
          !> If you are the file root, read in the data
-         allocate(global_buf_real64(i_glob, j_glob, k_glob))
+         allocate(global_buf_r8_kind(i_glob, j_glob, k_glob))
 
          call netcdf_read_data(fileobj, varname, &
-                              global_buf_real64, &
+                              global_buf_r8_kind, &
                               unlim_dim_level=unlim_dim_level, &
                               broadcast=.false.)
          !> If the checksum exists read it and compare it with the calculated from the data that was read
          if (variable_att_exists(fileobj, varname, "checksum", broadcast=.false.)) then
             call get_variable_attribute(fileobj, varname, "checksum", chksum_read, broadcast=.false.)
-            chksum_val = mpp_chksum(global_buf_real64, (/mpp_pe()/))
+            chksum_val = mpp_chksum(global_buf_r8_kind, (/mpp_pe()/))
             chksum = ""
             write(chksum, "(Z16)") chksum_val
             if (.not. string_compare(adjustl(chksum), adjustl(chksum_read))) then
@@ -274,29 +287,29 @@ subroutine scatter_data_bc_3d(fileobj, varname, vdata, bc_info, unlim_dim_level)
       !> If the fileobj's root is not the same as the variable's root, then no data will be read for the
       !! file root
       if (fileobj%is_root .and. .not. bc_info%data_on_file_root) then
-          allocate(local_buf_real64(1,1,k_glob))
-          local_buf_real64 = 0.
+          allocate(local_buf_r8_kind(1,1,k_glob))
+          local_buf_r8_kind = 0.
           isc = 1; i_add=0; iec=1; jsc=1; j_add=0; jec=1
           i1=1; i2=1; j1=1; j2=1;
       else
-          allocate(local_buf_real64(i1:i2,j1:j2,k_glob))
+          allocate(local_buf_r8_kind(i1:i2,j1:j2,k_glob))
       endif
 
       !> Scatter the data to the other PE
       call mpp_scatter(isc+i_add, iec+i_add, jsc+j_add, jec+j_add, k_glob, bc_info%pelist, &
-                       local_buf_real64(i1:i2,j1:j2,:), global_buf_real64, fileobj%is_root)
+                       local_buf_r8_kind(i1:i2,j1:j2,:), global_buf_r8_kind, fileobj%is_root)
 
       !> Return if fileobj's root is not the same as the variable's root
       if (fileobj%is_root .and. .not. bc_info%data_on_file_root) then
-          deallocate(local_buf_real64)
+          deallocate(local_buf_r8_kind)
           return
       endif
 
       !> Set vdata to equal the scattered data
-      vdata(i1:i2,j1:j2,:) = local_buf_real64(i1:i2,j1:j2,:)
+      vdata(i1:i2,j1:j2,:) = local_buf_r8_kind(i1:i2,j1:j2,:)
 
-      deallocate(local_buf_real64)
-      if (fileobj%is_root) deallocate(global_buf_real64)
+      deallocate(local_buf_r8_kind)
+      if (fileobj%is_root) deallocate(global_buf_r8_kind)
 
       class default
          call error("unsupported type.")
