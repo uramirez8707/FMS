@@ -105,9 +105,7 @@ test_update_domains_performance_SOURCES = \
   compare_data_checksums_int.F90 \
   test_update_domains_performance.F90
 test_minmax_SOURCES = test_minmax.F90
-test_mpp_update_domains_ad_SOURCES = \
-  compare_data_checksums.F90 \
-  test_mpp_update_domains_ad.F90
+test_mpp_update_domains_ad_SOURCES = test_mpp_update_domains_ad.F90
 test_global_arrays_SOURCES = test_global_arrays.F90
 test_chksum_int_SOURCES = test_chksum_int.F90
 test_redistribute_int_SOURCES = test_redistribute_int.F90
@@ -204,6 +202,11 @@ test_domains_utility_mod.mod: test_domains_utility_mod.$(OBJEXT)
 
 test_mpp_update_domains_real.$(OBJEXT): compare_data_checksums.mod fill_halo.mod test_mpp_update_domains
 test_mpp_update_domains_int.$(OBJEXT): compare_data_checksums_int.mod fill_halo.mod
+
+test_mpp_update_domains_main.$(OBJEXT): test_mpp_update_domains_real.mod test_mpp_update_domains_int.mod
+test_update_domains_performance.$(OBJEXT): compare_data_checksums_int.mod compare_data_checksums.mod
+test_mpp_global_field.$(OBJEXT): compare_data_checksums_int.mod compare_data_checksums.mod
+test_mpp_global_fieldi_ug.$(OBJEXT): compare_data_checksums_int.mod compare_data_checksums.mod
 
 # Clean up
 CLEANFILES = input.nml input_alternative.nml input_blank.nml empty.nml *.out* *.tst* \
