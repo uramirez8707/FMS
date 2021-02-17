@@ -206,7 +206,8 @@ test_mpp_update_domains_int.$(OBJEXT): compare_data_checksums_int.mod fill_halo.
 test_mpp_update_domains_main.$(OBJEXT): test_mpp_update_domains_real.mod test_mpp_update_domains_int.mod
 test_update_domains_performance.$(OBJEXT): compare_data_checksums_int.mod compare_data_checksums.mod
 test_mpp_global_field.$(OBJEXT): compare_data_checksums_int.mod compare_data_checksums.mod
-test_mpp_global_fieldi_ug.$(OBJEXT): compare_data_checksums_int.mod compare_data_checksums.mod
+test_mpp_global_field_ug.$(OBJEXT): compare_data_checksums_int.mod compare_data_checksums.mod
+test_mpp_domains.$(OBJEXT): compare_data_checksums.mod test_domains_utility_mod.mod
 
 # Clean up
 CLEANFILES = input.nml input_alternative.nml input_blank.nml empty.nml *.out* *.tst* \
