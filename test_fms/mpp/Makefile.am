@@ -198,8 +198,8 @@ EXTRA_DIST = input_base.nml \
 compare_data_checksums.mod: compare_data_checksums.$(OBJEXT)
 compare_data_checksums_int.mod: compare_data_checksums_int.$(OBJEXT)
 fill_halo.mod: fill_halo.$(OBJEXT)
-test_mpp_update_domains_real.mod: test_mpp_update_domains_real.$(OBJEXT) fill_halo.mod
-test_mpp_update_domains_int.mod: test_mpp_update_domains_int.$(OBJEXT) fill_halo.mod
+test_mpp_update_domains_real.mod: test_mpp_update_domains_real.$(OBJEXT) compare_data_checksums.mod fill_halo.mod
+test_mpp_update_domains_int.mod: test_mpp_update_domains_int.$(OBJEXT) compare_data_checksums_int.mod fill_halo.mod
 test_domains_utility_mod.mod: test_domains_utility_mod.$(OBJEXT)
 
 # Clean up
