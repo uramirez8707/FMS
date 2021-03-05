@@ -30,7 +30,7 @@ LDADD = $(top_builddir)/libFMS/libFMS.la
 
 # Build this test program.
 check_PROGRAMS = test_get_is_valid test_fms2_io test_atmosphere_io test_io_simple test_io_with_mask test_global_att \
-                 test_get_mosaic_tile_grid test_read_ascii_file test_bc_restart
+                 test_get_mosaic_tile_grid test_read_ascii_file test_bc_restart test_filename_appendix
 
 # This is the source code for the test.
 test_get_is_valid_SOURCES = test_get_is_valid.F90
