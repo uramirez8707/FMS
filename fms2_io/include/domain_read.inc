@@ -165,7 +165,7 @@ subroutine domain_read_2d(fileobj, variable_name, vdata, unlim_dim_level, &
        call allocate_array(buf_i4_kind, e)
        call netcdf_read_data(fileobj, variable_name, buf_i4_kind, &
                           unlim_dim_level=unlim_dim_level, corner=c, &
-                          edge_lengths=e, broadcast=.false.)
+                          edge_lengths=e, broadcast=.false. , domain_read=.true.)
 
        !< Adjust the indices relative to vdata.
        !< If vdata has halos, only the compute domain section is going to be added to vdata
@@ -183,7 +183,7 @@ subroutine domain_read_2d(fileobj, variable_name, vdata, unlim_dim_level, &
        call allocate_array(buf_i8_kind, e)
        call netcdf_read_data(fileobj, variable_name, buf_i8_kind, &
                           unlim_dim_level=unlim_dim_level, corner=c, &
-                          edge_lengths=e, broadcast=.false.)
+                          edge_lengths=e, broadcast=.false. , domain_read=.true.)
 
        !< Adjust the indices relative to vdata.
        !< If vdata has halos, only the compute domain section is going to be added to vdata
@@ -201,7 +201,7 @@ subroutine domain_read_2d(fileobj, variable_name, vdata, unlim_dim_level, &
        call allocate_array(buf_r4_kind, e)
        call netcdf_read_data(fileobj, variable_name, buf_r4_kind, &
                           unlim_dim_level=unlim_dim_level, corner=c, &
-                          edge_lengths=e, broadcast=.false.)
+                          edge_lengths=e, broadcast=.false. , domain_read=.true.)
 
        !< Adjust the indices relative to vdata.
        !< If vdata has halos, only the compute domain section is going to be added to vdata
@@ -219,7 +219,7 @@ subroutine domain_read_2d(fileobj, variable_name, vdata, unlim_dim_level, &
        call allocate_array(buf_r8_kind, e)
        call netcdf_read_data(fileobj, variable_name, buf_r8_kind, &
                           unlim_dim_level=unlim_dim_level, corner=c, &
-                          edge_lengths=e, broadcast=.false.)
+                          edge_lengths=e, broadcast=.false. , domain_read=.true.)
 
        !< Adjust the indices relative to vdata.
        !< If vdata has halos, only the compute domain section is going to be added to vdata
@@ -321,7 +321,7 @@ subroutine domain_read_3d(fileobj, variable_name, vdata, unlim_dim_level, &
        call allocate_array(buf_i4_kind, e)
        call netcdf_read_data(fileobj, variable_name, buf_i4_kind, &
                           unlim_dim_level=unlim_dim_level, corner=c, &
-                          edge_lengths=e, broadcast=.false.)
+                          edge_lengths=e, broadcast=.false. , domain_read=.true.)
 
        !< Adjust the indices relative to vdata.
        !< If vdata has halos, only the compute domain section is going to be added to vdata
@@ -335,7 +335,7 @@ subroutine domain_read_3d(fileobj, variable_name, vdata, unlim_dim_level, &
        call allocate_array(buf_i8_kind, e)
        call netcdf_read_data(fileobj, variable_name, buf_i8_kind, &
                           unlim_dim_level=unlim_dim_level, corner=c, &
-                          edge_lengths=e, broadcast=.false.)
+                          edge_lengths=e, broadcast=.false. , domain_read=.true.)
 
        !< Adjust the indices relative to vdata.
        !< If vdata has halos, only the compute domain section is going to be added to vdata
@@ -353,7 +353,7 @@ subroutine domain_read_3d(fileobj, variable_name, vdata, unlim_dim_level, &
        call allocate_array(buf_r4_kind, e)
        call netcdf_read_data(fileobj, variable_name, buf_r4_kind, &
                           unlim_dim_level=unlim_dim_level, corner=c, &
-                          edge_lengths=e, broadcast=.false.)
+                          edge_lengths=e, broadcast=.false. , domain_read=.true.)
 
        !< Adjust the indices relative to vdata.
        !< If vdata has halos, only the compute domain section is going to be added to vdata
@@ -368,7 +368,7 @@ subroutine domain_read_3d(fileobj, variable_name, vdata, unlim_dim_level, &
        call allocate_array(buf_r8_kind, e)
        call netcdf_read_data(fileobj, variable_name, buf_r8_kind, &
                           unlim_dim_level=unlim_dim_level, corner=c, &
-                          edge_lengths=e, broadcast=.false.)
+                          edge_lengths=e, broadcast=.false. , domain_read=.true.)
 
        !< Adjust the indices relative to vdata.
        !< If vdata has halos, only the compute domain section is going to be added to vdata
@@ -469,7 +469,7 @@ subroutine domain_read_4d(fileobj, variable_name, vdata, unlim_dim_level, &
        call allocate_array(buf_i4_kind, e)
        call netcdf_read_data(fileobj, variable_name, buf_i4_kind, &
                           unlim_dim_level=unlim_dim_level, corner=c, &
-                          edge_lengths=e, broadcast=.false.)
+                          edge_lengths=e, broadcast=.false. , domain_read=.true.)
 
        !< Adjust the indices relative to vdata.
        !< If vdata has halos, only the compute domain section is going to be added to vdata
@@ -487,7 +487,7 @@ subroutine domain_read_4d(fileobj, variable_name, vdata, unlim_dim_level, &
        call allocate_array(buf_i8_kind, e)
        call netcdf_read_data(fileobj, variable_name, buf_i8_kind, &
                           unlim_dim_level=unlim_dim_level, corner=c, &
-                          edge_lengths=e, broadcast=.false.)
+                          edge_lengths=e, broadcast=.false. , domain_read=.true.)
 
        !< Adjust the indices relative to vdata.
        !< If vdata has halos, only the compute domain section is going to be added to vdata
@@ -505,7 +505,7 @@ subroutine domain_read_4d(fileobj, variable_name, vdata, unlim_dim_level, &
        call allocate_array(buf_r4_kind, e)
        call netcdf_read_data(fileobj, variable_name, buf_r4_kind, &
                           unlim_dim_level=unlim_dim_level, corner=c, &
-                          edge_lengths=e, broadcast=.false.)
+                          edge_lengths=e, broadcast=.false. , domain_read=.true.)
 
        !< Adjust the indices relative to vdata.
        !< If vdata has halos, only the compute domain section is going to be added to vdata
@@ -523,7 +523,7 @@ subroutine domain_read_4d(fileobj, variable_name, vdata, unlim_dim_level, &
        call allocate_array(buf_r8_kind, e)
        call netcdf_read_data(fileobj, variable_name, buf_r8_kind, &
                           unlim_dim_level=unlim_dim_level, corner=c, &
-                          edge_lengths=e, broadcast=.false.)
+                          edge_lengths=e, broadcast=.false. , domain_read=.true.)
 
        !< Adjust the indices relative to vdata.
        !< If vdata has halos, only the compute domain section is going to be added to vdata
@@ -625,7 +625,7 @@ subroutine domain_read_5d(fileobj, variable_name, vdata, unlim_dim_level, &
        call allocate_array(buf_i4_kind, e)
        call netcdf_read_data(fileobj, variable_name, buf_i4_kind, &
                           unlim_dim_level=unlim_dim_level, corner=c, &
-                          edge_lengths=e, broadcast=.false.)
+                          edge_lengths=e, broadcast=.false. , domain_read=.true.)
 
        !< Adjust the indices relative to vdata.
        !< If vdata has halos, only the compute domain section is going to be added to vdata
@@ -643,7 +643,7 @@ subroutine domain_read_5d(fileobj, variable_name, vdata, unlim_dim_level, &
        call allocate_array(buf_i8_kind, e)
        call netcdf_read_data(fileobj, variable_name, buf_i8_kind, &
                           unlim_dim_level=unlim_dim_level, corner=c, &
-                          edge_lengths=e, broadcast=.false.)
+                          edge_lengths=e, broadcast=.false. , domain_read=.true.)
 
        !< Adjust the indices relative to vdata.
        !< If vdata has halos, only the compute domain section is going to be added to vdata
@@ -661,7 +661,7 @@ subroutine domain_read_5d(fileobj, variable_name, vdata, unlim_dim_level, &
        call allocate_array(buf_r4_kind, e)
        call netcdf_read_data(fileobj, variable_name, buf_r4_kind, &
                           unlim_dim_level=unlim_dim_level, corner=c, &
-                          edge_lengths=e, broadcast=.false.)
+                          edge_lengths=e, broadcast=.false. , domain_read=.true.)
 
        !< Adjust the indices relative to vdata.
        !< If vdata has halos, only the compute domain section is going to be added to vdata
@@ -679,7 +679,7 @@ subroutine domain_read_5d(fileobj, variable_name, vdata, unlim_dim_level, &
        call allocate_array(buf_r8_kind, e)
        call netcdf_read_data(fileobj, variable_name, buf_r8_kind, &
                           unlim_dim_level=unlim_dim_level, corner=c, &
-                          edge_lengths=e, broadcast=.false.)
+                          edge_lengths=e, broadcast=.false. , domain_read=.true.)
 
        !< Adjust the indices relative to vdata.
        !< If vdata has halos, only the compute domain section is going to be added to vdata

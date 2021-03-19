@@ -181,6 +181,7 @@ public :: set_netcdf_mode
 public :: check_netcdf_code
 public :: check_if_open
 public :: set_fileobj_time_name
+public :: get_variable_id
 
 interface netcdf_add_restart_variable
   module procedure netcdf_add_restart_variable_0d
@@ -426,7 +427,7 @@ end function get_variable_type
 
 !> @brief Open a netcdf file.
 !! @return .true. if open succeeds, or else .false.
-function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart, dont_add_res_to_filename, all_ranks_read) &
+function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart, dont_add_res_to_filename) &
   result(success)
 
   class(FmsNetcdfFile_t), intent(inout) :: fileobj !< File object.
@@ -452,7 +453,6 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart, do
                                               !! to false.
   logical, intent(in), optional :: dont_add_res_to_filename !< Flag indicating not to add
                                               !! ".res" to the filename
-  logical, intent(in), optional :: all_ranks_read !< Flag indicating if all ranks are reading
 
   logical :: success
 
@@ -461,6 +461,7 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart, do
   character(len=256) :: buf
   logical :: is_res
   logical :: dont_add_res !< flag indicated to not add ".res" to the filename
+  logical :: this_rank_opens
 
   if (allocated(fileobj%is_open)) then
     if (fileobj%is_open) then
@@ -506,15 +507,15 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart, do
   fileobj%io_root = fileobj%pelist(1)
   fileobj%is_root = mpp_pe() .eq. fileobj%io_root
 
-  if (present(all_ranks_read)) then
-      if (all_ranks_read) then
-         fileobj%io_root = mpp_pe()
-         fileobj%is_root = .true.
-      endif
+  this_rank_opens = .false.
+  if (string_compare(mode, "read", .true.)) then
+      this_rank_opens = .true.
+  elseif (fileobj%is_root) then
+      this_rank_opens =  .true.
   endif
 
   !Open the file with netcdf if this rank is the I/O root.
-  if (fileobj%is_root) then
+  if (this_rank_opens) then
     if (fms2_ncchksz == -1) call error("netcdf_file_open:: fms2_ncchksz not set.")
     if (fms2_nc_format_param == -1) call error("netcdf_file_open:: fms2_nc_format_param not set.")
 
@@ -569,14 +570,25 @@ end function netcdf_file_open
 
 
 !> @brief Close a netcdf file.
-subroutine netcdf_file_close(fileobj)
+subroutine netcdf_file_close(fileobj, domain_decomposed)
 
   class(FmsNetcdfFile_t),intent(inout) :: fileobj !< File object.
+  logical, intent(in), optional :: domain_decomposed
 
   integer :: err
   integer :: i
+  logical :: rank_open
 
-  if (fileobj%is_root) then
+  rank_open = .false.
+  if(fileobj%is_root) rank_open = .true.
+
+  if(present(domain_decomposed)) then
+     if(domain_decomposed) then
+        if(fileobj%is_readonly) rank_open = .true.
+     endif
+  endif
+
+  if (rank_open) then
     err = nf90_close(fileobj%ncid)
     call check_netcdf_code(err)
   endif

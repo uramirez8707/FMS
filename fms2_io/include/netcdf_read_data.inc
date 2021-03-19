@@ -253,7 +253,7 @@ end subroutine netcdf_read_data_1d
 
 !> @brief Read in data from a variable in a netcdf file.
 subroutine netcdf_read_data_2d(fileobj, variable_name, buf, unlim_dim_level, &
-                               corner, edge_lengths, broadcast)
+                               corner, edge_lengths, broadcast, domain_read)
 
   class(FmsNetcdfFile_t), intent(in) :: fileobj !< File object.
   character(len=*), intent(in) :: variable_name !< Variable name.
@@ -275,6 +275,7 @@ subroutine netcdf_read_data_2d(fileobj, variable_name, buf, unlim_dim_level, &
                                              !! "I/O root" ranks.
                                              !! The broadcast will be done
                                              !! by default.
+  logical, intent(in), optional :: domain_read
 
   logical :: bcast
   integer :: err
@@ -282,6 +283,12 @@ subroutine netcdf_read_data_2d(fileobj, variable_name, buf, unlim_dim_level, &
   integer :: unlim_dim_index
   integer, dimension(3) :: c
   integer, dimension(3) :: e
+  logical :: all_ranks_read
+
+  all_ranks_read = fileobj%is_root
+  if(present(domain_read)) then
+     if(domain_read) all_ranks_read = .true.
+  endif
 
   if (present(broadcast)) then
     bcast = broadcast
@@ -306,7 +313,7 @@ subroutine netcdf_read_data_2d(fileobj, variable_name, buf, unlim_dim_level, &
     endif
     c(unlim_dim_index) = unlim_dim_level
   endif
-  if (fileobj%is_root) then
+  if (all_ranks_read) then
     varid = get_variable_id(fileobj%ncid, trim(variable_name))
     select type(buf)
       type is (integer(kind=i4_kind))
@@ -341,7 +348,7 @@ end subroutine netcdf_read_data_2d
 
 !> @brief Read in data from a variable in a netcdf file.
 subroutine netcdf_read_data_3d(fileobj, variable_name, buf, unlim_dim_level, &
-                               corner, edge_lengths, broadcast)
+                               corner, edge_lengths, broadcast, domain_read)
 
   class(FmsNetcdfFile_t), intent(in) :: fileobj !< File object.
   character(len=*), intent(in) :: variable_name !< Variable name.
@@ -363,6 +370,7 @@ subroutine netcdf_read_data_3d(fileobj, variable_name, buf, unlim_dim_level, &
                                              !! "I/O root" ranks.
                                              !! The broadcast will be done
                                              !! by default.
+   logical, intent(in), optional :: domain_read
 
   logical :: bcast
   integer :: err
@@ -370,6 +378,12 @@ subroutine netcdf_read_data_3d(fileobj, variable_name, buf, unlim_dim_level, &
   integer :: unlim_dim_index
   integer, dimension(4) :: c
   integer, dimension(4) :: e
+  logical :: all_ranks_read
+
+  all_ranks_read = fileobj%is_root
+  if(present(domain_read)) then
+     if(domain_read) all_ranks_read = .true.
+  endif
 
   if (present(broadcast)) then
     bcast = broadcast
@@ -394,7 +408,7 @@ subroutine netcdf_read_data_3d(fileobj, variable_name, buf, unlim_dim_level, &
     endif
     c(unlim_dim_index) = unlim_dim_level
   endif
-  if (fileobj%is_root) then
+  if (all_ranks_read) then
     varid = get_variable_id(fileobj%ncid, trim(variable_name))
     select type(buf)
       type is (integer(kind=i4_kind))
@@ -429,7 +443,7 @@ end subroutine netcdf_read_data_3d
 
 !> @brief Read in data from a variable in a netcdf file.
 subroutine netcdf_read_data_4d(fileobj, variable_name, buf, unlim_dim_level, &
-                               corner, edge_lengths, broadcast)
+                               corner, edge_lengths, broadcast, domain_read)
 
   class(FmsNetcdfFile_t), intent(in) :: fileobj !< File object.
   character(len=*), intent(in) :: variable_name !< Variable name.
@@ -451,6 +465,7 @@ subroutine netcdf_read_data_4d(fileobj, variable_name, buf, unlim_dim_level, &
                                              !! "I/O root" ranks.
                                              !! The broadcast will be done
                                              !! by default.
+  logical, intent(in), optional :: domain_read
 
   logical :: bcast
   integer :: err
@@ -458,6 +473,12 @@ subroutine netcdf_read_data_4d(fileobj, variable_name, buf, unlim_dim_level, &
   integer :: unlim_dim_index
   integer, dimension(5) :: c
   integer, dimension(5) :: e
+  logical :: all_ranks_read
+
+  all_ranks_read = fileobj%is_root
+  if(present(domain_read)) then
+     if(domain_read) all_ranks_read = .true.
+  endif
 
   if (present(broadcast)) then
     bcast = broadcast
@@ -482,7 +503,7 @@ subroutine netcdf_read_data_4d(fileobj, variable_name, buf, unlim_dim_level, &
     endif
     c(unlim_dim_index) = unlim_dim_level
   endif
-  if (fileobj%is_root) then
+  if (all_ranks_read) then
     varid = get_variable_id(fileobj%ncid, trim(variable_name))
     select type(buf)
       type is (integer(kind=i4_kind))
@@ -517,7 +538,7 @@ end subroutine netcdf_read_data_4d
 
 !> @brief Read in data from a variable in a netcdf file.
 subroutine netcdf_read_data_5d(fileobj, variable_name, buf, unlim_dim_level, &
-                               corner, edge_lengths, broadcast)
+                               corner, edge_lengths, broadcast, domain_read)
 
   class(FmsNetcdfFile_t), intent(in) :: fileobj !< File object.
   character(len=*), intent(in) :: variable_name !< Variable name.
@@ -540,12 +561,20 @@ subroutine netcdf_read_data_5d(fileobj, variable_name, buf, unlim_dim_level, &
                                              !! The broadcast will be done
                                              !! by default.
 
+  logical, intent(in), optional :: domain_read
+
   logical :: bcast
   integer :: err
   integer :: varid
   integer :: unlim_dim_index
   integer, dimension(6) :: c
   integer, dimension(6) :: e
+  logical :: all_ranks_read
+
+  all_ranks_read = fileobj%is_root
+  if(present(domain_read)) then
+     if(domain_read) all_ranks_read = .true.
+  endif
 
   if (present(broadcast)) then
     bcast = broadcast
@@ -570,7 +599,7 @@ subroutine netcdf_read_data_5d(fileobj, variable_name, buf, unlim_dim_level, &
     endif
     c(unlim_dim_index) = unlim_dim_level
   endif
-  if (fileobj%is_root) then
+  if (all_ranks_read) then
     varid = get_variable_id(fileobj%ncid, trim(variable_name))
     select type(buf)
       type is (integer(kind=i4_kind))

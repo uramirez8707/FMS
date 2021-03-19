@@ -349,7 +349,6 @@ function open_domain_file(fileobj, path, mode, domain, nc_format, is_restart, do
   integer, dimension(:), allocatable :: pelist
   logical :: success2
   type(FmsNetcdfDomainFile_t) :: fileobj2
-  logical :: reading_file
 
   !Get the path of a "combined" file.
   io_layout = mpp_get_io_domain_layout(domain)
@@ -381,22 +380,21 @@ function open_domain_file(fileobj, path, mode, domain, nc_format, is_restart, do
   call mpp_get_pelist(io_domain, pelist)
   fileobj%adjust_indices = .true. !Set the default to true
 
-  if (string_compare(mode, "read", .true.)) reading_file = .true.
   !Open the distibuted files.
   success = netcdf_file_open(fileobj, distributed_filepath, mode, nc_format, pelist, &
-                             is_restart, dont_add_res_to_filename, all_ranks_read=reading_file)
+                             is_restart, dont_add_res_to_filename)
   if (string_compare(mode, "read", .true.) .or. string_compare(mode, "append", .true.)) then
     if (success) then
       if (.not. string_compare(distributed_filepath, combined_filepath)) then
         success2 = netcdf_file_open(fileobj2, combined_filepath, mode, nc_format, pelist, &
-                                    is_restart, dont_add_res_to_filename, all_ranks_read=reading_file)
+                                    is_restart, dont_add_res_to_filename)
         if (success2) then
           call error("you have both combined and distributed files.")
         endif
       endif
     else
       success = netcdf_file_open(fileobj, combined_filepath, mode, nc_format, pelist, &
-                                 is_restart, dont_add_res_to_filename, all_ranks_read=reading_file)
+                                 is_restart, dont_add_res_to_filename)
       !If the file is combined and the layout is not (1,1) set the adjust_indices flag to false
       if (success .and. (io_layout(1)*io_layout(2) .gt. 1)) fileobj%adjust_indices = .false.
     endif
@@ -427,7 +425,7 @@ subroutine close_domain_file(fileobj)
 
   type(FmsNetcdfDomainFile_t), intent(inout) :: fileobj !< File object.
 
-  call netcdf_file_close(fileobj)
+  call netcdf_file_close(fileobj, domain_decomposed = .true.)
   deallocate(fileobj%xdims)
   fileobj%nx = 0
   deallocate(fileobj%ydims)
