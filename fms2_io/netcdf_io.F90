@@ -426,7 +426,7 @@ end function get_variable_type
 
 !> @brief Open a netcdf file.
 !! @return .true. if open succeeds, or else .false.
-function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart, dont_add_res_to_filename) &
+function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart, dont_add_res_to_filename, all_ranks_read) &
   result(success)
 
   class(FmsNetcdfFile_t), intent(inout) :: fileobj !< File object.
@@ -452,6 +452,8 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart, do
                                               !! to false.
   logical, intent(in), optional :: dont_add_res_to_filename !< Flag indicating not to add
                                               !! ".res" to the filename
+  logical, intent(in), optional :: all_ranks_read !< Flag indicating if all ranks are reading
+
   logical :: success
 
   integer :: nc_format_param
@@ -503,6 +505,13 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart, do
   endif
   fileobj%io_root = fileobj%pelist(1)
   fileobj%is_root = mpp_pe() .eq. fileobj%io_root
+
+  if (present(all_ranks_read)) then
+      if (all_ranks_read) then
+         fileobj%io_root = mpp_pe()
+         fileobj%is_root = .true.
+      endif
+  endif
 
   !Open the file with netcdf if this rank is the I/O root.
   if (fileobj%is_root) then
