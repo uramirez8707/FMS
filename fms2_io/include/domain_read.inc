@@ -328,6 +328,9 @@ subroutine domain_read_3d(fileobj, variable_name, vdata, unlim_dim_level, &
        if (buffer_includes_halos) then
            c(xdim_index) = isc - isd + 1
            c(ydim_index) = jsc - jsd + 1
+       else
+           c(xdim_index) = 1
+           c(ydim_index) = 1
        endif
        call put_array_section(buf_i4_kind, vdata, c, e)
        deallocate(buf_i4_kind)
@@ -360,6 +363,9 @@ subroutine domain_read_3d(fileobj, variable_name, vdata, unlim_dim_level, &
        if (buffer_includes_halos) then
            c(xdim_index) = isc - isd + 1
            c(ydim_index) = jsc - jsd + 1
+       else
+           c(xdim_index) = 1
+           c(ydim_index) = 1
        endif
 
        call put_array_section(buf_r4_kind, vdata, c, e)
