@@ -440,7 +440,8 @@ MODULE diag_table_mod
   ! </DESCRIPTION>
   USE mpp_io_mod, ONLY: mpp_open, MPP_RDONLY
   USE mpp_mod, ONLY: read_ascii_file, get_ascii_file_num_lines
-  USE fms_mod, ONLY: fms_error_handler, error_mesg, file_exist, stdlog, mpp_pe, mpp_root_pe, FATAL, WARNING, lowercase, close_file
+  use fms_io_mod, only: file_exist, close_file
+  USE fms_mod, ONLY: fms_error_handler, error_mesg, stdlog, mpp_pe, mpp_root_pe, FATAL, WARNING, lowercase
   USE time_manager_mod, ONLY: get_calendar_type, NO_CALENDAR, set_date, set_time, month_name, time_type
   USE constants_mod, ONLY: SECONDS_PER_HOUR, SECONDS_PER_MINUTE
 

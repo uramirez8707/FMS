@@ -103,12 +103,13 @@ use time_manager_mod, only:  time_type, get_time, set_time,  &
                              operator(==), operator(>=),     &
                              operator(/=)
 use mpp_mod,          only:  input_nml_file, get_unit
-use fms_mod,          only:  open_file, error_mesg, &
+use fms_mod,          only:  error_mesg, &
                              check_nml_error, &
                              fms_init, &
                              mpp_pe, mpp_root_pe,&
                              FATAL, write_version_number, &
                              stdlog
+use fms_io_mod,       only:  open_file
 use fms2_io_mod,      only:  file_exists
 use constants_mod,    only:  radius, constants_init
 use mpp_mod,          only:  mpp_sum, mpp_init

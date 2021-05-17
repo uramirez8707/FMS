@@ -56,7 +56,7 @@ use            fms_mod, only: check_nml_error, stdlog,    &
 use        fms2_io_mod, only: read_data, FmsNetcdfFile_t, file_exists, open_file
 !  required for mpp_io
 use         fms_io_mod, only: read_data_mpp_io=>read_data, file_exist, open_ieee32_file
-use            fms_mod, only: close_file
+use         fms_io_mod, only: close_file
 !-----------------------------------------------------------------------
 
 use      constants_mod, only: PI

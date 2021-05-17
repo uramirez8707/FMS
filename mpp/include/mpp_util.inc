@@ -1433,7 +1433,7 @@ end function rarray_to_char
     from_pe = root_pe
     get_ascii_file_num_lines_and_length = -1
     num_lines = -1
-    max_length = -1
+    max_length = 0
     if ( pe == root_pe ) then
        inquire(FILE=FILENAME, EXIST=file_exist)
 

@@ -179,7 +179,7 @@ use fms2_io_mod,         only: FmsNetcdfDomainFile_t, read_data, get_dimension_s
 use fms2_io_mod,         only: get_variable_units, dimension_exists
 
 use mpp_io_mod,          only: mpp_open, MPP_MULTI, MPP_SINGLE, MPP_OVERWR !< use_mpp_io
-use fms_mod,             only: read_data, file_exist, field_exist, field_size, & !<use_mpp_io
+use fms_io_mod,             only: read_data, file_exist, field_exist, field_size, & !<use_mpp_io
                                close_file_use_mpp_io => close_file !< use_mpp_io
 use fms_io_mod,          only: get_var_att_value, & !< use_mpp_io
                                get_mosaic_tile_grid_use_mpp_io => get_mosaic_tile_grid !< use_mpp_io

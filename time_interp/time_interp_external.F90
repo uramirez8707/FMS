@@ -62,7 +62,8 @@ module time_interp_external_mod
        mpp_get_global_domain, NULL_DOMAIN2D
   use time_interp_mod, only : time_interp, time_interp_init
   use axis_utils_mod, only : get_axis_cart, get_axis_modulo, get_axis_modulo_times
-  use fms_mod, only : lowercase, open_namelist_file, check_nml_error, close_file
+  use fms_mod, only : lowercase, check_nml_error
+  use fms_io_mod, only : open_namelist_file, close_file
   use platform_mod, only: r8_kind
   use horiz_interp_mod, only : horiz_interp, horiz_interp_type
 

@@ -179,17 +179,13 @@ use       mpp_io_mod, only:  mpp_io_init, mpp_open, mpp_close,         &
                        fieldtype, mpp_get_atts, mpp_get_info, mpp_get_fields, &
                        do_cf_compliance
 
-use fms_io_mod, only : fms_io_init, fms_io_exit, field_size, &
-                       read_data, write_data, read_compressed, read_distributed, &
-                       open_namelist_file, open_restart_file, open_ieee32_file, close_file, &
-                       get_domain_decomp, &
-                       open_file, open_direct_file, get_mosaic_tile_grid, &
-                       get_mosaic_tile_file, get_global_att_value, file_exist, field_exist, &
-                       set_domain, nullify_domain
 use fms2_io_mod, only: fms2_io_init
 use memutils_mod, only: print_memuse_stats, memutils_init
 use grid2_mod, only: grid_init, grid_end
 
+! TO REMOVE IN THE "FUTURE"
+use fms_io_mod, only: fms_io_init, fms_io_exit
+! TO REMOVE IN THE "FUTURE"
 
 implicit none
 private
@@ -197,29 +193,9 @@ private
 ! routines for initialization and termination of module
 public :: fms_init, fms_end
 
-! routines for opening/closing specific types of file
-public :: open_namelist_file, open_restart_file, &
-          open_ieee32_file, close_file, &
-          open_file, open_direct_file
-
-! routines for reading/writing distributed data
-public :: read_data, write_data, read_compressed, read_distributed
-public :: get_domain_decomp, field_size
-public :: get_global_att_value
-
-! routines for get mosaic information
-public :: get_mosaic_tile_grid, get_mosaic_tile_file
-
-! miscellaneous i/o routines
-public :: file_exist, check_nml_error, field_exist,     &
-          error_mesg, fms_error_handler
-! version logging routine (originally from fms_io)
-public :: write_version_number
-
-! miscellaneous utilities (non i/o)
-public :: lowercase, uppercase,        &
+public :: check_nml_error, lowercase, uppercase, &
           string_array_index, monotonic_array, &
-          set_domain, nullify_domain
+          error_mesg, fms_error_handler, write_version_number
 
 ! public mpp interfaces
 public :: mpp_error, NOTE, WARNING, FATAL, &

@@ -323,12 +323,12 @@ use platform_mod
 #ifdef INTERNAL_FILE_NML
   USE mpp_mod, ONLY: input_nml_file
 #else
-  USE fms_mod, ONLY: open_namelist_file, close_file
+  USE fms_io_mod, ONLY: open_namelist_file, close_file
 #endif
 
   USE fms_mod, ONLY: error_mesg, FATAL, WARNING, NOTE, stdout, stdlog, write_version_number,&
-       & file_exist, fms_error_handler, check_nml_error, get_mosaic_tile_file, lowercase
-  USE fms_io_mod, ONLY: get_instance_filename
+       & fms_error_handler, check_nml_error, lowercase
+  USE fms_io_mod, ONLY: file_exist, get_instance_filename, get_mosaic_tile_file
   USE diag_axis_mod, ONLY: diag_axis_init, get_axis_length, get_axis_num, get_domain2d, get_tile_count,&
        & diag_axis_add_attribute, axis_compatible_check, CENTER, NORTH, EAST
   USE diag_util_mod, ONLY: get_subfield_size, log_diag_field_info, update_bounds,&
