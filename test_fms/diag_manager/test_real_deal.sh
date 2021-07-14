@@ -1,3 +1,5 @@
+#!/bin/sh
+
 #***********************************************************************
 #*                   GNU Lesser General Public License
 #*
@@ -17,28 +19,16 @@
 #* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 #***********************************************************************
 
-# This is an automake file for the test_fms/diag_manager directory of the FMS
-# package.
-# uramirez, Ed Hartnett
+# This is part of the GFDL FMS package. This is a shell script to
+# execute tests in the test_fms/data_override directory.
 
-# Find the needed mod and .inc files.
-AM_CPPFLAGS = -I$(top_srcdir)/include -I$(MODDIR)
+# Ed Hartnett 11/26/19
 
-# Link to the FMS library.
-LDADD = $(top_builddir)/libFMS/libFMS.la
+# Set common test settings.
+. ../test_common.sh
 
-# Build this test program.
-check_PROGRAMS = test_regional test_diag_manager test_diag_manager_time
-
-# This is the source code for the test.
-test_diag_manager_SOURCES = test_diag_manager.F90
-test_diag_manager_time_SOURCES = test_diag_manager_time.F90
-test_regional_SOURCES = test_regional.F90
-
-# Run the test.
-TESTS = test_real_deal.sh
-
-# Copy over other needed files to the srcdir
-EXTRA_DIST = input.nml_base input.nml_base_mppio diagTables test_diag_manager2.sh
-
-CLEANFILES = input.nml *.nc *.out diag_table
+echo "Test 1: Regional Diagnostics"
+rm -f diag_table input.nml
+touch input.nml
+cp $top_srcdir/test_fms/diag_manager/diagTables/diag_table_25 diag_table
+run_test test_regional 6
