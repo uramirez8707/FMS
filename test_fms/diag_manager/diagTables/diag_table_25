@@ -2,7 +2,11 @@ test_diag_manager
 2 1 1 0 0 0
 
 #output files
-"test_regional",         1, "hours",   1, "hours", "time"
+"test_regional_v1",         1, "hours",   1, "hours", "time"
+"test_regional_v2",         1, "hours",   1, "hours", "time"
+"test_regional_v3",         1, "hours",   1, "hours", "time"
 
 #output variables
- "ocean_mod", "sst", "sst", "test_regional",  "all", "mean", "183 185 -28.5 31.5 2 3", 2
+ "ocean_mod", "sst", "sst", "test_regional_v1",  "all", "mean", "183 185 -28.5 31.5 2 3", 2
+ "ocean_mod", "sst", "sst", "test_regional_v2",  "all", "mean", "-1 -1 -28.5 31.5 2 3", 2
+ "ocean_mod", "sst", "sst", "test_regional_v3",  "all", "mean", "183 185 -1 -1 2 3", 2

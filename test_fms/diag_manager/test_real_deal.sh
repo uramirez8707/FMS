@@ -27,8 +27,14 @@
 # Set common test settings.
 . ../test_common.sh
 
-echo "Test 1: Regional Diagnostics"
+#echo "Test 1: Regional Diagnostics"
+#rm -f diag_table input.nml
+#touch input.nml
+#cp $top_srcdir/test_fms/diag_manager/diagTables/diag_table_25 diag_table
+#run_test test_regional 6
+
+echo "Test 2: Cubesphere"
 rm -f diag_table input.nml
 touch input.nml
-cp $top_srcdir/test_fms/diag_manager/diagTables/diag_table_25 diag_table
-run_test test_regional 6
+cp $top_srcdir/test_fms/diag_manager/diagTables/diag_table_26 diag_table
+run_test test_regional_cubesphere 6

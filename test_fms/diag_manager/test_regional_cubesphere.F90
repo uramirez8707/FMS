@@ -6,7 +6,7 @@
 !* FMS is free software: you can redistribute it and/or modify it under
 !* the terms of the GNU Lesser General Public License as published by
 !* the Free Software Foundation, either version 3 of the License, or (at
-!* your option) any later version.
+!* your option) anlat later version.
 !*
 !* FMS is distributed in the hope that it will be useful, but WITHOUT
 !* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -36,7 +36,6 @@ use   mpp_mod
 implicit none
 
 type(time_type)                   :: Time
-integer, dimension(2)             :: layout = (/2,3/)
 integer :: nlon, nlat, nz
 type(domain2d)                    :: Domain
 real, dimension(:), allocatable :: x, y, z
@@ -45,18 +44,35 @@ integer :: is, ie, js, je
 real, allocatable, dimension(:,:,:) :: sst
 integer :: id_x, id_y, id_z, id_sst, id_ice
 integer :: used
+integer, parameter :: ntiles=6
+integer, dimension(4,ntiles) :: global_indices
+integer, dimension(2,ntiles) :: layout
+integer, dimension(ntiles) :: pe_start
+integer, dimension(ntiles) :: pe_end
+integer :: npes
+integer, dimension(2) :: io_layout=(/1, 1/)
 
 call fms_init
 call set_calendar_type(JULIAN)
 call diag_manager_init
 
-nlon = 360
-nlat = 180
+nlon = 10
+nlat = 10
 nz = 5
+npes = mpp_npes()
 
-call mpp_domains_set_stack_size(17280000)
-call mpp_define_domains( (/1,nlon,1,nlat/), layout, Domain)
-call mpp_define_io_domain(Domain, (/1,1/))
+!< Create the domain
+do i = 1,ntiles
+  global_indices(:, i) = (/1, nlon, 1, nlat/)
+  layout(:, i) = (/1, npes/ntiles/)
+  pe_start(i) = (i-1)*(npes/ntiles)
+  pe_end(i) = i*(npes/ntiles) - 1
+enddo
+
+call create_cubesphere_domain((/nlon, nlon, nlon, nlon, nlon, nlon/), &
+                                (/nlat, nlat, nlat, nlat, nlat, nlat/), &
+                                global_indices, layout, pe_start, pe_end, &
+                                io_layout, domain)
 call mpp_get_compute_domain(Domain, is, ie, js, je)
 
 ! Set up the data
@@ -101,21 +117,26 @@ enddo
 deallocate(x, y, z, sst)
 call diag_manager_end(Time)
 
-call mpp_sync()
-call check_for_errors()
-
 call fms_end
 
 contains
 
+include "create_cubesphere.inc"
+
 subroutine check_for_errors()
 
-  real, allocatable    :: axis_data_boundary(:, :) !< The expected begining and ending axis data for the
+  real    :: axis_data_boundary(2, 6) !< The expected begining and ending axis data for the
                                       !! x, y, z axis for the 2 file
-  integer, allocatable :: npoints (:, :)           !< Number of expected grid points in x, y, z for the
+  real, allocatable :: axis_data(:)
+  integer :: npoints (2, 3)           !< Number of expected grid points in x, y, z for the
                                       !! 2 file
-  character(len=25), allocatable :: filenames(:)   !< The expected filenames for the output diagnostics
-  character(len=25), allocatable :: axis_names(:,:)
+  character(len=25) :: filenames(2)   !< The expected filenames for the output diagnostics
+  character(len=25) :: axis_names(3)
+  logical :: test_passed              !< Flag indicating if a test passed
+  type(FmsNetcdfFile_t) :: fileobj
+  integer :: axis_size(1), var_size(4)
+
+  integer :: i, j                     !< For do loops
 
   !< Local axis data:
   !! Rank 0: x=1:180, y=-89:-30
@@ -125,18 +146,17 @@ subroutine check_for_errors()
   !! Rank 4: x=1:180, y=31:90
   !! Rank 5: x=181:360, y=31:90
 
-  !< CASE 1: Only a region
-  !! "test_regional_v1",         1, "hours",   1, "hours", "time"
-  !! "ocean_mod", "sst", "sst", "test_regional_v1",  "all", "mean", "183 185 -28.5 31.5 2 3", 2
-  !! So data is only available for ranks: 1 and 3
+  !< The data table:
+  !!  "test_regional",         1, "hours",   1, "hours", "time"
+  !!  "ocean_mod", "sst", "sst", "test_regional",  "all", "mean", "183 185 -28.5 31.5 2 3", 2
+  !! So only data is only available for ranks: 1 and 3
 
-  allocate(filenames(2), axis_data_boundary(2, 6), npoints(2,3), axis_names(3,2))
-  filenames(1) = "test_regional_v1.nc.0003"
-  filenames(2) = "test_regional_v1.nc.0005"
+  filenames(1) = "test_regional.nc.0003"
+  filenames(2) = "test_regional.nc.0005"
 
-  axis_names(1,:) = "x_sub01"
-  axis_names(2,:) = "y_sub01"
-  axis_names(3,:) = "z_sub01"
+  axis_names(1) = "x_sub01"
+  axis_names(2) = "y_sub01"
+  axis_names(3) = "z_sub01"
 
   !< The nearest value to -28.5 is -29 ... and to 31.5 is 31 ...
   axis_data_boundary(1,:) = (/183., 185., -29., 30., 2., 3./)
@@ -145,81 +165,8 @@ subroutine check_for_errors()
   npoints(1,:) = (/3, 60, 2/)
   npoints(2,:) = (/3, 1,  2/)
 
-  call check_the_values(filenames, axis_names, axis_data_boundary, npoints)
-  deallocate(filenames, axis_data_boundary, npoints, axis_names)
-
-  !< CASE 2: Only a longitude slice
-  !! "test_regional_v2",         1, "hours",   1, "hours", "time"
-  !! "ocean_mod", "sst", "sst", "test_regional_v2",  "all", "mean", "-1 -1 -28.5 31.5 2 3", 2
-  !! So data is only available for ranks 2-4
-
-  allocate(filenames(4), axis_data_boundary(4, 6), npoints(4,3), axis_names(2,4))
-  filenames(1) = "test_regional_v2.nc.0002"
-  filenames(2) = "test_regional_v2.nc.0003"
-  filenames(3) = "test_regional_v2.nc.0004"
-  filenames(4) = "test_regional_v2.nc.0005"
-
-  axis_names(1,:) = (/"x_sub01", "x_sub02", "x_sub01", "x_sub02"/)
-  axis_names(2,:) = (/"y_sub01", "y_sub02", "y_sub01", "y_sub02"/)
-
-  !< The nearest value to -28.5 is -29 ... and to 31.5 is 31 ...
-  axis_data_boundary(1,:) = (/1., 180., -29., 30., 2., 3./)
-  axis_data_boundary(2,:) = (/181., 360.,  -29., 30., 2., 3./)
-  axis_data_boundary(3,:) = (/1., 180., 31., 31., 2., 3./)
-  axis_data_boundary(4,:) = (/181., 360.,  31., 31., 2., 3./)
-
-  npoints(1,:) = (/180, 60, 2/)
-  npoints(2,:) = (/180, 60, 2/)
-  npoints(3,:) = (/180, 1, 2/)
-  npoints(4,:) = (/180, 1, 2/)
-
-  call check_the_values(filenames, axis_names, axis_data_boundary, npoints)
-  deallocate(filenames, axis_names, axis_data_boundary, npoints)
-
-  !< CASE 3: Only a latitude slice
-  !! "test_regional_v3",         1, "hours",   1, "hours", "time"
-  !! "ocean_mod", "sst", "sst", "test_regional_v3",  "all", "mean", "183 185 -1 -1 2 3", 2
-  !! So data is only available for 1,3,5
-
-  allocate(filenames(3), axis_data_boundary(3, 6), npoints(3,3), axis_names(2,3))
-  filenames(1) = "test_regional_v3.nc.0001"
-  filenames(2) = "test_regional_v3.nc.0003"
-  filenames(3) = "test_regional_v3.nc.0005"
-
-  axis_names(1,:) = (/"x_sub01", "x_sub01", "x_sub03"/)
-  axis_names(2,:) = (/"y_sub01", "y_sub03", "y_sub03"/)
-
-  !< The nearest value to -28.5 is -29 ... and to 31.5 is 31 ...
-  axis_data_boundary(1,:) = (/183., 185., -89., -30., 2., 3./)
-  axis_data_boundary(2,:) = (/183., 185.,  -29., 30., 2., 3./)
-  axis_data_boundary(3,:) = (/183., 185., 31., 90., 2., 3./)
-
-  npoints(1,:) = (/3, 60, 2/)
-  npoints(2,:) = (/3, 60, 2/)
-  npoints(3,:) = (/3, 60, 2/)
-
-  call check_the_values(filenames, axis_names, axis_data_boundary, npoints)
-  deallocate(filenames, axis_names, axis_data_boundary, npoints)
-
-end subroutine check_for_errors
-
-subroutine check_the_values(filenames, axis_names, axis_data_boundary, npoints)
-  character(len=25), intent(in) :: filenames(:)   !< The expected filenames for the output diagnostics
-  character(len=25), intent(in) :: axis_names(:,:)
-  real, intent(in)    :: axis_data_boundary(:,:) !< The expected begining and ending axis data for the
-                                      !! x, y, z axis for the 2 file
-  integer, intent(in) :: npoints (:,:)           !< Number of expected grid points in x, y, z for the
-                                      !! 2 file
-
-  real, allocatable :: axis_data(:)
-  logical :: test_passed              !< Flag indicating if a test passed
-  type(FmsNetcdfFile_t) :: fileobj
-  integer :: axis_size(1), var_size(4)
-
-  integer :: i, j                     !< For do loops
-
   if(mpp_pe() .eq. mpp_root_pe()) then
-    do i = 1, size(filenames) !< Loop through number of files
+    do i = 1, 2 !< Loop through number of files
        !< Check for the expected files
        inquire(file=filenames(i), exist=test_passed)
        if (.not. test_passed) call mpp_error(FATAL, "The expected file:"//trim(filenames(i))//&
@@ -228,29 +175,29 @@ subroutine check_the_values(filenames, axis_names, axis_data_boundary, npoints)
           & call mpp_error(FATAL, "Error opening the file:"//trim(filenames(i)))
 
        !< Check the axis data
-       do j = 1, size(axis_names,1)
-          if (.not. variable_exists(fileobj, axis_names(j, i))) call mpp_error(FATAL, &
-              "The axis data :"//trim(axis_names(j, i))//" does not exist!")
+       do j = 1, 3
+          if (.not. variable_exists(fileobj, axis_names(j))) call mpp_error(FATAL, &
+              "The axis data :"//trim(axis_names(j))//" does not exist!")
 
-          call get_variable_size(fileobj, axis_names(j, i), axis_size)
-          if (axis_size(1) .ne. npoints(i,j)) call mpp_error(FATAL, "The size of the axis_data:"//trim(axis_names(j, i))//&
+          call get_variable_size(fileobj, axis_names(j), axis_size)
+          if (axis_size(1) .ne. npoints(i,j)) call mpp_error(FATAL, "The size of the axis_data:"//trim(axis_names(j))//&
                                               "is not correct!")
 
           allocate(axis_data(axis_size(1)))
-          call read_data(fileobj, axis_names(j,i), axis_data)
+          call read_data(fileobj, axis_names(j), axis_data)
 
           !< Check the begining of the axis_data
           if (real(axis_data(1)) .ne. real(axis_data_boundary(i, 1+2*(j-1)))) then
               print *, axis_data(1)
               print *, axis_data_boundary(i, 1+2*(j-1))
-              call mpp_error(FATAL, "The begining of the axis_data does not match:"//trim(axis_names(j, i)))
+              call mpp_error(FATAL, "The begining of the axis_data does not match:"//trim(axis_names(j)))
           endif
 
           !< Check the end of the axis_data
           if (real(axis_data(axis_size(1))) .ne. real(axis_data_boundary(i, 2+2*(j-1)))) then
               print *, axis_data(axis_size(1))
               print *, axis_data_boundary(i, 2+2*(j-1))
-              call mpp_error(FATAL, "The ending of the axis_data does not match:"//trim(axis_names(j, i)))
+              call mpp_error(FATAL, "The ending of the axis_data does not match:"//trim(axis_names(j)))
           endif
 
           deallocate(axis_data)
@@ -273,6 +220,6 @@ subroutine check_the_values(filenames, axis_names, axis_data_boundary, npoints)
     enddo !< do i = 1, 2
   endif
 
-end subroutine check_the_values
+end subroutine
 
 end program test_regional

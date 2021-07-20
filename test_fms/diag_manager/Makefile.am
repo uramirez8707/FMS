@@ -28,12 +28,13 @@ AM_CPPFLAGS = -I$(top_srcdir)/include -I$(MODDIR)
 LDADD = $(top_builddir)/libFMS/libFMS.la
 
 # Build this test program.
-check_PROGRAMS = test_regional test_diag_manager test_diag_manager_time
+check_PROGRAMS = test_regional_cubesphere test_regional test_diag_manager test_diag_manager_time
 
 # This is the source code for the test.
 test_diag_manager_SOURCES = test_diag_manager.F90
 test_diag_manager_time_SOURCES = test_diag_manager_time.F90
 test_regional_SOURCES = test_regional.F90
+test_regional_cubesphere_SOURCES = test_regional_cubesphere.F90 create_cubesphere.inc
 
 # Run the test.
 TESTS = test_real_deal.sh
@@ -41,4 +42,4 @@ TESTS = test_real_deal.sh
 # Copy over other needed files to the srcdir
 EXTRA_DIST = input.nml_base input.nml_base_mppio diagTables test_diag_manager2.sh
 
-CLEANFILES = input.nml *.nc *.out diag_table
+CLEANFILES = input.nml *.nc* *.out diag_table
