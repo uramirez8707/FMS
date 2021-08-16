@@ -3420,7 +3420,6 @@ CONTAINS
     INTEGER :: b1,b2,b3,b4 ! size of buffer along x,y,z,and diurnal axes
     INTEGER :: i, j, k, m
     REAL    :: missvalue, num
-    real,allocatable,dimension(:,:,:,:) :: diurnal_buffer
     writing_field = 0
 
     need_compute = output_fields(out_num)%need_compute
@@ -3520,34 +3519,14 @@ CONTAINS
     ! Output field
     IF ( at_diag_end .AND. freq == END_OF_RUN ) output_fields(out_num)%next_output = time
 ! if (time .eq. output_fields(out_num)%next_output) then
-    if (output_fields(out_num)%n_diurnal_samples > 1) then
-          !> allocate the buffer for diurnal data
-          allocate(diurnal_buffer(size(output_fields(out_num)%buffer,1),size(output_fields(out_num)%buffer,2),&
-                    size(output_fields(out_num)%buffer,4),size(output_fields(out_num)%buffer,3)))
-          !> swap the last 2 axes in the data buffer to match the netcdf output order
-          do i = 1,size(output_fields(out_num)%buffer,4)
-          do j = 1,size(output_fields(out_num)%buffer,3)
-               diurnal_buffer(:,:,i,j) = output_fields(out_num)%buffer(:,:,j,i)
-          enddo
-          enddo
-    endif
     IF ( (output_fields(out_num)%time_ops) .AND. (.NOT. mix_snapshot_average_fields) ) THEN
        middle_time = (output_fields(out_num)%last_output+output_fields(out_num)%next_output)/2
-       if (output_fields(out_num)%n_diurnal_samples > 1) then
-          CALL diag_data_out(file_num, out_num, diurnal_buffer, middle_time, use_mpp_io_arg=use_mpp_io)
-       else
-          CALL diag_data_out(file_num, out_num, output_fields(out_num)%buffer, middle_time, &
-                 & use_mpp_io_arg=use_mpp_io)
-       endif
+       CALL diag_data_out(file_num, out_num, output_fields(out_num)%buffer, middle_time, &
+               & use_mpp_io_arg=use_mpp_io)
     ELSE
-       if (output_fields(out_num)%n_diurnal_samples > 1) then
-            CALL diag_data_out(file_num, out_num, &
-                 & diurnal_buffer, output_fields(out_num)%next_output, use_mpp_io_arg=use_mpp_io)
-       else
-            CALL diag_data_out(file_num, out_num, &
-                 & output_fields(out_num)%buffer, output_fields(out_num)%next_output,&
-                 & use_mpp_io_arg=use_mpp_io)
-       endif
+       CALL diag_data_out(file_num, out_num, &
+              & output_fields(out_num)%buffer, output_fields(out_num)%next_output,&
+              & use_mpp_io_arg=use_mpp_io)
     END IF
 !output_fields(out_num)%last_output = output_fields(out_num)%next_output
 ! endif
@@ -3576,7 +3555,6 @@ CONTAINS
        END IF
        IF ( input_fields(in_num)%mask_variant .AND. average ) output_fields(out_num)%counter = 0.0
     END IF
-    if (allocated(diurnal_buffer))deallocate(diurnal_buffer)
   END FUNCTION writing_field
 
   SUBROUTINE diag_manager_set_time_end(Time_end_in)
@@ -3732,7 +3710,6 @@ CONTAINS
     INTEGER :: stdout_unit
     LOGICAL :: reduced_k_range, need_compute, local_output
     CHARACTER(len=128) :: message
-    real,allocatable,dimension(:,:,:,:) :: diurnal_buffer
 
     stdout_unit = stdout()
 
@@ -3783,21 +3760,7 @@ CONTAINS
                & TRIM(output_fields(i)%output_name)//' NOT available,'//&
                & ' check if output interval > runlength. Netcdf fill_values are written', NOTE)
           output_fields(i)%buffer = FILL_VALUE
-          if (output_fields(i)%n_diurnal_samples > 1) then
-               !> allocate the buffer for diurnal data
-               if (.not. allocated(diurnal_buffer)) &
-                    allocate(diurnal_buffer(size(output_fields(i)%buffer,1),size(output_fields(i)%buffer,2),&
-                    size(output_fields(i)%buffer,4),size(output_fields(i)%buffer,3)))
-               !> swap the last 2 axes in the data buffer to match the netcdf output order
-               do loop1 = 1,size(output_fields(i)%buffer,4)
-               do loop2 = 1,size(output_fields(i)%buffer,3)
-                    diurnal_buffer(:,:,loop1,loop2) = output_fields(i)%buffer(:,:,loop2,loop1)
-               enddo
-               enddo
-               CALL diag_data_out(file, i, diurnal_buffer, time, .TRUE., use_mpp_io_arg=use_mpp_io)
-          else
           CALL diag_data_out(file, i, output_fields(i)%buffer, time, .TRUE., use_mpp_io_arg=use_mpp_io)
-          endif
        END IF
     END DO
     ! Now it's time to output static fields
@@ -3810,7 +3773,6 @@ CONTAINS
             & WRITE (stdout_unit,'(a,i12,a,a)') 'Diag_Manager: ',files(file)%bytes_written, &
             & ' bytes of data written to file ',TRIM(files(file)%name)
     END IF
-     if (allocated(diurnal_buffer)) deallocate(diurnal_buffer)
   END SUBROUTINE closing_file
   ! </SUBROUTINE>
 
