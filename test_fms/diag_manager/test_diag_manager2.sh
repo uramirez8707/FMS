@@ -461,6 +461,7 @@ test_expect_success "Unstructured grid (test $my_test_count)" '
 '
 
 # test_diag_manager_time
+my_test_count=24
 cat <<_EOF > diag_table
 test_diag_manager
 2 1 1 0 0 0
@@ -483,8 +484,8 @@ test_expect_success "wildcard filenames (test $my_test_count)" '
   mpirun -n 1 ../test_diag_manager_time
 '
 
+my_test_count=25
 rm -f input.nml diag_table
-
 touch input.nml
 cat <<_EOF > diag_table
 test_diag_manager
@@ -499,6 +500,34 @@ test_diag_manager
 _EOF
 test_expect_success "diurnal test (test $my_test_count)" '
   mpirun -n 1 ../test_diag_manager_time
+'
+
+my_test_count=26
+cat <<_EOF > input.nml
+& test_diag_manager_time_nml
+domain_type = 2
+/
+_EOF
+
+test_expect_success "diurnal test cubedsphere (test $my_test_count)" '
+  mpirun -n 6 ../test_diag_manager_time
+'
+
+my_test_count=27
+rm -f input.nml diag_table && touch input.nml
+cat <<_EOF > diag_table
+test_diag_manager
+2 1 1 0 0 0
+
+#output files
+"test_diurnal_UG",         1, "hours",   1, "hours", "time"
+
+#output variables
+ "land_mod", "sst", "sst", "test_diurnal_UG",  "all", "diurnal3", "none", 2
+_EOF
+
+test_expect_success "diurnal test unstructured grid (test $my_test_count)" '
+  mpirun -n 6 ../test_diag_manager_ug
 '
 
 test_done

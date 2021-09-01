@@ -1254,9 +1254,14 @@ class(FmsNetcdfFile_t), intent(inout)     :: fileob
           time = 0
      endif
 
-     !> If the variable is 2D, switch the n_diurnal_samples and nz dimension, so local_buffer has
-     !! dimension (nx, ny, n_diurnal_samples, nz).
-     if (size(buffer,3) .eq. 1) then
+     if (size(buffer,3) .eq. 1 .and. size(buffer,2) .eq. 1) then
+        !> If the variable is 1D, switch the  buffer so that n_diurnal_samples is
+        !! the second dimension (nx, n_diurnal_samples, 1, 1)
+        allocate(local_buffer(size(buffer,1),size(buffer,4),size(buffer,2),size(buffer,3)))
+        local_buffer(:,:,1,1) = buffer(:,1,1,:)
+     else if (size(buffer,3) .eq. 1) then
+        !> If the variable is 2D, switch the n_diurnal_samples and nz dimension, so local_buffer has
+        !! dimension (nx, ny, n_diurnal_samples, 1).
         allocate(local_buffer(size(buffer,1),size(buffer,2),size(buffer,4),size(buffer,3)))
         local_buffer(:,:,:,1) = buffer(:,:,1,:)
      else

@@ -33,7 +33,6 @@ use  time_manager_mod, only: time_type, set_calendar_type, set_date, NOLEAP, JUL
 implicit none
 
 type(time_type)                   :: Time
-integer, dimension(2)             :: layout = (/1,1/)
 integer :: nlon, nlat, nz
 type(domain2d)                    :: Domain
 real, dimension(:), allocatable :: x, y, z
@@ -43,17 +42,50 @@ real, allocatable :: sst(:,:,:), ice(:,:)
 integer :: id_x, id_y, id_z, id_sst, id_ice
 logical :: used
 
+integer :: domain_type = 1 !< Type of domain: 1: "lat_lon", 2: "cubed_sphere"
+integer :: io_status !< Error code after reading the namelist
+integer :: npes !< Number of PE ranks the test is running with
+integer, dimension(2) :: io_layout=(/1, 1/) !< Io_layout for the cubed_sphere/lat-lon grids
+
+!< For the cubesphere domain
+integer, parameter :: ntiles=6 !< Number of tiles for the test
+integer, dimension(4,ntiles) :: global_indices !< The global indices for each tile
+integer, dimension(2,ntiles) :: layout !< The layout for each tile
+integer, dimension(ntiles) :: pe_start !< The starting pe in the pelist for each tile
+integer, dimension(ntiles) :: pe_end   !< The ending pe in the pelist for each tile
+
+namelist / test_diag_manager_time_nml / domain_type
+
 call fms_init
 call set_calendar_type(JULIAN)
 call diag_manager_init
 
+read (input_nml_file, test_diag_manager_time_nml, iostat=io_status)
+if (io_status > 0) call mpp_error(FATAL,'=>test_diag_manager_nml: Error reading input.nml')
+
 nlon = 20
 nlat = 30
 nz = 5
+npes = mpp_npes()
 
 call mpp_domains_set_stack_size(17280000)
-call mpp_define_domains( (/1,nlon,1,nlat/), layout, Domain, name='test_diag_manager')
-call mpp_define_io_domain(Domain, (/1,1/))
+
+if (domain_type .eq. 1) then
+   call mpp_define_domains( (/1,nlon,1,nlat/), (/1,1/), Domain, name='test_diag_manager')
+   call mpp_define_io_domain(Domain, (/1,1/))
+else if (domain_type .eq. 2 ) then
+   do i = 1,ntiles
+      global_indices(:, i) = (/1, nlon, 1, nlat/)
+      layout(:, i) = (/1, npes/ntiles/)
+      pe_start(i) = (i-1)*(npes/ntiles)
+      pe_end(i) = i*(npes/ntiles) - 1
+   enddo
+
+   call create_atmosphere_domain((/nlon, nlon, nlon, nlon, nlon, nlon/), &
+                                (/nlat, nlat, nlat, nlat, nlat, nlat/), &
+                                global_indices, layout, pe_start, pe_end, &
+                                io_layout, domain)
+endif
 call mpp_get_compute_domain(Domain, is, ie, js, je)
 
 ! Set up the data
@@ -85,17 +117,22 @@ id_ice = register_diag_field  ('test_diag_manager_mod', 'ice', (/id_x,id_y/), Ti
 
 ! Send the first time's data
 used = send_data(id_sst, sst, Time)
+used = send_data(id_sst, ice, Time)
 
 ! Increase the time and send data
 do i=1,23
-Time = set_date(2,1,1,i,0,0)
-sst = real(i)
-ice = real(i)
-if(id_sst > 0) used = send_data(id_sst, sst, Time)
-if(id_ice > 0) used = send_data(id_ice, ice, Time)
+   Time = set_date(2,1,1,i,0,0)
+   sst = real(i)
+   ice = real(i)
+
+   if(id_sst > 0) used = send_data(id_sst, sst, Time)
+   if(id_ice > 0) used = send_data(id_ice, ice, Time)
 enddo
 
 call diag_manager_end(Time)
 call fms_end
+
+contains
+include "../fms2_io/create_atmosphere_domain.inc"
 
 end program test_diag_manager_time
