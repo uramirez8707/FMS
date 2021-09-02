@@ -95,7 +95,6 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
   !> Write diag field using @ref fms2_io
   !> @ingroup diag_output_mod
   interface diag_field_write
-     module procedure diag_field_write_field
      module procedure diag_field_write_varname
   end interface
 
@@ -1158,84 +1157,11 @@ class(FmsNetcdfFile_t), intent(inout)     :: fileob
     num_axis_in_file = 0
   END SUBROUTINE done_meta_data
 
-  !> @brief Outputs the diagnostic data to a file using fms2_io taking a field object as input
-  subroutine diag_field_write_field (field, buffer, static, fileob, file_num, fileobjU, fileobj, fileobjND, fnum_for_domain, time_in)
-    TYPE(diag_fieldtype), INTENT(inout) :: Field !<
-    REAL , INTENT(inout) :: buffer(:,:,:,:)
-    logical, intent(in), optional :: static
-    class(FmsNetcdfFile_t), optional, intent(inout),target :: fileob
-    class(FmsNetcdfFile_t), pointer :: fptr => null()
-    integer, intent(in), optional  :: file_num
-    type(FmsNetcdfUnstructuredDomainFile_t),intent(inout), optional :: fileobjU(:)
-    type(FmsNetcdfDomainFile_t),intent(inout), optional:: fileobj(:)
-    type(FmsNetcdfFile_t),intent(inout), optional:: fileobjND(:)
-    character(len=2), intent(in), optional :: fnum_for_domain
-    INTEGER, OPTIONAL, INTENT(in) :: time_in
-    integer :: time
-     if (present(static)) then
-          if (static) time = 0
-     elseif (present(time_in)) then
-          time = time_in
-     else
-          time = 0
-     endif
-
-     if (present(fileob)) then !> Write output to the fileob file
-          fptr => fileob
-          select type (fptr)
-          type is (FmsNetcdfFile_t)
-               call write_data (fptr,trim(mpp_get_field_name(field%field)),buffer)
-          type is (FmsNetcdfDomainFile_t)
-               call write_data (fptr,trim(mpp_get_field_name(field%field)),buffer)
-          type is (FmsNetcdfUnstructuredDomainFile_t)
-               call write_data (fptr,trim(mpp_get_field_name(field%field)),buffer)
-          class default
-               call error_mesg("diag_field_write","fileob passed in is not one of the FmsNetcdfFile_t types",fatal)
-          end select
-     elseif (present(file_num) .and. present(fileobjU) .and. present(fileobjND) .and. present(fileobj) .and. present(fnum_for_domain)) then
-     !> Figure out which file object to write output to
-!          if (fnum_for_domain == "2d" .or. fnum_for_domain == "nd") then
-          if (fnum_for_domain == "2d" ) then
-               if (check_if_open(fileobj(file_num))) then
-                    if (time == 0) then
-                         call write_data (fileobj (file_num), trim(mpp_get_field_name(field%field)), buffer)
-                    else
-                         call write_data (fileobj (file_num), trim(mpp_get_field_name(field%field)), buffer, unlim_dim_level=time)
-                    endif
-               endif
-          elseif (fnum_for_domain == "nd") then
-               if (check_if_open(fileobjND (file_num)) ) then
-                    if (time == 0) then
-                         call write_data (fileobjND (file_num), trim(mpp_get_field_name(field%field)), buffer)
-                    else
-                         call write_data (fileobjND (file_num), trim(mpp_get_field_name(field%field)), buffer, unlim_dim_level=time)
-                    endif
-               endif
-          elseif (fnum_for_domain == "ug") then
-                    if (time == 0) then
-                         call write_data (fileobjU(file_num), trim(mpp_get_field_name(field%field)), buffer)
-                    else
-                         call write_data (fileobjU(file_num), trim(mpp_get_field_name(field%field)), buffer, unlim_dim_level=time)
-                    endif
-          else
-               call error_mesg("diag_field_write","No file object is associated with this file number",fatal)
-          endif
-     elseif (present(file_num) ) then
-          write (6,*) present(file_num) ,present(fileobjU) , present(fileobjND) , present(fileobj) , present(fnum_for_domain)
-          call error_mesg("diag_field_write","When FILE_NUM is used to determine which file object to use,"&
-           //" You must also include fileobjU, fileobj, fileonjND, and fnum_for_domain",fatal)
-     else
-          call error_mesg("diag_field_write","You must include a fileob or a file_num.",fatal)
-     endif
-  end subroutine diag_field_write_field
-
   !> \brief Writes diagnostic data out using fms2_io routine.
-  subroutine diag_field_write_varname (varname, buffer, static, fileob, file_num, fileobjU, fileobj, fileobjND, fnum_for_domain, time_in)
+  subroutine diag_field_write_varname (varname, buffer, static, file_num, fileobjU, fileobj, fileobjND, fnum_for_domain, time_in)
     CHARACTER(len=*), INTENT(in) :: varname !<
     REAL , INTENT(inout) :: buffer(:,:,:,:)
     logical, intent(in), optional :: static
-    class(FmsNetcdfFile_t), intent(inout), optional, target :: fileob
-    class(FmsNetcdfFile_t), pointer :: fptr => null()
     integer, intent(in), optional  :: file_num
     type(FmsNetcdfUnstructuredDomainFile_t),intent(inout), optional :: fileobjU(:)
     type(FmsNetcdfDomainFile_t),intent(inout), optional:: fileobj(:)
@@ -1269,19 +1195,7 @@ class(FmsNetcdfFile_t), intent(inout)     :: fileob
         local_buffer = buffer(:,:,:,:)
      endif
 
-     if (present(fileob)) then !> Write output to the fileob file
-          fptr => fileob
-          select type (fptr)
-          type is (FmsNetcdfFile_t)
-               call write_data (fptr,trim(varname),local_buffer)
-          type is (FmsNetcdfDomainFile_t)
-               call write_data (fptr,trim(varname),local_buffer)
-          type is (FmsNetcdfUnstructuredDomainFile_t)
-               call write_data (fptr,trim(varname),local_buffer)
-          class default
-               call error_mesg("diag_field_write","fileob passed in is not one of the FmsNetcdfFile_t types",fatal)
-          end select
-     elseif (present(file_num) .and. present(fileobjU) .and. present(fileobj) .and. present(fileobjND) .and. present(fnum_for_domain)) then
+     if (present(file_num) .and. present(fileobjU) .and. present(fileobj) .and. present(fileobjND) .and. present(fnum_for_domain)) then
      !> Figure out which file object to write output to
           if (fnum_for_domain == "2d" ) then
                if (check_if_open(fileobj(file_num))) then

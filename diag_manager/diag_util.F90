@@ -59,13 +59,13 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
        & get_axis_reqfld, axis_is_compressed, get_compressed_axes_ids
   USE diag_output_mod, ONLY: diag_output_init, write_axis_meta_data,&
        & write_field_meta_data, done_meta_data
+  USE mpp_io_mod, ONLY: mpp_get_field_name
   USE diag_output_mod, ONLY: diag_field_write, diag_write_time !<fms2_io use_mpp_io=.false.
   USE diag_grid_mod, ONLY: get_local_indexes
   USE fms_mod, ONLY: error_mesg, FATAL, WARNING, NOTE, mpp_pe, mpp_root_pe, lowercase, fms_error_handler,&
        & write_version_number, do_cf_compliance
   USE fms_io_mod, ONLY: get_tile_string, return_domain, string
   USE fms2_io_mod, ONLY: fms2_io_get_instance_filename => get_instance_filename
-  USE fms_io_mod, ONLY: mpp_io_get_instance_filename => get_instance_filename
   USE mpp_domains_mod,ONLY: domain1d, domain2d, mpp_get_compute_domain, null_domain1d, null_domain2d,&
        & OPERATOR(.NE.), OPERATOR(.EQ.), mpp_modify_domain, mpp_get_domain_components,&
        & mpp_get_ntile_count, mpp_get_current_ntile, mpp_get_tile_id, mpp_mosaic_defined, mpp_get_tile_npes,&
@@ -73,7 +73,6 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
   USE time_manager_mod,ONLY: time_type, OPERATOR(==), OPERATOR(>), NO_CALENDAR, increment_date,&
        & increment_time, get_calendar_type, get_date, get_time, leap_year, OPERATOR(-),&
        & OPERATOR(<), OPERATOR(>=), OPERATOR(<=), OPERATOR(==)
-  USE mpp_io_mod, ONLY: mpp_close
   USE mpp_mod, ONLY: mpp_npes
   USE fms_io_mod, ONLY: get_mosaic_tile_file_ug
   USE constants_mod, ONLY: SECONDS_PER_DAY, SECONDS_PER_HOUR, SECONDS_PER_MINUTE
@@ -2270,20 +2269,20 @@ CONTAINS
             IF ( files(file)%rtime_current >= start_dif .AND. files(file)%rtime_current <= end_dif) THEN
              ! Output the axes if this is first time-averaged field
              time_data(1, 1, 1, 1) = start_dif
-             call diag_field_write (files(file)%f_avg_start, time_data(1:1,:,:,:), file_num=file, &
+             call diag_field_write (mpp_get_field_name(files(file)%f_avg_start%field), time_data(1:1,:,:,:), file_num=file, &
                                    fileobjU=fileobjU, fileobj=fileobj, fileobjND=fileobjND, &
                                    fnum_for_domain=fnum_for_domain(file), time_in=files(file)%time_index)
              time_data(2, 1, 1, 1) = end_dif
-             call diag_field_write (files(file)%f_avg_end, time_data(2:2,:,:,:), file_num=file, &
+             call diag_field_write (mpp_get_field_name(files(file)%f_avg_end%field), time_data(2:2,:,:,:), file_num=file, &
                                    fileobjU=fileobjU, fileobj=fileobj, fileobjND=fileobjND, &
                                    fnum_for_domain=fnum_for_domain(file), time_in=files(file)%time_index)
              ! Compute the length of the average
              dt_time(1, 1, 1, 1) = end_dif - start_dif
-             call diag_field_write (files(file)%f_avg_nitems, dt_time(1:1,:,:,:), file_num=file, &
+             call diag_field_write (mpp_get_field_name(files(file)%f_avg_nitems%field), dt_time(1:1,:,:,:), file_num=file, &
                                    fileobjU=fileobjU, fileobj=fileobj, fileobjND=fileobjND, &
                                    fnum_for_domain=fnum_for_domain(file), time_in=files(file)%time_index)
              ! Include boundary variable for CF compliance
-             call diag_field_write (files(file)%f_bounds, time_data(1:2,:,:,:), file_num=file, &
+             call diag_field_write (mpp_get_field_name(files(file)%f_bounds%field), time_data(1:2,:,:,:), file_num=file, &
                                    fileobjU=fileobjU, fileobj=fileobj, fileobjND=fileobjND, &
                                    fnum_for_domain=fnum_for_domain(file), time_in=files(file)%time_index)
              EXIT
