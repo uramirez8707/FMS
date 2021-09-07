@@ -1545,7 +1545,6 @@ CONTAINS
     INTEGER, DIMENSION(6) :: axes
     INTEGER, ALLOCATABLE  :: axesc(:) ! indices if compressed axes associated with the field
     LOGICAL :: time_ops, aux_present, match_aux_name, req_present, match_req_fields
-    LOGICAL :: all_scalar_or_1d
     CHARACTER(len=7) :: prefix
     CHARACTER(len=7) :: avg_name = 'average'
     CHARACTER(len=128) :: time_units, timeb_units, avg, error_string, filename, aux_name, req_fields, fieldname
@@ -1610,13 +1609,11 @@ CONTAINS
     ! JWD: This is a klooge; need something more robust
     domain2 = NULL_DOMAIN2D
     domainU = NULL_DOMAINUG
-    all_scalar_or_1d = .TRUE.
     DO j = 1, files(file)%num_fields
        field_num = files(file)%fields(j)
        if (output_fields(field_num)%local_output .AND. .NOT. output_fields(field_num)%need_compute) CYCLE
        num_axes = output_fields(field_num)%num_axes
        IF ( num_axes > 1 ) THEN
-          all_scalar_or_1d = .FALSE.
           domain2 = get_domain2d ( output_fields(field_num)%axes(1:num_axes) )
           domainU = get_domainUG ( output_fields(field_num)%axes(1) )
           IF ( domain2 .NE. NULL_DOMAIN2D ) EXIT
@@ -1627,63 +1624,20 @@ CONTAINS
        END IF
     END DO
 
-    IF (.NOT. all_scalar_or_1d) THEN
-        IF (domainU .NE. null_domainUG .AND. domain2 .NE. null_domain2D) THEN
-            CALL error_mesg('diag_util_mod::opening_file', &
-                            'Domain2 and DomainU are somehow both set.', &
+    IF (domainU .NE. null_domainUG .AND. domain2 .NE. null_domain2D) THEN
+        CALL error_mesg('diag_util_mod::opening_file', &
+                        'Domain2 and DomainU are somehow both set.', &
                             FATAL)
-        ELSEIF (domainU .EQ. null_domainUG) THEN
-            IF (domain2 .EQ. NULL_DOMAIN2D) THEN
-                CALL return_domain(domain2)
-            ENDIF
-
-            IF (domain2 .EQ. NULL_DOMAIN2D) THEN
-
-                !Fix for the corner-case when you have a file that contains
-                !2D field(s) that is not associated with a domain tile, as
-                !is usually assumed.
-
-                !This is very confusing, but I will try to explain.  The
-                !all_scalar_or_1d flag determines if the file name is associated
-                !with a domain (i.e. has ".tilex." in the file name).  A value
-                !of .FALSE. for the all_scalar_or_1d flag signals that the
-                !file name is associated with a domain tile.  Normally,
-                !files that contain at least one two-dimensional field are
-                !assumed to be associated with a specific domain tile, and
-                !thus have the value of the all_scalar_or_1d flag set to
-                !.FALSE.  It is possible, however, to have a file that contains
-                !two-dimensional fields that is not associated with a domain tile
-                !(i.e., if you make it into this branch.).  If that is the
-                !case, then reset the all_scalar_or_1d flag back to .TRUE.
-                !Got that?
-                all_scalar_or_1d = .TRUE.
-
-            ELSE
-                ntileMe = mpp_get_current_ntile(domain2)
-                ALLOCATE(tile_id(ntileMe))
-                tile_id = mpp_get_tile_id(domain2)
-                fname = TRIM(filename)
-                IF ( mpp_get_ntile_count(domain2) > 1 ) THEN
-                   CALL get_tile_string(filename, TRIM(fname)//'.tile' , tile_id(files(file)%tile_count))
-                ELSEIF ( tile_id(1) > 1 ) then
-                   CALL get_tile_string(filename, TRIM(fname)//'.tile' , tile_id(1))
-                ENDIF
-                DEALLOCATE(tile_id)
-            ENDIF
-        ENDIF
     ENDIF
-    IF ( domainU .ne. null_domainUG) then
-          fname = TRIM(filename)
-          CALL get_mosaic_tile_file_ug(fname,filename,domainU)
-    ENDIF
+
     IF ( allocated(files(file)%attributes) ) THEN
-                CALL diag_output_init(filename, files(file)%format, global_descriptor,&
-                & files(file)%file_unit, all_scalar_or_1d, domain2, domainU,&
+                CALL diag_output_init(filename, global_descriptor,&
+                & files(file)%file_unit, domain2, domainU,&
                 & fileobj(file),fileobjU(file), fileobjND(file), fnum_for_domain(file),&
                 & attributes=files(file)%attributes(1:files(file)%num_attributes))
     ELSE
-                CALL diag_output_init(filename, files(file)%format, global_descriptor,&
-                & files(file)%file_unit, all_scalar_or_1d, domain2,domainU, &
+                CALL diag_output_init(filename, global_descriptor,&
+                & files(file)%file_unit, domain2,domainU, &
                 & fileobj(file),fileobjU(file),fileobjND(file),fnum_for_domain(file))
     END IF
     !> update fnum_for_domain with the correct domain

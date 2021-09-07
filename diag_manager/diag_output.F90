@@ -36,8 +36,8 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
                                       c_int32_t,c_int16_t,c_intptr_t
 ! use_mpp_io = .false.
   USE mpp_io_mod, ONLY: axistype, fieldtype, mpp_io_init, &
-       & mpp_get_id, MPP_WRONLY, MPP_OVERWR,&
-       & MPP_NETCDF, MPP_MULTI, MPP_SINGLE, mpp_get_field_name, &
+       & mpp_get_id, &
+       & mpp_get_field_name, &
        & fillin_fieldtype
   USE mpp_domains_mod, ONLY: domain1d, domain2d, mpp_define_domains, mpp_get_pelist,&
        &  mpp_get_global_domain, mpp_get_compute_domains, null_domain1d, null_domain2d,&
@@ -129,16 +129,14 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
 CONTAINS
 
   !> @brief Registers the time axis and opens the output file.
-  SUBROUTINE diag_output_init_fms2_io (file_name, FORMAT, file_title, file_unit,&
-       & all_scalar_or_1d, domain, domainU, fileobj, fileobjU, fileobjND, fnum_domain, &
+  SUBROUTINE diag_output_init_fms2_io (file_name, file_title, file_unit,&
+       & domain, domainU, fileobj, fileobjU, fileobjND, fnum_domain, &
        & attributes)
     CHARACTER(len=*), INTENT(in)  :: file_name !< Output file name
     CHARACTER(len=*), INTENT(in)  :: file_title !< Descriptive title for the file
-    INTEGER         , INTENT(in)  :: FORMAT !< File format (Currently only 'NETCDF' is valid)
     INTEGER         , INTENT(out) :: file_unit !< File unit number assigned to the output file.
                                                !! Needed for subsuquent calls to
                                                !! diag_output_mod
-    LOGICAL         , INTENT(in)  :: all_scalar_or_1d
     TYPE(domain2d)  , INTENT(in)  :: domain
     TYPE(diag_atttype), INTENT(in), DIMENSION(:), OPTIONAL :: attributes
     TYPE(domainUG), INTENT(in)    :: domainU !< The unstructure domain
@@ -147,10 +145,8 @@ CONTAINS
     type(FmsNetcdfFile_t),intent(inout),target :: fileobjND
     class(FmsNetcdfFile_t), pointer :: fileob => NULL()
     character(*),intent(out) :: fnum_domain
-    INTEGER :: form, threading, fileset, i
+    INTEGER :: i
     TYPE(diag_global_att_type) :: gAtt
-    character(len=:),allocatable :: fname_no_tile
-    integer :: len_file_name
     integer, allocatable, dimension(:) :: current_pelist
     integer :: mype  !< The pe you are on
     character(len=9) :: mype_string !< a string to store the pe
@@ -160,74 +156,6 @@ CONTAINS
        module_is_initialized = .TRUE.
        CALL write_version_number("DIAG_OUTPUT_MOD", version)
     END IF
-    !---- set up output file ----
-    SELECT CASE (FORMAT)
-    CASE (NETCDF1)
-       form      = MPP_NETCDF
-       threading = MPP_MULTI
-       fileset   = MPP_MULTI
-    CASE default
-       ! <ERROR STATUS="FATAL">invalid format</ERROR>
-       CALL error_mesg('diag_output_init', 'invalid format', FATAL)
-    END SELECT
-
-    IF(all_scalar_or_1d) THEN
-       threading = MPP_SINGLE
-       fileset   = MPP_SINGLE
-    END IF
-
-    len_file_name = len(trim(file_name))
-!> If the file name has .tileX or .tileX.nc where X is a one or two digit tile number, removes
-!! that suffix from the time name because fms2_io will add it
-!! \note If mpp_domains accepts more than 99 tiles, this will need to be updated
-    allocate(character(len=len_file_name) :: fname_no_tile)
-    if (len_file_name < 6) then
-       if (trim(file_name) == "tile") then
-          call error_mesg('diag_output_init', 'You can not name your history file "tile"',FATAL)
-       else
-          fname_no_tile = trim(file_name)
-       endif
-    !> One-digit tile numbers example
-    !! \verbatim
-    !! filename.tile1.nc
-    !!       09876543210
-    !!          ^  ^
-    !! filename.tile1
-    !!    09876543210
-    !!          ^  ^
-    !! \endverbatim
-    elseif (lowercase(file_name(len_file_name-4:len_file_name-1)) .eq. "tile") then
-       fname_no_tile = file_name(1:len_file_name-6)
-    elseif (len_file_name < 9) then
-       fname_no_tile = trim(file_name)
-    elseif (lowercase(file_name(len_file_name-7:len_file_name-4)) .eq. "tile") then
-       fname_no_tile = file_name(1:len_file_name-9)
-    !> Two-digit tile numbers example
-    !! \verbatim
-    !! filename.tile10.nc
-    !!        09876543210
-    !!          ^  ^
-    !! filename.tile10
-    !!     09876543210
-    !!          ^  ^
-    !! \endverbatim
-    elseif (lowercase(file_name(len_file_name-5:len_file_name-2)) .eq. "tile") then
-       fname_no_tile = file_name(1:len_file_name-7)
-
-    elseif (lowercase(file_name(len_file_name-5:len_file_name-8)) .eq. "tile") then
-       fname_no_tile = file_name(1:len_file_name-10)
-    else
-       fname_no_tile = trim(file_name)
-    endif
-!> If there is a .nc suffix on the file name, removes the .nc
-    if (len(trim(fname_no_tile)) > 3 ) then
-       checkNC: do i = 3,len(trim(fname_no_tile))
-         if (fname_no_tile(i-2:i) == ".nc") then
-            fname_no_tile(i-2:i) = "   "
-            exit checkNC
-         endif
-       enddo checkNC
-    endif
 
 !> Checks to make sure that only domain2D or domainUG is used.  If both are not null, then FATAL
     if (domain .NE. NULL_DOMAIN2D .AND. domainU .NE. NULL_DOMAINUG)&
@@ -239,7 +167,7 @@ CONTAINS
      !> Check if there is an io_domain
      iF ( associated(mpp_get_io_domain(domain)) ) then
        fileob => fileobj
-       if (.not.check_if_open(fileob)) call open_check(open_file(fileobj, trim(fname_no_tile)//".nc", "overwrite", &
+       if (.not.check_if_open(fileob)) call open_check(open_file(fileobj, trim(file_name)//".nc", "overwrite", &
                             domain, is_restart=.false.))
        fnum_domain = "2d" ! 2d domain
        file_unit = 2
@@ -248,7 +176,7 @@ CONTAINS
        mype = mpp_pe()
        write(mype_string,'(I0.4)') mype
         if (.not.check_if_open(fileob)) then
-               call open_check(open_file(fileobjND, trim(fname_no_tile)//".nc."//trim(mype_string), "overwrite", &
+               call open_check(open_file(fileobjND, trim(file_name)//".nc."//trim(mype_string), "overwrite", &
                             is_restart=.false.))
                !< For regional subaxis add the NumFilesInSet attribute, which is added by fms2_io for (other)
                !< domains with sufficient decomposition info. Note mppnccombine will work with an entry of zero.
@@ -259,7 +187,7 @@ CONTAINS
      endiF
     ELSE IF (domainU .NE. NULL_DOMAINUG) THEN
        fileob => fileobjU
-       if (.not.check_if_open(fileob)) call open_check(open_file(fileobjU, trim(fname_no_tile)//".nc", "overwrite", &
+       if (.not.check_if_open(fileob)) call open_check(open_file(fileobjU, trim(file_name)//".nc", "overwrite", &
                             domainU, is_restart=.false.))
        fnum_domain = "ug" ! unstructured grid
        file_unit=3
@@ -269,7 +197,7 @@ CONTAINS
         allocate(current_pelist(mpp_npes()))
         call mpp_get_current_pelist(current_pelist)
         if (.not.check_if_open(fileob)) then
-               call open_check(open_file(fileobjND, trim(fname_no_tile)//".nc", "overwrite", &
+               call open_check(open_file(fileobjND, trim(file_name)//".nc", "overwrite", &
                             pelist=current_pelist, is_restart=.false.))
         endif
        fnum_domain = "nd" ! no domain
