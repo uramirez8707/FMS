@@ -504,7 +504,7 @@ test_expect_success "diurnal test (test $my_test_count)" '
 
 my_test_count=26
 cat <<_EOF > input.nml
-& test_diag_manager_time_nml
+&test_diag_manager_time_nml
 domain_type = 2
 /
 _EOF
