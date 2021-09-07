@@ -45,7 +45,7 @@ setup_test () {
 &diag_manager_nml
    max_field_attributes=3
    debug_diag_manager=.true.
-   use_mpp_io = .false. 
+   use_mpp_io = .false.
 /
 
 &ensemble_nml
@@ -530,4 +530,139 @@ test_expect_success "diurnal test unstructured grid (test $my_test_count)" '
   mpirun -n 6 ../test_diag_manager_ug
 '
 
+my_test_count=28
+rm -f input.nml diag_table && touch input.nml
+cat <<_EOF > diag_table
+test_diag_manager
+2 1 1 0 0 0
+
+#output files
+"test_averages",         1, "hours",   1, "hours", "time"
+
+#output variables
+ "test_diag_manager_mod", "sst", "sst", "test_averages",  "all", ".true.", "none", 2
+
+_EOF
+
+test_expect_success "time averaging (test $my_test_count)" '
+  mpirun -n 1 ../test_diag_manager_time
+'
+
+my_test_count=29
+rm -f input.nml diag_table && touch input.nml
+cat <<_EOF > diag_table
+test_diag_manager
+2 1 1 0 0 0
+
+#output files
+"test_no_averages",         1, "hours",   1, "hours", "time"
+
+#output variables
+ "test_diag_manager_mod", "sst", "sst", "test_no_averages",  "all", ".false.", "none", 2
+
+_EOF
+
+test_expect_success "no time averaging (test $my_test_count)" '
+  mpirun -n 1 ../test_diag_manager_time
+'
+
+my_test_count=30
+rm -f input.nml diag_table
+cat <<_EOF > input.nml
+&diag_manager_nml
+   mix_snapshot_average_fields = .true.
+/
+_EOF
+
+cat <<_EOF > diag_table
+test_diag_manager
+2 1 1 0 0 0
+
+#output files
+"test_averages_mix_snapshot",         1, "hours",   1, "hours", "time"
+
+#output variables
+ "test_diag_manager_mod", "sst", "sst", "test_averages_mix_snapshot",  "all", ".true.", "none", 2
+ "test_diag_manager_mod", "sst", "sst_no_mean", "test_averages_mix_snapshot",  "all", ".false.", "none", 2
+_EOF
+
+test_expect_success "time averaging with mix snapshot(test $my_test_count)" '
+  mpirun -n 1 ../test_diag_manager_time
+'
+
+my_test_count=31
+rm -f input.nml diag_table
+cat <<_EOF > input.nml
+&test_diag_manager_time_nml
+   do_regional = .true.
+/
+_EOF
+cat <<_EOF > diag_table
+test_diag_manager
+2 1 1 0 0 0
+
+#output files
+"test_regional_v1",         1, "hours",   1, "hours", "time"
+"test_regional_v2",         1, "hours",   1, "hours", "time"
+"test_regional_v3",         1, "hours",   1, "hours", "time"
+
+#output variables
+ "test_diag_manager_mod", "sst", "sst", "test_regional_v1",  "all", "mean", "183 185 -28.5 31.5 2 3", 2
+ "test_diag_manager_mod", "sst", "sst", "test_regional_v2",  "all", "mean", "-1 -1 -28.5 31.5 2 3", 2
+ "test_diag_manager_mod", "sst", "sst", "test_regional_v3",  "all", "mean", "183 185 -1 -1 2 3", 2
+
+_EOF
+
+test_expect_success "Regional diagnostics (test $my_test_count)" '
+  mpirun -n 6 ../test_diag_manager_time
+'
+
+my_test_count=32
+rm -f input.nml diag_table && touch input.nml
+cat <<_EOF > diag_table
+test_diag_manager
+2 1 1 0 0 0
+
+#output files
+"test_reduction_methods",         1, "hours",   1, "hours", "time"
+
+#output variables
+ "test_diag_manager_mod", "sst", "sst_rms", "test_reduction_methods",  "all", "rms", "none", 2
+ "test_diag_manager_mod", "sst", "sst_pow", "test_reduction_methods",  "all", "pow10", "none", 2
+ "test_diag_manager_mod", "sst", "sst", "test_reduction_methods",  "all", "max", "none", 2
+ "test_diag_manager_mod", "sst", "sst", "test_reduction_methods",  "all", "min", "none", 2
+
+_EOF
+
+test_expect_success "Test reduction methods (test $my_test_count)" '
+  mpirun -n 1 ../test_diag_manager_time
+'
+
+my_test_count=33
+rm -f input.nml diag_table
+
+cat <<_EOF > input.nml
+&test_diag_manager_time_nml
+   use_mask_table = .true.
+/
+_EOF
+
+printf "1\n2,3\n1,1" | cat > the_mask
+
+cat <<_EOF > diag_table
+test_diag_manager
+2 1 1 0 0 0
+
+#output files
+"test_with_mask",         1, "hours",   1, "hours", "time"
+
+#output variables
+ "test_diag_manager_mod", "sst", "sst", "test_with_mask",  "all", ".false.", "none", 2
+ "test_diag_manager_mod", "ice", "ice", "test_with_mask",  "all", ".false.", "none", 2
+
+_EOF
+
+test_expect_success "Test diag_manager with mask table (test $my_test_count)" '
+  mpirun -n 5 ../test_diag_manager_time
+'
 test_done
