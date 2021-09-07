@@ -28,12 +28,13 @@ AM_CPPFLAGS = -I$(top_srcdir)/include -I$(MODDIR)
 LDADD = $(top_builddir)/libFMS/libFMS.la
 
 # Build this test program.
-check_PROGRAMS = test_diag_manager test_diag_manager_time test_diag_manager_ug
+check_PROGRAMS = test_diag_manager test_diag_manager_time test_diag_manager_ug test_no_domain
 
 # This is the source code for the test.
 test_diag_manager_SOURCES = test_diag_manager.F90
 test_diag_manager_time_SOURCES = test_diag_manager_time.F90
 test_diag_manager_ug_SOURCES = test_diag_manager_ug.F90
+test_no_domain_SOURCES = test_no_domain.F90
 
 TEST_EXTENSIONS = .sh
 SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \

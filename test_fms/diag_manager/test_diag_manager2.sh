@@ -665,4 +665,45 @@ _EOF
 test_expect_success "Test diag_manager with mask table (test $my_test_count)" '
   mpirun -n 5 ../test_diag_manager_time
 '
+
+my_test_count=33
+rm -f input.nml diag_table && touch input.nml
+cat <<_EOF > diag_table
+test_diag_manager
+2 1 1 0 0 0
+
+#output files
+"test_no_domain_static",         1, "hours",   1, "hours", "time"
+
+#output variables
+ "test_diag_manager_mod", "var3ds", "var3ds", "test_no_domain_static",  "all", ".false.", "none", 2
+ "test_diag_manager_mod", "var2ds", "var2ds", "test_no_domain_static",  "all", ".false.", "none", 2
+ "test_diag_manager_mod", "var1ds", "var1ds", "test_no_domain_static",  "all", ".false.", "none", 2
+
+_EOF
+
+test_expect_success "Test no domain static fields (test $my_test_count)" '
+  mpirun -n 1 ../test_no_domain
+'
+
+my_test_count=34
+rm -f input.nml diag_table && touch input.nml
+cat <<_EOF > diag_table
+test_diag_manager
+2 1 1 0 0 0
+
+#output files
+"test_no_domain",         1, "hours",   1, "hours", "time"
+
+#output variables
+ "test_diag_manager_mod", "var3d", "var3d", "test_no_domain",  "all", ".false.", "none", 2
+ "test_diag_manager_mod", "var2d", "var2d", "test_no_domain",  "all", ".false.", "none", 2
+ "test_diag_manager_mod", "var1d", "var1d", "test_no_domain",  "all", ".false.", "none", 2
+
+_EOF
+
+test_expect_success "Test no domain with no static fields (test $my_test_count)" '
+  mpirun -n 1 ../test_no_domain
+'
+
 test_done
