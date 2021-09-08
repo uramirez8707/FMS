@@ -332,228 +332,76 @@ integer :: domain_size, axis_length, axis_pos
             & num_attributes, attributes, domain_position=axis_pos)
 
        IF ( Domain .NE. null_domain1d ) THEN
-          IF ( length > 0 ) THEN
-             if (trim(uppercase(trim(axis_cart_name))) .eq. "X" .or. trim(uppercase(trim(axis_cart_name))) .eq. "Y") then
-                  select type (fptr)
-                    type is (FmsNetcdfDomainFile_t)
-                         call register_axis(fptr, axis_name, lowercase(trim(axis_cart_name)), domain_position=axis_pos )
-                      if (allocated(fptr%pelist)) then
-                         call get_global_io_domain_indices(fptr, trim(axis_name), istart, iend)
-                         call register_field(fptr, axis_name, type_str, (/axis_name/) )
-                         if(trim(axis_units) .ne. "none") call register_variable_attribute(fptr, axis_name, "units", trim(axis_units), str_len=len_trim(axis_units))
-                         call register_variable_attribute(fptr, axis_name, "long_name", trim(axis_long_name), str_len=len_trim(axis_long_name))
-                         call register_variable_attribute(fptr, axis_name, "axis",trim(axis_cart_name), str_len=len_trim(axis_cart_name))
-                         select case (axis_direction)
-                              case (1)
-                                   call register_variable_attribute(fptr, axis_name, "positive", "up", str_len=len_trim("up"))
-                              case (-1)
-                                   call register_variable_attribute(fptr, axis_name, "positive", "down", str_len=len_trim("down"))
-                         end select
-                         call write_data(fptr, axis_name, axis_data(istart:iend) )
-                      endif
-                    type is (FmsNetcdfFile_t) !< For regional X and Y axes, treat as any other axis
-                         call mpp_get_global_domain(domain, begin=gstart, end=gend)  !< Get the global indicies
-                         call mpp_get_compute_domain(domain, begin=cstart, end=cend, size=clength) !< Get the compute indicies
-                         iend =  cend - gstart + 1     !< Get the array indicies for the axis data
-                         istart = cstart - gstart + 1
-                         call register_axis(fptr, axis_name, dimension_length=clength)
-                         call register_field(fptr, axis_name, type_str, (/axis_name/) )
-                         call register_variable_attribute(fptr, axis_name, "long_name", trim(axis_long_name), str_len=len_trim(axis_long_name))
-                         call register_variable_attribute(fptr, axis_name, "units", trim(axis_units), str_len=len_trim(axis_units))
-                         call register_variable_attribute(fptr, axis_name, "axis",trim(axis_cart_name), str_len=len_trim(axis_cart_name))
-                         select case (axis_direction)
-                              case (1)
-                                   call register_variable_attribute(fptr, axis_name, "positive", "up", str_len=len_trim("up"))
-                              case (-1)
-                                   call register_variable_attribute(fptr, axis_name, "positive", "down", str_len=len_trim("down"))
-                         end select
-                         !< For regional subaxis add the "domain_decomposition" attribute, which is added
-                         !< fms2_io for (other) domains with sufficient decomposition info.
-                         call register_variable_attribute(fptr, axis_name, "domain_decomposition", &
-                              (/gstart, gend, cstart, cend/))
-                         call write_data(fptr, axis_name, axis_data(istart:iend) )
-                    class default
-                         call error_mesg("diag_output_mod::write_axis_meta_data", &
-                              "The file object is not the right type. It must be FmsNetcdfDomainFile_t or "//&
-                                "FmsNetcdfFile_t for a X or Y axis, ", FATAL)
-                  end select
-             endif
+          !< Domain decomposed axis!
+          select type (fptr)
+             type is (FmsNetcdfFile_t)
+                !< If the axis is domain decomposed and the type is FmsNetcdfFile_t, this is regional diagnostic
+                !! So treat it as any other dimension
+                call mpp_get_global_domain(domain, begin=gstart, end=gend)  !< Get the global indicies
+                call mpp_get_compute_domain(domain, begin=cstart, end=cend, size=clength) !< Get the compute indicies
+                iend =  cend - gstart + 1     !< Get the array indicies for the axis data
+                istart = cstart - gstart + 1
+                call register_axis(fptr, axis_name, dimension_length=clength)
+                call register_field(fptr, axis_name, type_str, (/axis_name/) )
 
-          ELSE
-               select type (fptr)
-                    type is (FmsNetcdfDomainFile_t)
-                         call register_axis(fptr, axis_name, lowercase(trim(axis_cart_name)), domain_position=axis_pos )
-                      if (allocated(fptr%pelist)) then
-                         call get_global_io_domain_indices(fptr, trim(axis_name), istart, iend)
-                         call register_field(fptr, axis_name, type_str, (/axis_name/) )
-                      endif
-                    type is (FmsNetcdfUnstructuredDomainFile_t)
-                        call register_axis(fptr, axis_name )
-                    type is (FmsNetcdfFile_t)
-                         call register_axis(fptr, axis_name, dimension_length=size(axis_data))
-                      if (allocated(fptr%pelist)) then
-!                         call get_global_io_domain_indices(fptr, trim(axis_name), istart, iend)
-                         istart = lbound(axis_data,1)
-                         iend = ubound(axis_data,1)
-                         call register_field(fptr, axis_name, type_str, (/axis_name/) )
-                      endif
-                    class default
-                         call error_mesg("diag_output_mod::write_axis_meta_data", &
-                              "The FmsNetcdfDomain file object is not the right type.", FATAL)
-                end select
-                    call register_field(fileob, axis_name, type_str, (/axis_name/) )
-                    call register_variable_attribute(fileob, axis_name, "long_name", trim(axis_long_name), str_len=len_trim(axis_long_name))
-                    call register_variable_attribute(fileob, axis_name, "units", trim(axis_units), str_len=len_trim(axis_units))
-                    call register_variable_attribute(fileob, axis_name, "axis",trim(axis_cart_name), str_len=len_trim(axis_cart_name))
-                    select case (axis_direction)
-                         case (1)
-                              call register_variable_attribute(fptr, axis_name, "positive", "up", str_len=len_trim("up"))
-                         case (-1)
-                              call register_variable_attribute(fptr, axis_name, "positive", "down", str_len=len_trim("down"))
-                    end select
-                    call write_data(fileob, axis_name, axis_data(istart:iend) )
-          END IF
+                !< For regional subaxis add the "domain_decomposition" attribute, which is added
+                !< fms2_io for (other) domains with sufficient decomposition info.
+                call register_variable_attribute(fptr, axis_name, "domain_decomposition", &
+                      (/gstart, gend, cstart, cend/))
+             type is (FmsNetcdfDomainFile_t)
+                !< If the axis is domain decomposed and the type is FmsNetcdfDomainFile_t, this is a domain decomposed dimension
+                !! so register it as one
+                call register_axis(fptr, axis_name, lowercase(trim(axis_cart_name)), domain_position=axis_pos )
+                call get_global_io_domain_indices(fptr, trim(axis_name), istart, iend)
+                call register_field(fptr, axis_name, type_str, (/axis_name/) )
+          end select
+
+       ELSE IF ( DomainU .NE. null_domainUG) THEN
+          !< Unstructured domain axis
+          select type(fptr)
+             type is (FmsNetcdfUnstructuredDomainFile_t)
+               call register_axis(fptr, axis_name )
+          end select
+          call register_field(fptr, axis_name, type_str, (/axis_name/) )
+          istart = lbound(axis_data,1)
+          iend = ubound(axis_data,1)
        ELSE
-          IF ( length > 0 ) THEN
+          !< Non domain decomposed axis
+          call register_axis(fptr, axis_name, dimension_length=size(axis_data))
+          call register_field(fptr, axis_name, type_str, (/axis_name/) )
+          istart = lbound(axis_data,1)
+          iend = ubound(axis_data,1)
+       ENDIF !< IF ( Domain .NE. null_domain1d )
 
-            !For an unstructured dimension, only the root rank of the io_domain
-            !pelist will perform the wirte, so a gather of the unstructured
-            !axis size and axis data is required.
-             if (uppercase(trim(axis_cart_name)) .eq. "U") then
-                 if (DomainU .eq. null_domainUG) then
-                     call error_mesg("diag_output_mod::write_axis_meta_data", &
-                                     "A non-nul domainUG is required to" &
-                                     //" write unstructured axis metadata.", &
-                                     FATAL)
-                 endif
-                 io_domain => null()
-                 io_domain => mpp_get_UG_io_domain(DomainU)
-                 io_domain_npes = mpp_get_UG_domain_npes(io_domain)
-                 allocate(io_pelist(io_domain_npes))
-                 call mpp_get_UG_domain_pelist(io_domain, &
-                                               io_pelist)
-                 allocate(unstruct_axis_sizes(io_domain_npes))
-                 unstruct_axis_sizes = 0
-                 call mpp_gather((/size(axis_data)/), &
-                                 unstruct_axis_sizes, &
-                                 io_pelist)
-                 if (mpp_pe() .eq. io_pelist(1)) then
-                     allocate(unstruct_axis_data(sum(unstruct_axis_sizes)))
-                 else
-                     allocate(unstruct_axis_data(1))
-                 endif
-                 unstruct_axis_data = 0.0
-                 call mpp_gather(axis_data, &
-                                 size(axis_data), &
-                                 unstruct_axis_data, &
-                                 unstruct_axis_sizes, &
-                                 io_pelist)
-                  select type (fptr)
-                   type is (FmsNetcdfUnstructuredDomainFile_t)
-                        call register_axis(fptr, axis_name )
-                        call register_field(fptr, axis_name, type_str, (/axis_name/) )
-                        if(trim(axis_units) .ne. "none") call register_variable_attribute(fptr, axis_name, "units", trim(axis_units), str_len=len_trim(axis_units))
-                        call register_variable_attribute(fptr, axis_name, "long_name", trim(axis_long_name), str_len=len_trim(axis_long_name))
-                        if(trim(axis_cart_name).ne."N") call register_variable_attribute(fptr, axis_name, "axis",trim(axis_cart_name), str_len=len_trim(axis_cart_name))
-                        call write_data(fptr, axis_name, axis_data)
-                   class default
-                        call error_mesg("diag_output_mod::write_axis_meta_data", &
-                             "The file unstructred 1 object is not the right type.", NOTE)
-                  end select
-                 deallocate(io_pelist)
-                 deallocate(unstruct_axis_sizes)
-                 deallocate(unstruct_axis_data)
-                 io_domain => null()
+       if (length <= 0) then
+          !< This is the time axis
+          !> @note Check if the time variable is registered.  It's possible that is_time_axis_registered is set to true if using
+          !! time-templated files because they aren't closed when done writing.  An alternative to this set up would be to put
+          !! variable_exists into the if statement with an .or. so that it gets registered.
+          is_time_axis_registered = variable_exists(fptr,trim(axis_name),.true.)
+          if (.not. is_time_axis_registered) then
+              call register_axis(fptr, trim(axis_name), unlimited )
+              call register_field(fptr, axis_name, type_str, (/axis_name/) )
+              is_time_axis_registered = .true.
+              if (present(time_axis_registered)) time_axis_registered = is_time_axis_registered
+          endif !<if (.not. is_time_axis_registered)
+       endif !< if (length <= 0)
 
-             else
-                 select type (fptr)
-                   type is (FmsNetcdfUnstructuredDomainFile_t)
-                        call register_axis(fptr, axis_name, size(axis_data) )
-                        call register_field(fptr, axis_name, type_str, (/axis_name/) )
-                        if(trim(axis_units) .ne. "none") call register_variable_attribute(fptr, axis_name, "units", trim(axis_units), str_len=len_trim(axis_units))
-                        call register_variable_attribute(fptr, axis_name, "long_name", trim(axis_long_name), str_len=len_trim(axis_long_name))
-                        if(trim(axis_cart_name).ne."N") call register_variable_attribute(fptr, axis_name, "axis",trim(axis_cart_name), str_len=len_trim(axis_cart_name))
-                        select case (axis_direction)
-                             case (1)
-                                  call register_variable_attribute(fptr, axis_name, "positive", "up", str_len=len_trim("up"))
-                             case (-1)
-                                  call register_variable_attribute(fptr, axis_name, "positive", "down", str_len=len_trim("down"))
-                        end select
-                        call write_data(fptr, axis_name, axis_data)
-                   type is (FmsNetcdfDomainFile_t)
-                    if (.not.variable_exists(fptr, axis_name)) then
-                        call register_axis(fptr, axis_name, size(axis_data) )
-                        call register_field(fptr, axis_name, type_str, (/axis_name/) )
-                        if(trim(axis_units) .ne. "none") call register_variable_attribute(fptr, axis_name, "units", trim(axis_units), str_len=len_trim(axis_units))
-                        call register_variable_attribute(fptr, axis_name, "long_name", trim(axis_long_name), str_len=len_trim(axis_long_name))
-                        if(trim(axis_cart_name).ne."N") call register_variable_attribute(fptr, axis_name, "axis",trim(axis_cart_name), str_len=len_trim(axis_cart_name))
-                        select case (axis_direction)
-                             case (1)
-                                  call register_variable_attribute(fptr, axis_name, "positive", "up", str_len=len_trim("up"))
-                             case (-1)
-                                  call register_variable_attribute(fptr, axis_name, "positive", "down", str_len=len_trim("down"))
-                        end select
-                        call write_data(fptr, axis_name, axis_data)
-                    endif
-                   type is (FmsNetcdfFile_t)
-                    if (.not.variable_exists(fptr, axis_name)) then
-                        call register_axis(fptr, axis_name, size(axis_data) )
-                        call register_field(fptr, axis_name, type_str, (/axis_name/) )
-                        if(trim(axis_units) .ne. "none") call register_variable_attribute(fptr, axis_name, "units", trim(axis_units), str_len=len_trim(axis_units))
-                        call register_variable_attribute(fptr, axis_name, "long_name", trim(axis_long_name), str_len=len_trim(axis_long_name))
-                        if(trim(axis_cart_name).ne."N") call register_variable_attribute(fptr, axis_name, "axis",trim(axis_cart_name), str_len=len_trim(axis_cart_name))
-                        select case (axis_direction)
-                             case (1)
-                                  call register_variable_attribute(fptr, axis_name, "positive", "up", str_len=len_trim("up"))
-                             case (-1)
-                                  call register_variable_attribute(fptr, axis_name, "positive", "down", str_len=len_trim("down"))
-                        end select
-                        call write_data(fptr, axis_name, axis_data)
-                    endif
-                   class default
-                        call error_mesg("diag_output_mod::write_axis_meta_data", &
-                             "The file object is not the right type.", FATAL)
-                 end select
-             endif
+       !< Add the attributes
+       if(trim(axis_units) .ne. "none") call register_variable_attribute(fptr, axis_name, "units", trim(axis_units), str_len=len_trim(axis_units))
+       call register_variable_attribute(fptr, axis_name, "long_name", trim(axis_long_name), str_len=len_trim(axis_long_name))
+       if(trim(axis_cart_name).ne."N") call register_variable_attribute(fptr, axis_name, "axis",trim(axis_cart_name), str_len=len_trim(axis_cart_name))
 
-          ELSE
-!> @note Check if the time variable is registered.  It's possible that is_time_axis_registered is set to true if using
-!! time-templated files because they aren't closed when done writing.  An alternative to this set up would be to put
-!! variable_exists into the if statement with an .or. so that it gets registered.
-                is_time_axis_registered = variable_exists(fptr,trim(axis_name),.true.)
-                if (allocated(fptr%pelist) .and. .not. is_time_axis_registered) then
-                 select type (fptr)
-                   type is (FmsNetcdfDomainFile_t)
-                        call register_axis(fptr, trim(axis_name), unlimited )
-                        call register_field(fptr, axis_name, type_str, (/axis_name/) )
-                        if(trim(axis_units) .ne. "none") call register_variable_attribute(fptr, axis_name, "units", trim(axis_units), str_len=len_trim(axis_units))
-
-                        call register_variable_attribute(fptr, axis_name, "long_name", trim(axis_long_name), str_len=len_trim(axis_long_name))
-                        if(trim(axis_cart_name).ne."N") call register_variable_attribute(fptr, axis_name, "axis",trim(axis_cart_name), str_len=len_trim(axis_cart_name))
-                        is_time_axis_registered = .true.
-                        if (present(time_axis_registered)) time_axis_registered = is_time_axis_registered
-                   type is (FmsNetcdfUnstructuredDomainFile_t)
-                        call register_axis(fptr, axis_name, size(axis_data) )
-                        call register_field(fptr, axis_name, type_str, (/axis_name/) )
-                        if(trim(axis_units) .ne. "none") call register_variable_attribute(fptr, axis_name, "units", trim(axis_units), str_len=len_trim(axis_units))
-                        call register_variable_attribute(fptr, axis_name, "long_name", trim(axis_long_name), str_len=len_trim(axis_long_name))
-                        if(trim(axis_cart_name).ne."N") call register_variable_attribute(fptr, axis_name, "axis",trim(axis_cart_name), str_len=len_trim(axis_cart_name))
-                        is_time_axis_registered = .true.
-                   type is (FmsNetcdfFile_t)
-                        call register_axis(fptr, trim(axis_name), unlimited )
-                        call register_field(fptr, axis_name, type_str, (/axis_name/) )
-                        if(trim(axis_units) .ne. "none") call register_variable_attribute(fptr, axis_name, "units", trim(axis_units), str_len=len_trim(axis_units))
-                        call register_variable_attribute(fptr, axis_name, "long_name", trim(axis_long_name), str_len=len_trim(axis_long_name))
-                        if(trim(axis_cart_name).ne."N") call register_variable_attribute(fptr, axis_name, "axis",trim(axis_cart_name), str_len=len_trim(axis_cart_name))
-                        is_time_axis_registered = .true.
-                        if (present(time_axis_registered)) time_axis_registered = is_time_axis_registered
-                   class default
-                        call error_mesg("diag_output_mod::write_axis_meta_data", &
-                             "The file object is not the right type.", FATAL)
-                 end select
-                endif
-          END IF
-       END IF
+       if (length > 0 ) then
+          !< If not a time axis, add the positive attribute and write the data
+          select case (axis_direction)
+             case (1)
+                call register_variable_attribute(fptr, axis_name, "positive", "up", str_len=len_trim("up"))
+             case (-1)
+                call register_variable_attribute(fptr, axis_name, "positive", "down", str_len=len_trim("down"))
+          end select
+          call write_data(fptr, axis_name, axis_data(istart:iend) )
+       endif
 
        ! Write axis attributes
        id_axis = mpp_get_id(Axis_types(num_axis_in_file))
