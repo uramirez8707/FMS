@@ -62,8 +62,6 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
   use mpp_mod,         only: mpp_gather
   use mpp_mod,         only: uppercase,lowercase
   use fms2_io_mod
-  use axis_utils2_mod,   only: axis_edges
-
 
   IMPLICIT NONE
 
@@ -257,20 +255,14 @@ CONTAINS
     CHARACTER(len=1)     :: axis_cart_name
     INTEGER              :: axis_direction, axis_edges
     REAL, ALLOCATABLE    :: axis_data(:)
-    INTEGER, ALLOCATABLE :: axis_extent(:), pelist(:)
 integer :: domain_size, axis_length, axis_pos
     INTEGER              :: num_attributes
     TYPE(diag_atttype), DIMENSION(:), ALLOCATABLE :: attributes
     INTEGER              :: calendar, id_axis, id_time_axis
     INTEGER              :: i, j, index, num, length, edges_index
-    INTEGER              :: gbegin, gend, gsize, ndivs
+    INTEGER              :: gend !< End index of global io_domain
     LOGICAL              :: time_ops1
     CHARACTER(len=2048)  :: err_msg
-    type(domainUG),pointer                     :: io_domain
-    integer(I4_KIND)                          :: io_domain_npes
-    integer(I4_KIND),dimension(:),allocatable :: io_pelist
-    integer(I4_KIND),dimension(:),allocatable :: unstruct_axis_sizes
-    real,dimension(:),allocatable              :: unstruct_axis_data
     integer                                    :: id_axis_current
     logical :: is_time_axis_registered
     integer :: istart, iend
@@ -463,7 +455,7 @@ integer :: domain_size, axis_length, axis_pos
        length = get_axis_global_length ( id_axis )
        ALLOCATE(axis_data(length))
        CALL get_diag_axis(id_axis, axis_name, axis_units, axis_long_name, axis_cart_name,&
-            & axis_direction, axis_edges, Domain, DomainU, axis_data, num_attributes, attributes)
+            & axis_direction, axis_edges, Domain, DomainU, axis_data)
 
        !  ---- write edges attribute to original axis ----
        call register_variable_attribute(fileob, axis_name_current, "edges",trim(axis_name), str_len=len_trim(axis_name))
@@ -474,94 +466,23 @@ integer :: domain_size, axis_length, axis_pos
        edge_axis_flag(num_axis_in_file) = .TRUE.
        time_axis_flag (num_axis_in_file) = .FALSE.
 
-       !  ---- write edges axis to file ----
-       IF ( Domain .NE. null_domain1d ) THEN
-          ! assume domain decomposition is irregular and loop through all prev and next
-          ! domain pointers extracting domain extents.  Assume all pes are used in
-          ! decomposition
-          CALL mpp_get_global_domain(Domain, begin=gbegin, END=gend, size=gsize)
-          CALL mpp_get_layout(Domain, ndivs)
-          IF ( ndivs .NE. 1 ) THEN
-             IF ( ALLOCATED(axis_extent) ) DEALLOCATE(axis_extent)
-             ALLOCATE(axis_extent(0:ndivs-1))
-             CALL mpp_get_compute_domains(Domain,size=axis_extent(0:ndivs-1))
-             gend=gend+1
-             axis_extent(ndivs-1)= axis_extent(ndivs-1)+1
-             IF ( ALLOCATED(pelist) ) DEALLOCATE(pelist)
-             ALLOCATE(pelist(0:ndivs-1))
-             CALL mpp_get_pelist(Domain,pelist)
-          END IF
-       END IF
-
 !> Add edges axis with fms2_io
-                 select type (fptr)
-                   type is (FmsNetcdfUnstructuredDomainFile_t)
-                        call register_axis(fptr, axis_name, size(axis_data) )
-                        call register_field(fptr, axis_name, type_str, (/axis_name/) )
-                        if(trim(axis_units) .ne. "none") call register_variable_attribute(fptr, axis_name, "units", trim(axis_units), str_len=len_trim(axis_units))
-                        call register_variable_attribute(fptr, axis_name, "long_name", trim(axis_long_name), str_len=len_trim(axis_long_name))
-                        if(trim(axis_cart_name).ne."N") call register_variable_attribute(fptr, axis_name, "axis",trim(axis_cart_name), str_len=len_trim(axis_cart_name))
-                        select case (axis_direction)
-                             case (1)
-                                  call register_variable_attribute(fptr, axis_name, "positive", "up", str_len=len_trim("up"))
-                             case (-1)
-                                  call register_variable_attribute(fptr, axis_name, "positive", "down", str_len=len_trim("down"))
-                        end select
-                        call write_data(fptr, axis_name, axis_data)
-                   type is (FmsNetcdfDomainFile_t)
-                    if (.not.variable_exists(fptr, axis_name)) then
-                        call register_axis(fptr, axis_name, size(axis_data) )
-                        call register_field(fptr, axis_name, type_str, (/axis_name/) )
-                        if(trim(axis_units) .ne. "none") call register_variable_attribute(fptr, axis_name, "units", trim(axis_units), str_len=len_trim(axis_units))
-                        call register_variable_attribute(fptr, axis_name, "long_name", trim(axis_long_name), str_len=len_trim(axis_long_name))
-                        if(trim(axis_cart_name).ne."N") call register_variable_attribute(fptr, axis_name, "axis",trim(axis_cart_name), str_len=len_trim(axis_cart_name))
-                        select case (axis_direction)
-                             case (1)
-                                  call register_variable_attribute(fptr, axis_name, "positive", "up", str_len=len_trim("up"))
-                             case (-1)
-                                  call register_variable_attribute(fptr, axis_name, "positive", "down", str_len=len_trim("down"))
-                        end select
-                        call write_data(fptr, axis_name, axis_data)
-                    endif
-                   type is (FmsNetcdfFile_t)
-                    if (.not.variable_exists(fptr, axis_name)) then
-                        call register_axis(fptr, axis_name, size(axis_data) )
-                        call register_field(fptr, axis_name, type_str, (/axis_name/) )
-                        if(trim(axis_units) .ne. "none") call register_variable_attribute(fptr, axis_name, "units", trim(axis_units), str_len=len_trim(axis_units))
-                        call register_variable_attribute(fptr, axis_name, "long_name", trim(axis_long_name), str_len=len_trim(axis_long_name))
-                        if(trim(axis_cart_name).ne."N") call register_variable_attribute(fptr, axis_name, "axis",trim(axis_cart_name), str_len=len_trim(axis_cart_name))
-                        select case (axis_direction)
-                             case (1)
-                                  call register_variable_attribute(fptr, axis_name, "positive", "up", str_len=len_trim("up"))
-                             case (-1)
-                                  call register_variable_attribute(fptr, axis_name, "positive", "down", str_len=len_trim("down"))
-                        end select
-                        call write_data(fptr, axis_name, axis_data)
-                    endif
-                   class default
-                        call error_mesg("diag_output_mod::write_axis_meta_data", &
-                             "The file object unstructured 2 is not the right type.", FATAL)
-                 end select
-       ! Write edge axis attributes
-       id_axis = mpp_get_id(Axis_types(num_axis_in_file))
-!       CALL write_attribute_meta(file_unit, id_axis, num_attributes, attributes, err_msg)
-       IF ( LEN_TRIM(err_msg) .GT. 0 ) THEN
-          CALL error_mesg('diag_output_mod::write_axis_meta_data', TRIM(err_msg), FATAL)
-       END IF
+       if (.not.variable_exists(fptr, axis_name)) then
+          call register_axis(fptr, axis_name, size(axis_data) )
+          call register_field(fptr, axis_name, type_str, (/axis_name/) )
+          if(trim(axis_units) .ne. "none") call register_variable_attribute(fptr, axis_name, "units", trim(axis_units), str_len=len_trim(axis_units))
+          call register_variable_attribute(fptr, axis_name, "long_name", trim(axis_long_name), str_len=len_trim(axis_long_name))
+          if(trim(axis_cart_name).ne."N") call register_variable_attribute(fptr, axis_name, "axis",trim(axis_cart_name), str_len=len_trim(axis_cart_name))
+          select case (axis_direction)
+             case (1)
+                call register_variable_attribute(fptr, axis_name, "positive", "up", str_len=len_trim("up"))
+             case (-1)
+                call register_variable_attribute(fptr, axis_name, "positive", "down", str_len=len_trim("down"))
+          end select
+          call write_data(fptr, axis_name, axis_data)
+       endif !< if (.not.variable_exists(fptr, axis_name))
 
        DEALLOCATE (axis_data)
-       ! Deallocate attributes
-       IF ( ALLOCATED(attributes) ) THEN
-          DO j=1, num_attributes
-             IF ( allocated(attributes(j)%fatt ) ) THEN
-                DEALLOCATE(attributes(j)%fatt)
-             END IF
-             IF ( allocated(attributes(j)%iatt ) ) THEN
-                DEALLOCATE(attributes(j)%iatt)
-             END IF
-          END DO
-          DEALLOCATE(attributes)
-       END IF
     END DO
   END SUBROUTINE write_axis_meta_data_fms2_io
 
