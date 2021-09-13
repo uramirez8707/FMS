@@ -133,6 +133,13 @@ id_z  = diag_axis_init('z',  z,  'point_Z', 'z', long_name='point_Z')
 id_sst = register_diag_field  ('test_diag_manager_mod', 'sst', (/id_x,id_y,id_z/), Time, 'SST', 'K')
 id_ice = register_diag_field  ('test_diag_manager_mod', 'ice', (/id_x,id_y/), Time, 'ICE', 'm')
 
+call diag_field_add_attribute(id_sst, "do strings work", "yes")
+call diag_field_add_attribute(id_sst, "number of mullions", 10)
+call diag_field_add_attribute(id_sst, "number of mullions array", (/10/))
+
+call diag_field_add_attribute(id_ice, "number of real mullions", 10.)
+call diag_field_add_attribute(id_ice, "number of real mullions array", (/10./))
+
 ! Increase the time and send data
 do i=1,46
    Time = increment_date(Time, 0, 0, 0, 0, 30, 0) !Increase the time by 30 min
