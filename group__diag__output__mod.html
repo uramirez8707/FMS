@@ -123,7 +123,7 @@ Data Types</h2></td></tr>
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions/Subroutines</h2></td></tr>
 <tr class="memitem:gaa6ee6adbe0d31e6b8c3263ad2505b472"><td class="memItemLeft" align="right" valign="top">subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__output__mod.html#gaa6ee6adbe0d31e6b8c3263ad2505b472">diag_output_init_fms2_io</a> (file_name, file_title, file_unit, domain, domainU, fileobj, fileobjU, fileobjND, fnum_domain, attributes)</td></tr>
-<tr class="memdesc:gaa6ee6adbe0d31e6b8c3263ad2505b472"><td class="mdescLeft">&#160;</td><td class="mdescRight">Registers the time axis and opens the output file.  <a href="group__diag__output__mod.html#gaa6ee6adbe0d31e6b8c3263ad2505b472">More...</a><br /></td></tr>
+<tr class="memdesc:gaa6ee6adbe0d31e6b8c3263ad2505b472"><td class="mdescLeft">&#160;</td><td class="mdescRight">Opens the output file.  <a href="group__diag__output__mod.html#gaa6ee6adbe0d31e6b8c3263ad2505b472">More...</a><br /></td></tr>
 <tr class="separator:gaa6ee6adbe0d31e6b8c3263ad2505b472"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gaff47be1208377e0143a8e043420d0465"><td class="memItemLeft" align="right" valign="top">subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__diag__output__mod.html#gaff47be1208377e0143a8e043420d0465">write_axis_meta_data_fms2_io</a> (file_unit, axes, fileob, time_ops, time_axis_registered)</td></tr>
 <tr class="memdesc:gaff47be1208377e0143a8e043420d0465"><td class="mdescLeft">&#160;</td><td class="mdescRight">Write the axis meta data to file.  <a href="group__diag__output__mod.html#gaff47be1208377e0143a8e043420d0465">More...</a><br /></td></tr>
@@ -286,7 +286,7 @@ character(len= *), parameter&#160;</td><td class="memItemRight" valign="bottom">
 <p>If the variable is 2D, switch the n_diurnal_samples and nz dimension, so local_buffer has dimension (nx, ny, n_diurnal_samples, 1).</p>
 <p>Figure out which file object to write output to</p>
 
-<p class="definition">Definition at line <a class="el" href="diag__output_8F90_source.html#l00859">859</a> of file <a class="el" href="diag__output_8F90_source.html">diag_output.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="diag__output_8F90_source.html#l00858">858</a> of file <a class="el" href="diag__output_8F90_source.html">diag_output.F90</a>.</p>
 
 </div>
 </div>
@@ -372,13 +372,19 @@ character(len= *), parameter&#160;</td><td class="memItemRight" valign="bottom">
 </table>
 </div><div class="memdoc">
 
-<p>Registers the time axis and opens the output file. </p>
+<p>Opens the output file. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramdir">[in]</td><td class="paramname">file_name</td><td>Output file name </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">file_title</td><td>Descriptive title for the file </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">file_unit</td><td>File unit number assigned to the output file. Needed for subsuquent calls to diag_output_mod </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">domain</td><td>Domain associated with file, if domain decomposed </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">domainu</td><td>The unstructure domain </td></tr>
+    <tr><td class="paramdir">[in,out]</td><td class="paramname">fileobj</td><td>Domain decomposed fileobj </td></tr>
+    <tr><td class="paramdir">[in,out]</td><td class="paramname">fileobju</td><td>Unstructured domain fileobj </td></tr>
+    <tr><td class="paramdir">[in,out]</td><td class="paramname">fileobjnd</td><td>Non domain decomposed fileobj </td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">fnum_domain</td><td>String indicating the type of fileobj was used: "2d" domain decomposed "ug" unstrucuted domain decomposed "nd" no domain </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">attributes</td><td>Array of global attributes to be written to file </td></tr>
   </table>
   </dd>
 </dl>
@@ -441,7 +447,7 @@ character(len= *), parameter&#160;</td><td class="memItemRight" valign="bottom">
 <p>Write the time data</p>
 <p>Cleanup</p>
 
-<p class="definition">Definition at line <a class="el" href="diag__output_8F90_source.html#l00920">920</a> of file <a class="el" href="diag__output_8F90_source.html">diag_output.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="diag__output_8F90_source.html#l00919">919</a> of file <a class="el" href="diag__output_8F90_source.html">diag_output.F90</a>.</p>
 
 </div>
 </div>
@@ -469,7 +475,7 @@ character(len= *), parameter&#160;</td><td class="memItemRight" valign="bottom">
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="diag__output_8F90_source.html#l00849">849</a> of file <a class="el" href="diag__output_8F90_source.html">diag_output.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="diag__output_8F90_source.html#l00848">848</a> of file <a class="el" href="diag__output_8F90_source.html">diag_output.F90</a>.</p>
 
 </div>
 </div>
@@ -500,7 +506,7 @@ character(len= *), parameter&#160;</td><td class="memItemRight" valign="bottom">
 <p>Return the axis index number. </p>
 <dl class="section return"><dt>Returns</dt><dd>Integer index </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="diag__output_8F90_source.html#l00944">944</a> of file <a class="el" href="diag__output_8F90_source.html">diag_output.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="diag__output_8F90_source.html#l00943">943</a> of file <a class="el" href="diag__output_8F90_source.html">diag_output.F90</a>.</p>
 
 </div>
 </div>
@@ -588,7 +594,7 @@ character(len= *), parameter&#160;</td><td class="memItemRight" valign="bottom">
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="diag__output_8F90_source.html#l00789">789</a> of file <a class="el" href="diag__output_8F90_source.html">diag_output.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="diag__output_8F90_source.html#l00788">788</a> of file <a class="el" href="diag__output_8F90_source.html">diag_output.F90</a>.</p>
 
 </div>
 </div>
@@ -616,7 +622,7 @@ character(len= *), parameter&#160;</td><td class="memItemRight" valign="bottom">
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">class(<a class="el" href="structnetcdf__io__mod_1_1fmsnetcdffile__t.html">fmsnetcdffile_t</a>), intent(inout), target&#160;</td>
+          <td class="paramtype">class(<a class="el" href="structnetcdf__io__mod_1_1fmsnetcdffile__t.html">fmsnetcdffile_t</a>), intent(inout)&#160;</td>
           <td class="paramname"><em>fileob</em>, </td>
         </tr>
         <tr>
@@ -649,14 +655,28 @@ character(len= *), parameter&#160;</td><td class="memItemRight" valign="bottom">
   <table class="params">
     <tr><td class="paramdir">[in]</td><td class="paramname">file_unit</td><td>File unit number </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">axes</td><td>Array of axis ID's, including the time axis </td></tr>
+    <tr><td class="paramdir">[in,out]</td><td class="paramname">fileob</td><td>FMS2_io fileobj </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">time_ops</td><td>.TRUE. if this file contains any min, max, time_rms, or time_average </td></tr>
+    <tr><td class="paramdir">[in,out]</td><td class="paramname">time_axis_registered</td><td>.TRUE. if the time axis was already written to the file </td></tr>
   </table>
   </dd>
 </dl>
+<p>If the axis is domain decomposed and the type is FmsNetcdfFile_t, this is regional diagnostic So treat it as any other dimension</p>
+<p>For regional subaxis add the "domain_decomposition" attribute, which is added fms2_io for (other) domains with sufficient decomposition info.</p>
+<p>If the axis is domain decomposed and the type is FmsNetcdfDomainFile_t, this is a domain decomposed dimension so register it as one</p>
+<p>If the axis is in unstructured domain and the type is FmsNetcdfUnstructuredDomainFile_t, this is an unstrucutred axis so register it as one</p>
+<p>If the axis is not in a domain, register it as a normal dimension</p>
 <dl class="section note"><dt>Note</dt><dd>Check if the time variable is registered. It's possible that is_time_axis_registered is set to true if using time-templated files because they aren't closed when done writing. An alternative to this set up would be to put variable_exists into the if statement with an .or. so that it gets registered.</dd></dl>
+<p>if (.not. is_time_axis_registered)</p>
+<p>if (length &lt;= 0)</p>
+<p>Add the attributes</p>
+<p>If not a time axis, add the positive attribute and write the data</p>
+<p>Write additional axis attributes, from diag_axis_add_attribute calls</p>
+<p>Write additional attribute (calendar_type) for time axis -&mdash; </p><dl class="section note"><dt>Note</dt><dd>calendar attribute is compliant with CF convention <a href="http://www.cgd.ucar.edu/cms/eaton/netcdf/CF-current.htm#cal">http://www.cgd.ucar.edu/cms/eaton/netcdf/CF-current.htm#cal</a></dd></dl>
+<p>Deallocate attributes</p>
 <p>Add edges axis with fms2_io</p>
 
-<p class="definition">Definition at line <a class="el" href="diag__output_8F90_source.html#l00243">243</a> of file <a class="el" href="diag__output_8F90_source.html">diag_output.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="diag__output_8F90_source.html#l00246">246</a> of file <a class="el" href="diag__output_8F90_source.html">diag_output.F90</a>.</p>
 
 </div>
 </div>
@@ -809,7 +829,7 @@ character(len= *), parameter&#160;</td><td class="memItemRight" valign="bottom">
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="diag__output_8F90_source.html#l00495">495</a> of file <a class="el" href="diag__output_8F90_source.html">diag_output.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="diag__output_8F90_source.html#l00494">494</a> of file <a class="el" href="diag__output_8F90_source.html">diag_output.F90</a>.</p>
 
 </div>
 </div>
