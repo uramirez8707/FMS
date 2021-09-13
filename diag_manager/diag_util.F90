@@ -1558,6 +1558,7 @@ CONTAINS
     INTEGER :: is, ie, last, ind
     character(len=2) :: fnum_domain
     class(FmsNetcdfFile_t), pointer    :: fileob
+    integer :: real_num_axes
 
     aux_present = .FALSE.
     match_aux_name = .FALSE.
@@ -1713,43 +1714,37 @@ CONTAINS
           allocate(files(file)%is_time_axis_registered)
           files(file)%is_time_axis_registered = .false.
        endif
+       if (time_ops) then
+            !< If the file contains time_average fields write the "time" and "nv" dimension
+            real_num_axes = num_axes + 2
+            axes(num_axes + 2) = files(file)%time_bounds_id
+       else
+            !< If the file doesn't contain time_average fields write the "time" dimension
+            real_num_axes = num_axes + 1
+       endif
+
        if (fnum_for_domain(file) == "2d") then
-          CALL write_axis_meta_data(files(file)%file_unit, axes(1:num_axes + 1),fileobj(file), time_ops=time_ops, &
+          CALL write_axis_meta_data(files(file)%file_unit, axes(1:real_num_axes),fileobj(file), time_ops=time_ops, &
                                    time_axis_registered=files(file)%is_time_axis_registered)
        elseif (fnum_for_domain(file) == "nd") then
-          CALL write_axis_meta_data(files(file)%file_unit, axes(1:num_axes + 1),fileobjnd(file), time_ops=time_ops, &
+          CALL write_axis_meta_data(files(file)%file_unit, axes(1:real_num_axes),fileobjnd(file), time_ops=time_ops, &
                                    time_axis_registered=files(file)%is_time_axis_registered)
        elseif (fnum_for_domain(file) == "ug") then
-          CALL write_axis_meta_data(files(file)%file_unit, axes(1:num_axes + 1),fileobjU(file), time_ops=time_ops, &
+          CALL write_axis_meta_data(files(file)%file_unit, axes(1:real_num_axes),fileobjU(file), time_ops=time_ops, &
                                    time_axis_registered=files(file)%is_time_axis_registered)
        endif
-       IF ( time_ops ) THEN
-          axes(num_axes + 2) = files(file)%time_bounds_id
-          if (fnum_for_domain(file) == "2d") then
-              CALL write_axis_meta_data(files(file)%file_unit, axes(1:num_axes + 2),fileobj(file), &
-                                   time_axis_registered=files(file)%is_time_axis_registered)
-       elseif (fnum_for_domain(file) == "nd") then
-              CALL write_axis_meta_data(files(file)%file_unit, axes(1:num_axes + 2),fileobjND(file), &
-                                   time_axis_registered=files(file)%is_time_axis_registered)
-          elseif (fnum_for_domain(file) == "ug") then
-              CALL write_axis_meta_data(files(file)%file_unit, axes(1:num_axes + 2),fileobjU(file), &
-                                   time_axis_registered=files(file)%is_time_axis_registered)
-          endif
-       END IF
+
        ! write metadata for axes used  in compression-by-gathering, e.g. for unstructured
        ! grid
        DO k = 1, num_axes
           IF (axis_is_compressed(axes(k))) THEN
              CALL get_compressed_axes_ids(axes(k), axesc) ! returns allocatable array
-             if (fnum_for_domain(file) == "2d" ) then
-                 CALL write_axis_meta_data(files(file)%file_unit, axesc,fileobj(file), &
-                                   time_axis_registered=files(file)%is_time_axis_registered)
-             elseif (fnum_for_domain(file) == "nd") then
-                 CALL write_axis_meta_data(files(file)%file_unit, axesc,fileobjND(file), &
-                                   time_axis_registered=files(file)%is_time_axis_registered)
-             elseif (fnum_for_domain(file) == "ug") then
+             if (fnum_for_domain(file) == "ug") then
                  CALL write_axis_meta_data(files(file)%file_unit, axesc,fileobjU(file), &
                                    time_axis_registered=files(file)%is_time_axis_registered)
+             else
+                 CALL error_mesg('diag_util_mod::opening_file::'//trim(filename), "Compressed "//&
+                     "dimensions are only allowed with axis in the unstructured dimension", FATAL)
              endif
              DEALLOCATE(axesc)
           ENDIF

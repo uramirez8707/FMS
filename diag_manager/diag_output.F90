@@ -364,7 +364,7 @@ integer :: domain_size, axis_length, axis_pos
           call register_field(fileob, axis_name, type_str, (/axis_name/) )
           istart = lbound(axis_data,1)
           iend = ubound(axis_data,1)
-       ENDIF !< IF ( Domain .NE. null_domain1d )
+       ENDIF !! IF ( Domain .NE. null_domain1d )
 
        if (length <= 0) then
           !> @note Check if the time variable is registered.  It's possible that is_time_axis_registered is set to true if using
@@ -376,8 +376,8 @@ integer :: domain_size, axis_length, axis_pos
               call register_field(fileob, axis_name, type_str, (/axis_name/) )
               is_time_axis_registered = .true.
               if (present(time_axis_registered)) time_axis_registered = is_time_axis_registered
-          endif !> if (.not. is_time_axis_registered)
-       endif !> if (length <= 0)
+          endif !! if (.not. is_time_axis_registered)
+       endif !! if (length <= 0)
 
        !> Add the attributes
        if(trim(axis_units) .ne. "none") call register_variable_attribute(fileob, axis_name, "units", trim(axis_units), str_len=len_trim(axis_units))
@@ -479,7 +479,7 @@ integer :: domain_size, axis_length, axis_pos
                 call register_variable_attribute(fileob, axis_name, "positive", "down", str_len=len_trim("down"))
           end select
           call write_data(fileob, axis_name, axis_data)
-       endif !< if (.not.variable_exists(fileob, axis_name))
+       endif !! if (.not.variable_exists(fileob, axis_name))
 
        DEALLOCATE (axis_data)
     END DO
