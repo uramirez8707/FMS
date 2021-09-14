@@ -36,6 +36,7 @@ type(time_type) :: Time
 integer :: id_dim1, id_dim2, id_dim3 !< IDs for diag axis
 integer :: id_var3d, id_var2d, id_var1d, id_varscalar !< IDs for non static variables
 integer :: id_var3ds, id_var2ds, id_var1ds !< IDs for static variables
+integer :: id_nodata !< ID for a variable that send_data is never called
 
 real :: var3d(10,20,25), var2d(10,20), var1d(10), varscalar !< Data to be send to send data
 
@@ -57,6 +58,7 @@ id_var3d = register_diag_field  ('test_diag_manager_mod', 'var3d', (/id_dim1, id
 id_var2d = register_diag_field  ('test_diag_manager_mod', 'var2d', (/id_dim1, id_dim2/), Time, 'var2d', 'apples')
 id_var1d = register_diag_field  ('test_diag_manager_mod', 'var1d', (/id_dim1/), Time, 'var1d', 'apples')
 id_varscalar = register_diag_field  ('test_diag_manager_mod', 'varscalar', Time, 'varscalar', 'apples')
+id_nodata = register_diag_field  ('test_diag_manager_mod', 'nodata', Time, 'nodata', 'apples')
 
 !< Register the static fields
 id_var3ds = register_static_field  ('test_diag_manager_mod', 'var3ds', (/id_dim1, id_dim2, id_dim3/), 'var3ds', 'apples')
