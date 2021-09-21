@@ -198,7 +198,7 @@ $(document).ready(function(){initNavTree('mpp_2test__read__ascii__file_8F90_sour
 <div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;      filename = <span class="stringliteral">&quot;input.nml&quot;</span></div>
 <div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;      num_lines = get_ascii_file_num_lines(filename, str_length)</div>
 <div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;      <span class="keyword">allocate</span>(test_array(num_lines))</div>
-<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;      <span class="keyword">call </span>read_ascii_file(filename,0, test_array)</div>
+<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;      <span class="keyword">call </span>read_ascii_file(filename, 0, test_array)</div>
 <div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;    <span class="keywordflow">else</span> <span class="keywordflow">if</span> (test_numb == 6) <span class="keywordflow">then</span></div>
 <div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;      filename = <span class="stringliteral">&quot;input.nml&quot;</span></div>
 <div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;      num_lines = get_ascii_file_num_lines(filename, str_length)</div>

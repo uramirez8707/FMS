@@ -1,7 +1,9 @@
 var diag__output_8F90 =
 [
-    [ "diag_field_write_varname", "diag__output_8F90.html#ga8f987fd416bbdf19c8c6bc01254be7db", null ],
-    [ "diag_output_init_fms2_io", "diag__output_8F90.html#gaa6ee6adbe0d31e6b8c3263ad2505b472", null ],
+    [ "diag_field_write_field", "diag__output_8F90.html#gad99a258efd56f01927b3ec1ad6f61c45", null ],
+    [ "diag_field_write_varname", "diag__output_8F90.html#ga11abdb82e3dc5fc633352fd9617cad11", null ],
+    [ "diag_flush", "diag__output_8F90.html#ga78dd63a7c9c12ab0934e8f9680d6094c", null ],
+    [ "diag_output_init_fms2_io", "diag__output_8F90.html#ga76ad7ec293a0815119e9ef5dab351f25", null ],
     [ "diag_write_time", "diag__output_8F90.html#gad53355722ce2fc05b2f0d319cc87274c", null ],
     [ "done_meta_data", "diag__output_8F90.html#gad319750dc385752038f14d79a36d0d22", null ],
     [ "get_axis_index", "diag__output_8F90.html#ga9574e293cd049b0e355df0f020e65ab5", null ],
