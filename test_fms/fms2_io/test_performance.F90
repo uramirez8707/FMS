@@ -26,7 +26,7 @@ program test_performance
 !! not be read.
 
 use   mpp_domains_mod, only: mpp_domains_set_stack_size, mpp_define_domains, mpp_define_io_domain, &
-                             mpp_get_compute_domain,domain2d
+                             mpp_get_compute_domain,domain2d, mpp_copy_domain
 use   mpp_mod
 use   fms2_io_mod
 use   fms_mod,         only: fms_init, fms_end
@@ -35,10 +35,12 @@ use   platform_mod
 implicit none
 
 integer, dimension(2)                 :: layout=(/1,1/)           !< Domain layout
-integer, dimension(2)                 :: io_layout=(/1,1/)           !< Domain layout
+integer, dimension(2)                 :: io_layout_write=(/1,1/)  !< Domain layout
+integer, dimension(2)                 :: io_layout_read=(/1,1/)   !< Domain layout
 integer                               :: nlon=20             !< Number of points in x axis
 integer                               :: nlat=20             !< Number of points in y axis
-type(domain2d)                        :: Domain           !< Domain with mask table
+type(domain2d)                        :: Domain_write           !< Domain with mask table
+type(domain2d)                        :: Domain_read
 real(kind=r8_kind), allocatable, dimension(:,:,:) :: sst     !< Data to be written
 real(kind=r8_kind), allocatable, dimension(:,:,:) :: sst_in2 !< Buffer where data will be read with fms2io
 character(len=10), dimension(3)        :: names            !< Dimensions names
@@ -52,7 +54,8 @@ integer                               :: nz=20               !< number of vertic
 integer                               :: newclock1, newclock
 integer :: io_status
 
-namelist / test_performance_nml / nlon, nlat, nz, layout, io_layout
+namelist / test_performance_nml / nlon, nlat, nz, layout, io_layout_write, io_layout_read
+
 
 call fms_init
 
@@ -60,7 +63,7 @@ read (input_nml_file, test_performance_nml, iostat=io_status)
 if (io_status > 0) call mpp_error(FATAL,'=>test_peformance: Error reading input.nml')
 
 if (mpp_pe() .eq. mpp_root_pe()) then
-   print *, "nlon = ", nlon, " nlat = ", nlat, " layout=", layout, " io_layout=", io_layout
+   print *, "nlon = ", nlon, " nlat = ", nlat, " layout=", layout, " io_layout=", io_layout_write, io_layout_read
 endif
 
 newClock = mpp_clock_id( 'Writing' )
@@ -68,9 +71,13 @@ newClock1 = mpp_clock_id( 'Reading' )
 
 !< Create a domain nlonXnlat with mask
 call mpp_domains_set_stack_size(17280000)
-call mpp_define_domains( (/1,nlon,1,nlat/), layout, Domain, name='test_performance')
-call mpp_define_io_domain(Domain, io_layout)
-call mpp_get_compute_domain(Domain, is, ie, js, je)
+call mpp_define_domains( (/1,nlon,1,nlat/), layout, Domain_write, name='test_performance')
+
+call mpp_get_compute_domain(Domain_write, is, ie, js, je)
+call mpp_define_io_domain(Domain_write, io_layout_write)
+
+call mpp_copy_domain(Domain_write, Domain_read)
+call mpp_define_io_domain(Domain_read, io_layout_read)
 
 !< Set up the data
 allocate(sst(is:ie,js:je, nz))
@@ -81,7 +88,7 @@ sst = real(7., kind=r8_kind)
 !< Open a netCDF file and initialize the file object.
 if (mpp_pe() .eq. mpp_root_pe()) print *, "Writing the restarts"
 call mpp_clock_begin(newClock)
-if (open_file(fileobj, "test_performance.nc", "overwrite", domain, is_restart=.true.)) then
+if (open_file(fileobj, "test_performance.nc", "overwrite", domain_write, is_restart=.true.)) then
     !< Register the axis
     names(1) = "xaxis_1"
     names(2) = "yaxis_1"
@@ -106,7 +113,7 @@ call mpp_clock_end(newClock)
 call mpp_sync()
 
 call mpp_clock_begin(newClock1)
-if (open_file(fileobj, "test_performance.nc", "read", domain, is_restart=.true.)) then
+if (open_file(fileobj, "test_performance.nc", "read", domain_read, is_restart=.true.)) then
 
     !< Register the axis
     names(1) = "xaxis_1"
