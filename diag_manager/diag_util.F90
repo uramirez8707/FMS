@@ -2158,6 +2158,11 @@ CONTAINS
     LOGICAL :: final_call, do_write, static_write
     INTEGER :: i, num
     REAL :: dif, time_data(2, 1, 1, 1), dt_time(1, 1, 1, 1), start_dif, end_dif
+    REAL :: time_in_file !< Time in file at the beginning of this call
+
+    !< Save the current time in the file. If the time in the file is not the same as the
+    !! current time, files(file)%rtime_current will be updated
+    time_in_file = files(file)%rtime_current
 
     do_write = .TRUE.
     final_call = .FALSE.
@@ -2208,37 +2213,28 @@ CONTAINS
        END IF
     END IF
 
-    ! Need to write average axes out;
-    DO i = 1, files(file)%num_fields
-       num = files(file)%fields(i)
-       IF ( output_fields(num)%time_ops .AND. &
-            input_fields(output_fields(num)%input_field)%register) THEN
-          ! time needs to be between start_dif and end_dif to prevent duplicate writes on time_bnds
-          IF ( num == field ) THEN
-            IF ( files(file)%rtime_current >= start_dif .AND. files(file)%rtime_current <= end_dif) THEN
-             ! Output the axes if this is first time-averaged field
-             time_data(1, 1, 1, 1) = start_dif
-             call diag_field_write (mpp_get_field_name(files(file)%f_avg_start%field), time_data(1:1,:,:,:), file_num=file, &
-                                   fileobjU=fileobjU, fileobj=fileobj, fileobjND=fileobjND, &
-                                   fnum_for_domain=fnum_for_domain(file), time_in=files(file)%time_index)
-             time_data(2, 1, 1, 1) = end_dif
-             call diag_field_write (mpp_get_field_name(files(file)%f_avg_end%field), time_data(2:2,:,:,:), file_num=file, &
-                                   fileobjU=fileobjU, fileobj=fileobj, fileobjND=fileobjND, &
-                                   fnum_for_domain=fnum_for_domain(file), time_in=files(file)%time_index)
-             ! Compute the length of the average
-             dt_time(1, 1, 1, 1) = end_dif - start_dif
-             call diag_field_write (mpp_get_field_name(files(file)%f_avg_nitems%field), dt_time(1:1,:,:,:), file_num=file, &
-                                   fileobjU=fileobjU, fileobj=fileobj, fileobjND=fileobjND, &
-                                   fnum_for_domain=fnum_for_domain(file), time_in=files(file)%time_index)
-             ! Include boundary variable for CF compliance
-             call diag_field_write (mpp_get_field_name(files(file)%f_bounds%field), time_data(1:2,:,:,:), file_num=file, &
-                                   fileobjU=fileobjU, fileobj=fileobj, fileobjND=fileobjND, &
-                                   fnum_for_domain=fnum_for_domain(file), time_in=files(file)%time_index)
-             EXIT
-            END IF
-          END IF
+    if (files(file)%rtime_current > time_in_file) then !< If time was written in this call
+       if (output_fields(field)%time_ops) then !< If this is a time_average field
+          ! Output the axes if this is first time-averaged field
+          time_data(1, 1, 1, 1) = start_dif
+          call diag_field_write (mpp_get_field_name(files(file)%f_avg_start%field), time_data(1:1,:,:,:), file_num=file, &
+                                 fileobjU=fileobjU, fileobj=fileobj, fileobjND=fileobjND, &
+                                 fnum_for_domain=fnum_for_domain(file), time_in=files(file)%time_index)
+          time_data(2, 1, 1, 1) = end_dif
+          call diag_field_write (mpp_get_field_name(files(file)%f_avg_end%field), time_data(2:2,:,:,:), file_num=file, &
+                                 fileobjU=fileobjU, fileobj=fileobj, fileobjND=fileobjND, &
+                                 fnum_for_domain=fnum_for_domain(file), time_in=files(file)%time_index)
+          ! Compute the length of the average
+          dt_time(1, 1, 1, 1) = end_dif - start_dif
+          call diag_field_write (mpp_get_field_name(files(file)%f_avg_nitems%field), dt_time(1:1,:,:,:), file_num=file, &
+                                 fileobjU=fileobjU, fileobj=fileobj, fileobjND=fileobjND, &
+                                 fnum_for_domain=fnum_for_domain(file), time_in=files(file)%time_index)
+          ! Include boundary variable for CF compliance
+          call diag_field_write (mpp_get_field_name(files(file)%f_bounds%field), time_data(1:2,:,:,:), file_num=file, &
+                                 fileobjU=fileobjU, fileobj=fileobj, fileobjND=fileobjND, &
+                                 fnum_for_domain=fnum_for_domain(file), time_in=files(file)%time_index)
        END IF
-    END DO
+    END IF
 
     ! If write time is greater (equal for the last call) than last_flush for this file, flush it
     IF ( final_call ) THEN
