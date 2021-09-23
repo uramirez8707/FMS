@@ -59,7 +59,6 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
        & get_axis_reqfld, axis_is_compressed, get_compressed_axes_ids
   USE diag_output_mod, ONLY: diag_output_init, write_axis_meta_data,&
        & write_field_meta_data, done_meta_data
-  USE mpp_io_mod, ONLY: mpp_get_field_name
   USE diag_output_mod, ONLY: diag_field_write, diag_write_time !<fms2_io use_mpp_io=.false.
   USE diag_grid_mod, ONLY: get_local_indexes
   USE fms_mod, ONLY: error_mesg, FATAL, WARNING, NOTE, mpp_pe, mpp_root_pe, lowercase, fms_error_handler,&
@@ -2217,20 +2216,20 @@ CONTAINS
        if (output_fields(field)%time_ops) then !< If this is a time_average field
           ! Output the axes if this is first time-averaged field
           time_data(1, 1, 1, 1) = start_dif
-          call diag_field_write (mpp_get_field_name(files(file)%f_avg_start%field), time_data(1:1,:,:,:), file_num=file, &
+          call diag_field_write (files(file)%f_avg_start%name, time_data(1:1,:,:,:), file_num=file, &
                                  fileobjU=fileobjU, fileobj=fileobj, fileobjND=fileobjND, &
                                  fnum_for_domain=fnum_for_domain(file), time_in=files(file)%time_index)
           time_data(2, 1, 1, 1) = end_dif
-          call diag_field_write (mpp_get_field_name(files(file)%f_avg_end%field), time_data(2:2,:,:,:), file_num=file, &
+          call diag_field_write (files(file)%f_avg_end%name, time_data(2:2,:,:,:), file_num=file, &
                                  fileobjU=fileobjU, fileobj=fileobj, fileobjND=fileobjND, &
                                  fnum_for_domain=fnum_for_domain(file), time_in=files(file)%time_index)
           ! Compute the length of the average
           dt_time(1, 1, 1, 1) = end_dif - start_dif
-          call diag_field_write (mpp_get_field_name(files(file)%f_avg_nitems%field), dt_time(1:1,:,:,:), file_num=file, &
+          call diag_field_write (files(file)%f_avg_nitems%name, dt_time(1:1,:,:,:), file_num=file, &
                                  fileobjU=fileobjU, fileobj=fileobj, fileobjND=fileobjND, &
                                  fnum_for_domain=fnum_for_domain(file), time_in=files(file)%time_index)
           ! Include boundary variable for CF compliance
-          call diag_field_write (mpp_get_field_name(files(file)%f_bounds%field), time_data(1:2,:,:,:), file_num=file, &
+          call diag_field_write (files(file)%f_bounds%name, time_data(1:2,:,:,:), file_num=file, &
                                  fileobjU=fileobjU, fileobj=fileobj, fileobjND=fileobjND, &
                                  fnum_for_domain=fnum_for_domain(file), time_in=files(file)%time_index)
        END IF

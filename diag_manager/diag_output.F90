@@ -34,11 +34,6 @@ use platform_mod
 use,intrinsic :: iso_fortran_env, only: real128
 use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
                                       c_int32_t,c_int16_t,c_intptr_t
-! use_mpp_io = .false.
-  USE mpp_io_mod, ONLY: axistype, fieldtype, mpp_io_init, &
-       & mpp_get_id, &
-       & mpp_get_field_name, &
-       & fillin_fieldtype
   USE mpp_domains_mod, ONLY: domain1d, domain2d, mpp_define_domains, mpp_get_pelist,&
        &  mpp_get_global_domain, mpp_get_compute_domains, null_domain1d, null_domain2d,&
        & domainUG, null_domainUG, CENTER, EAST, NORTH, mpp_get_compute_domain,&
@@ -82,7 +77,6 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
   INTEGER                 :: num_axis_in_file = 0
   INTEGER, DIMENSION(max_axis_num) :: axis_in_file
   LOGICAL, DIMENSION(max_axis_num) :: time_axis_flag, edge_axis_flag
-  TYPE(axistype), DIMENSION(max_axis_num), SAVE :: Axis_types
 
   LOGICAL :: module_is_initialized = .FALSE.
 
@@ -154,7 +148,6 @@ CONTAINS
     character(len=9) :: mype_string !< a string to store the pe
     !---- initialize mpp_io ----
     IF ( .NOT.module_is_initialized ) THEN
-       CALL mpp_io_init ()
        module_is_initialized = .TRUE.
        CALL write_version_number("DIAG_OUTPUT_MOD", version)
     END IF
@@ -396,8 +389,8 @@ integer :: domain_size, axis_length, axis_pos
        endif
 
        !> Write additional axis attributes, from diag_axis_add_attribute calls
-       id_axis = mpp_get_id(Axis_types(num_axis_in_file))
-       CALL write_attribute_meta(file_unit, id_axis, num_attributes, attributes, err_msg, varname=axis_name, fileob=fileob)
+       id_axis = num_axis_in_file
+       CALL write_attribute_meta(file_unit, num_attributes, attributes, err_msg, varname=axis_name, fileob=fileob)
        IF ( LEN_TRIM(err_msg) .GT. 0 ) THEN
           CALL error_mesg('diag_output_mod::write_axis_meta_data', TRIM(err_msg), FATAL)
        END IF
@@ -407,7 +400,7 @@ integer :: domain_size, axis_length, axis_pos
        !! http://www.cgd.ucar.edu/cms/eaton/netcdf/CF-current.htm#cal
        IF ( axis_cart_name == 'T' ) THEN
           time_axis_flag(num_axis_in_file) = .TRUE.
-          id_time_axis = mpp_get_id(Axis_types(num_axis_in_file))
+          id_time_axis = num_axis_in_file
           calendar = get_calendar_type()
 
 
@@ -635,42 +628,24 @@ character(len=128),dimension(size(axes)) :: axis_names
     !------ write meta data and return fieldtype -------
 !!! Fill in mpp fieldtype for field%field
     IF ( use_range ) THEN
-       IF ( Field%miss_present ) THEN
-          CALL fillin_fieldtype( Field%Field,&
-               & Axis_types(axis_indices(1:num)),&
-               & name, units, long_name,&
-               & RANGE(1), RANGE(2),&
-               & missing=Field%miss_pack,&
-               & fill=Field%miss_pack,&
-               & scale=scale, add=add, pack=ipack,&
-               & time_method=time_method)
-       ELSE
-          CALL fillin_fieldtype( Field%Field,&
-               & Axis_types(axis_indices(1:num)),&
-               & name, units,  long_name,&
-               & RANGE(1), RANGE(2),&
-               & missing=CMOR_MISSING_VALUE,&
-               & fill=CMOR_MISSING_VALUE,&
-               & scale=scale, add=add, pack=ipack,&
-               & time_method=time_method)
-       END IF
+       field%min = range(1)
+       field%max = range(2)
+       field%scale = scale
+       field%add = add
+       field%pack = ipack
+    ENDIF
+
+    IF (Field%miss_present) THEN
+       field%missing = Field%miss_pack
+       field%fill = field%miss_pack
     ELSE
-       IF ( Field%miss_present ) THEN
-          CALL fillin_fieldtype( Field%Field,&
-               & Axis_types(axis_indices(1:num)),&
-               & name, units, long_name,&
-               & missing=Field%miss_pack,&
-               & fill=Field%miss_pack,&
-               & pack=ipack, time_method=time_method)
-       ELSE
-          CALL fillin_fieldtype( Field%Field,&
-               & Axis_types(axis_indices(1:num)),&
-               & name, units, long_name,&
-               & missing=CMOR_MISSING_VALUE,&
-               & fill=CMOR_MISSING_VALUE,&
-               & pack=ipack, time_method=time_method)
-       END IF
-    END IF
+       field%missing = CMOR_MISSING_VALUE
+       field%fill = CMOR_MISSING_VALUE
+    ENDIF
+    field%name = name
+    field%units = units
+    field%longname = long_name
+
   if (.not. variable_exists(fileob,name)) then
   ! ipack Valid values:
   !        1 = 64bit </LI>
@@ -724,7 +699,7 @@ character(len=128),dimension(size(axes)) :: axis_names
     IF ( PRESENT(num_attributes) ) THEN
        IF ( PRESENT(attributes) ) THEN
           IF ( num_attributes .GT. 0 .AND. allocated(attributes) ) THEN
-             CALL write_attribute_meta(file_unit, mpp_get_id(Field%Field), num_attributes, attributes, time_method, err_msg, fileob=fileob, varname=name)
+             CALL write_attribute_meta(file_unit, num_attributes, attributes, time_method, err_msg, fileob=fileob, varname=name)
              IF ( LEN_TRIM(err_msg) .GT. 0 ) THEN
                 CALL error_mesg('diag_output_mod::write_field_meta_data',&
                      & TRIM(err_msg)//" Contact the developers.", FATAL)
@@ -784,9 +759,8 @@ character(len=128),dimension(size(axes)) :: axis_names
   !> \brief Write out attribute meta data to file
   !!
   !! Write out the attribute meta data to file, for field and axes
-  SUBROUTINE write_attribute_meta_fms2_io(file_unit, id, num_attributes, attributes, time_method, err_msg, varname, fileob)
+  SUBROUTINE write_attribute_meta_fms2_io(file_unit, num_attributes, attributes, time_method, err_msg, varname, fileob)
     INTEGER, INTENT(in) :: file_unit !< File unit number
-    INTEGER, INTENT(in) :: id !< ID of field, file, axis to get attribute meta data
     INTEGER, INTENT(in) :: num_attributes !< Number of attributes to write
     TYPE(diag_atttype), DIMENSION(:), INTENT(in) :: attributes !< Array of attributes
     CHARACTER(len=*), INTENT(in), OPTIONAL :: time_method !< To include in cell_methods attribute if present
