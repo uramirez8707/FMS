@@ -103,11 +103,7 @@ use platform_mod
      REAL :: miss, miss_pack
      LOGICAL :: miss_present, miss_pack_present
      INTEGER :: tile_count
-     real :: min, max, missing, fill, scale, add
-     character(len=128)      :: name
-     character(len=128)      :: units
-     character(len=256)      :: longname
-     integer                 :: pack
+     character(len=128)      :: fieldname !< Fieldname
   END TYPE diag_fieldtype
 
   !> @brief Attribute type for diagnostic fields

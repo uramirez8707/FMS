@@ -625,26 +625,8 @@ character(len=128),dimension(size(axes)) :: axis_names
        Field%miss_pack_present = .FALSE.
     END IF
 
-    !------ write meta data and return fieldtype -------
-!!! Fill in mpp fieldtype for field%field
-    IF ( use_range ) THEN
-       field%min = range(1)
-       field%max = range(2)
-       field%scale = scale
-       field%add = add
-       field%pack = ipack
-    ENDIF
-
-    IF (Field%miss_present) THEN
-       field%missing = Field%miss_pack
-       field%fill = field%miss_pack
-    ELSE
-       field%missing = CMOR_MISSING_VALUE
-       field%fill = CMOR_MISSING_VALUE
-    ENDIF
-    field%name = name
-    field%units = units
-    field%longname = long_name
+    !< Save the fieldname in the diag_fieldtype, so it can be used later
+    field%fieldname = name
 
   if (.not. variable_exists(fileob,name)) then
   ! ipack Valid values:
