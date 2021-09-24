@@ -84,44 +84,12 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
   character(len=*), parameter :: version = '2020.03'
   !> @}
 
-  !> Write diag field using @ref fms2_io
-  !> @ingroup diag_output_mod
-  interface diag_field_write
-     module procedure diag_field_write_varname
-  end interface
-
-  !> Initialize output for writing.
-  !> @ingroup diag_output_mod
-  interface diag_output_init
-     module procedure diag_output_init_fms2_io
-  end interface
-
-  !> Writes axis metadata to a file.
-  !> @ingroup diag_output_mod
-  interface write_axis_meta_data
-     module procedure write_axis_meta_data_fms2_io
-  end interface
-
-  !> Writes field metadata to a file.
-  !> @ingroup diag_output_mod
-  interface write_field_meta_data
-     module procedure write_field_meta_data_fms2_io
-  end interface
-
-  !> Private interface to write metadata for an attribute to a file.
-  !!
-  !> @note Added for mpp_io support
-  !> @ingroup diag_output_mod
-  interface write_attribute_meta
-     module procedure write_attribute_meta_fms2_io
-  end interface
-
 !> @addtogroup diag_output_mod
 !> @{
 CONTAINS
 
   !> @brief Opens the output file.
-  SUBROUTINE diag_output_init_fms2_io (file_name, file_title, file_unit,&
+  SUBROUTINE diag_output_init (file_name, file_title, file_unit,&
        & domain, domainU, fileobj, fileobjU, fileobjND, fnum_domain, &
        & attributes)
     CHARACTER(len=*), INTENT(in)  :: file_name  !< Output file name
@@ -232,10 +200,10 @@ CONTAINS
 
     call register_global_attribute(fileob, 'grid_tile', TRIM(gAtt%tile_name), str_len=len_trim(gAtt%tile_name))
 
-  END SUBROUTINE diag_output_init_fms2_io
+  END SUBROUTINE diag_output_init
 
   !> @brief Write the axis meta data to file.
-  SUBROUTINE write_axis_meta_data_fms2_io(file_unit, axes, fileob, time_ops, time_axis_registered)
+  SUBROUTINE write_axis_meta_data(file_unit, axes, fileob, time_ops, time_axis_registered)
     INTEGER, INTENT(in) :: file_unit !< File unit number
     INTEGER, INTENT(in) :: axes(:) !< Array of axis ID's, including the time axis
     class(FmsNetcdfFile_t) , intent(inout) :: fileob !< FMS2_io fileobj
@@ -389,7 +357,6 @@ integer :: domain_size, axis_length, axis_pos
        endif
 
        !> Write additional axis attributes, from diag_axis_add_attribute calls
-       id_axis = num_axis_in_file
        CALL write_attribute_meta(file_unit, num_attributes, attributes, err_msg, varname=axis_name, fileob=fileob)
        IF ( LEN_TRIM(err_msg) .GT. 0 ) THEN
           CALL error_mesg('diag_output_mod::write_axis_meta_data', TRIM(err_msg), FATAL)
@@ -476,12 +443,12 @@ integer :: domain_size, axis_length, axis_pos
 
        DEALLOCATE (axis_data)
     END DO
-  END SUBROUTINE write_axis_meta_data_fms2_io
+  END SUBROUTINE write_axis_meta_data
 
   !> @brief Write the field meta data to file.
   !! @return diag_fieldtype Field
   !! @details The meta data for the field is written to the file indicated by file_unit
-  FUNCTION write_field_meta_data_fms2_io ( file_unit, name, axes, units, long_name, range, pack, mval,&
+  FUNCTION write_field_meta_data ( file_unit, name, axes, units, long_name, range, pack, mval,&
        & avg_name, time_method, standard_name, interp_method, attributes, num_attributes,     &
        & use_UGdomain, fileob) result ( Field )
     INTEGER, INTENT(in) :: file_unit !< Output file unit number
@@ -736,19 +703,19 @@ character(len=128),dimension(size(axes)) :: axis_names
     Field%tile_count = get_tile_count ( axes )
     Field%DomainU = get_domainUG ( axes(1) )
 
-  END FUNCTION write_field_meta_data_fms2_io
+  END FUNCTION write_field_meta_data
 
   !> \brief Write out attribute meta data to file
   !!
   !! Write out the attribute meta data to file, for field and axes
-  SUBROUTINE write_attribute_meta_fms2_io(file_unit, num_attributes, attributes, time_method, err_msg, varname, fileob)
+  SUBROUTINE write_attribute_meta(file_unit, num_attributes, attributes, time_method, err_msg, varname, fileob)
     INTEGER, INTENT(in) :: file_unit !< File unit number
     INTEGER, INTENT(in) :: num_attributes !< Number of attributes to write
     TYPE(diag_atttype), DIMENSION(:), INTENT(in) :: attributes !< Array of attributes
     CHARACTER(len=*), INTENT(in), OPTIONAL :: time_method !< To include in cell_methods attribute if present
     CHARACTER(len=*), INTENT(out), OPTIONAL :: err_msg !< Return error message
     CHARACTER(len=*), INTENT(IN), OPTIONAL :: varname !< The name of the variable
-class(FmsNetcdfFile_t), intent(inout)     :: fileob
+    class(FmsNetcdfFile_t), intent(inout) :: fileob !< FMS2_io fileobj
 
     INTEGER :: i, att_len
     CHARACTER(len=1280) :: att_str
@@ -794,7 +761,7 @@ class(FmsNetcdfFile_t), intent(inout)     :: fileob
           END IF
        END SELECT
     END DO
-  END SUBROUTINE write_attribute_meta_fms2_io
+  END SUBROUTINE write_attribute_meta
 
   !> @brief Writes axis data to file.
   !! @details Writes axis data to file.  This subroutine is to be called once per file
@@ -810,21 +777,25 @@ class(FmsNetcdfFile_t), intent(inout)     :: fileob
   END SUBROUTINE done_meta_data
 
   !> \brief Writes diagnostic data out using fms2_io routine.
-  subroutine diag_field_write_varname (varname, buffer, static, file_num, fileobjU, fileobj, fileobjND, fnum_for_domain, time_in)
-    CHARACTER(len=*), INTENT(in) :: varname !<
-    REAL , INTENT(inout) :: buffer(:,:,:,:)
-    logical, intent(in), optional :: static
-    integer, intent(in), optional  :: file_num
-    type(FmsNetcdfUnstructuredDomainFile_t),intent(inout), optional :: fileobjU(:)
-    type(FmsNetcdfDomainFile_t),intent(inout), optional:: fileobj(:)
-    type(FmsNetcdfFile_t),intent(inout), optional:: fileobjND(:)
-    character(len=2), intent(in), optional :: fnum_for_domain
-    INTEGER, OPTIONAL, INTENT(in) :: time_in
-    integer :: time
+  subroutine diag_field_write (varname, buffer, static, file_num, fileobjU, fileobj, fileobjND, fnum_for_domain, time_in)
+    CHARACTER(len=*), INTENT(in)    :: varname                             !< Variable name
+    REAL ,            INTENT(inout) :: buffer(:,:,:,:)                     !< Buffer containing the variable data
+    logical,          intent(in)    :: static                              !< Flag indicating if a variable is static
+    integer,          intent(in)    :: file_num                            !< Index in the fileobj* types array
+    type(FmsNetcdfUnstructuredDomainFile_t), intent(inout) :: fileobjU(:)  !< Array of non domain decomposed fileobj
+    type(FmsNetcdfDomainFile_t),             intent(inout) :: fileobj(:)   !< Array of domain decomposed fileobj
+    type(FmsNetcdfFile_t),                   intent(inout) :: fileobjND(:) !< Array of unstructured domain fileobj
+    character(len=2), intent(in) :: fnum_for_domain                        !< String indicating the type of domain
+                                                                           !! "2d" domain decomposed
+                                                                           !! "ug" unstructured domain decomposed
+                                                                           !! "nd" no domain
+    INTEGER, OPTIONAL, INTENT(in) :: time_in !< Time index
+
+    integer :: time !< Time index
     real,allocatable :: local_buffer(:,:,:,:) !< Buffer containing the data will be sent to fms2io
 
 !> Set up the time.  Static field and default time is 0
-     if (present(static) .and. static) then
+     if ( static ) then
           time = 0
      elseif (present(time_in)) then
           time = time_in
@@ -847,37 +818,34 @@ class(FmsNetcdfFile_t), intent(inout)     :: fileob
         local_buffer = buffer(:,:,:,:)
      endif
 
-     if (present(file_num) .and. present(fileobjU) .and. present(fileobj) .and. present(fileobjND) .and. present(fnum_for_domain)) then
      !> Figure out which file object to write output to
-          if (fnum_for_domain == "2d" ) then
-               if (check_if_open(fileobj(file_num))) then
-                    call write_data (fileobj (file_num), trim(varname), local_buffer, unlim_dim_level=time )
-               endif
-          elseif (fnum_for_domain == "nd") then
-               if (check_if_open(fileobjND (file_num)) ) then
-                    call write_data (fileobjND (file_num), trim(varname), local_buffer, unlim_dim_level=time)
-               endif
-          elseif (fnum_for_domain == "ug") then
-               call write_data (fileobjU(file_num), trim(varname), local_buffer, unlim_dim_level=time)
-          else
-               call error_mesg("diag_field_write","No file object is associated with this file number",fatal)
-          endif
-     elseif (present(file_num) ) then
-          call error_mesg("diag_field_write","When FILE_NUM is used to determine which file object to use,"&
-           //" You must also include fileobjU, fileobj, and fnum_for_domain",fatal)
+     if (fnum_for_domain == "2d" ) then
+        if (check_if_open(fileobj(file_num))) then
+           call write_data (fileobj (file_num), trim(varname), local_buffer, unlim_dim_level=time )
+        endif
+     elseif (fnum_for_domain == "nd") then
+        if (check_if_open(fileobjND (file_num)) ) then
+           call write_data (fileobjND (file_num), trim(varname), local_buffer, unlim_dim_level=time)
+        endif
+     elseif (fnum_for_domain == "ug") then
+        if (check_if_open(fileobjU(file_num))) then
+           call write_data (fileobjU(file_num), trim(varname), local_buffer, unlim_dim_level=time)
+        endif
      else
-          call error_mesg("diag_field_write","You must include a fileob or a file_num.",fatal)
+         call error_mesg("diag_field_write","fnum_for_domain must be '2d', 'nd', or 'ug'",fatal)
      endif
+
      deallocate(local_buffer)
-  end subroutine diag_field_write_varname
+  end subroutine diag_field_write
+
 !> \brief Writes the time data to the history file
   subroutine diag_write_time (fileob,rtime_value,time_index,time_name)
-     class(FmsNetcdfFile_t), intent(inout),target  :: fileob      !< fms2_io file object
-     class(FmsNetcdfFile_t), pointer                        :: fptr => null()
-     real, intent(in)                                       :: rtime_value !< The value of time to be written
-     integer, intent(in)                                    :: time_index  !< The index of the time variable
-     character(len=*),intent(in),optional                   :: time_name   !< The name of the time variable
-     character(len=:),allocatable                           :: name_time   !< The name of the time variable
+     class(FmsNetcdfFile_t), intent(inout)        :: fileob      !< fms2_io file object
+     real,                   intent(in)           :: rtime_value !< The value of time to be written
+     integer,                intent(in)           :: time_index  !< The index of the time variable
+     character(len=*),       intent(in), optional :: time_name   !< The name of the time variable
+     character(len=:),allocatable :: name_time   !< The name of the time variable
+
 !> Get the name of the time variable
      if (present(time_name)) then
           allocate(character(len=len(time_name)) :: name_time)
@@ -890,7 +858,6 @@ class(FmsNetcdfFile_t), intent(inout)     :: fileob
      call write_data (fileob, trim(name_time), rtime_value, unlim_dim_level=time_index)
 !> Cleanup
      if (allocated(name_time)) deallocate(name_time)
-     if (associated(fptr)) nullify(fptr)
   end subroutine diag_write_time
 
   !> @brief Return the axis index number.

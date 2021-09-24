@@ -2196,8 +2196,8 @@ CONTAINS
                     " has gone backwards. There may be missing values for some of the variables",NOTE)
     endif
 !> Write data
-    call diag_field_write (output_fields(field)%output_name, dat, static=static_write, file_num=file, fileobjU=fileobjU, &
-                         fileobj=fileobj, fileobjND=fileobjND, fnum_for_domain=fnum_for_domain(file), time_in=files(file)%time_index)
+    call diag_field_write (output_fields(field)%output_name, dat, static_write, file, fileobjU, &
+                         fileobj, fileobjND, fnum_for_domain(file), time_in=files(file)%time_index)
     ! record number of bytes written to this file
     files(file)%bytes_written = files(file)%bytes_written +&
          & (SIZE(dat,1)*SIZE(dat,2)*SIZE(dat,3))*(8/output_fields(field)%pack)
@@ -2216,22 +2216,22 @@ CONTAINS
        if (output_fields(field)%time_ops) then !< If this is a time_average field
           ! Output the axes if this is first time-averaged field
           time_data(1, 1, 1, 1) = start_dif
-          call diag_field_write (files(file)%f_avg_start%fieldname, time_data(1:1,:,:,:), file_num=file, &
-                                 fileobjU=fileobjU, fileobj=fileobj, fileobjND=fileobjND, &
-                                 fnum_for_domain=fnum_for_domain(file), time_in=files(file)%time_index)
+          call diag_field_write (files(file)%f_avg_start%fieldname, time_data(1:1,:,:,:), static_write, file, &
+                                 fileobjU, fileobj, fileobjND, &
+                                 fnum_for_domain(file), time_in=files(file)%time_index)
           time_data(2, 1, 1, 1) = end_dif
-          call diag_field_write (files(file)%f_avg_end%fieldname, time_data(2:2,:,:,:), file_num=file, &
-                                 fileobjU=fileobjU, fileobj=fileobj, fileobjND=fileobjND, &
-                                 fnum_for_domain=fnum_for_domain(file), time_in=files(file)%time_index)
+          call diag_field_write (files(file)%f_avg_end%fieldname, time_data(2:2,:,:,:), static_write, file, &
+                                 fileobjU, fileobj, fileobjND, &
+                                 fnum_for_domain(file), time_in=files(file)%time_index)
           ! Compute the length of the average
           dt_time(1, 1, 1, 1) = end_dif - start_dif
-          call diag_field_write (files(file)%f_avg_nitems%fieldname, dt_time(1:1,:,:,:), file_num=file, &
-                                 fileobjU=fileobjU, fileobj=fileobj, fileobjND=fileobjND, &
-                                 fnum_for_domain=fnum_for_domain(file), time_in=files(file)%time_index)
+          call diag_field_write (files(file)%f_avg_nitems%fieldname, dt_time(1:1,:,:,:), static_write, file, &
+                                 fileobjU, fileobj, fileobjND, &
+                                 fnum_for_domain(file), time_in=files(file)%time_index)
           ! Include boundary variable for CF compliance
-          call diag_field_write (files(file)%f_bounds%fieldname, time_data(1:2,:,:,:), file_num=file, &
-                                 fileobjU=fileobjU, fileobj=fileobj, fileobjND=fileobjND, &
-                                 fnum_for_domain=fnum_for_domain(file), time_in=files(file)%time_index)
+          call diag_field_write (files(file)%f_bounds%fieldname, time_data(1:2,:,:,:), static_write, file, &
+                                 fileobjU, fileobj, fileobjND, &
+                                 fnum_for_domain(file), time_in=files(file)%time_index)
        END IF
     END IF
 
