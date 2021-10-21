@@ -81,10 +81,9 @@ contains
   end subroutine compare_checksums_2D_r4
 
   !> Compare the checksums of 2 3D 32-bit real arrays
-  subroutine compare_checksums_3D_r4( a, b, string, skip_chksum )
+  subroutine compare_checksums_3D_r4( a, b, string )
      real(kind=r4_kind), intent(in), dimension(:,:,:) :: a, b !< 3D 64-bit real arrays to compare
      character(len=*), intent(in) :: string
-     logical, optional            :: skip_chksum
      integer(kind=i8_kind) :: sum1, sum2
      integer :: i, j, k
      integer :: pe
@@ -106,14 +105,8 @@ contains
        enddo
      enddo
 
-     ! these fail if the pe is provided for mpp_domains subset test
-     ! avoids mpp_chksum hanging from nested pes
-     if (PRESENT(skip_chksum)) then
-       if (skip_chksum) return
-     else
-       sum1 = mpp_chksum( a )
-       sum2 = mpp_chksum( b )
-     endif
+     sum1 = mpp_chksum( a , (/pe/) )
+     sum2 = mpp_chksum( b , (/pe/) )
 
      if( sum1.EQ.sum2 )then
        if( pe.EQ.mpp_root_pe() )call mpp_error( NOTE, trim(string)//': OK.' )
