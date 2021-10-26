@@ -1,5 +1,6 @@
 var NAVTREEINDEX28 =
 {
+"structdata__override__mod_1_1data__type.html#a306a7bec3245caf26a51676e85f3a580":[4,8,0,0,5],
 "structdata__override__mod_1_1data__type.html#a4e93d7a623932ba553635570b43f7ad9":[4,8,0,0,7],
 "structdata__override__mod_1_1data__type.html#a551ead59ba2b28a6b2320c2966c3501d":[4,8,0,0,0],
 "structdata__override__mod_1_1data__type.html#a7852e756c3fdd12f5a72a2523b07b7ea":[4,8,0,0,10],
@@ -248,6 +249,5 @@ var NAVTREEINDEX28 =
 "structdrifters__comm__mod_1_1drifters__comm__type.html#a3122c66e5967734416ff26adf103a662":[4,11,1,0,0],
 "structdrifters__comm__mod_1_1drifters__comm__type.html#a3e49d89b54f27cd77afbb1ba4c76ba6d":[4,11,1,0,22],
 "structdrifters__comm__mod_1_1drifters__comm__type.html#a4e907cf88576d936fb5a6852420d12fb":[4,11,1,0,21],
-"structdrifters__comm__mod_1_1drifters__comm__type.html#a59ef58548d561ad6f55bc514028c8fd5":[4,11,1,0,15],
-"structdrifters__comm__mod_1_1drifters__comm__type.html#a5f876b60b5d5fa2064e1a38c7de92185":[4,11,1,0,20]
+"structdrifters__comm__mod_1_1drifters__comm__type.html#a59ef58548d561ad6f55bc514028c8fd5":[4,11,1,0,15]
 };

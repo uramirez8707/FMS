@@ -32,5 +32,6 @@ var modules =
     [ "Time Manager", "group__time__manager.html", "group__time__manager" ],
     [ "Topography", "group__topography.html", "group__topography" ],
     [ "Tracer Manager", "group__tracer__manager.html", "group__tracer__manager" ],
-    [ "Tridiagonal", "group__tridiagonal.html", "group__tridiagonal" ]
+    [ "Tridiagonal", "group__tridiagonal.html", "group__tridiagonal" ],
+    [ "yaml_parser_mod", "group__yaml__parser__mod.html", null ]
 ];
