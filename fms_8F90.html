@@ -113,6 +113,12 @@ Data Types</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">interface &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interfacefms__mod_1_1string.html">string</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Converts a number to a string.  <a href="interfacefms__mod_1_1string.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">interface &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interfacefms__mod_1_1c__strlen.html">c_strlen</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">C functions.  <a href="interfacefms__mod_1_1c__strlen.html#details">More...</a><br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">interface &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interfacefms__mod_1_1c__free.html">c_free</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Frees a C pointer.  <a href="interfacefms__mod_1_1c__free.html#details">More...</a><br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions/Subroutines</h2></td></tr>
@@ -148,6 +154,9 @@ subroutine, private&#160;</td><td class="memItemRight" valign="bottom"><a class=
 character(len=32) function&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__fms__mod.html#ga04380e51ee749685e98ac96d03856eae">string_from_real</a> (a)</td></tr>
 <tr class="memdesc:ga04380e51ee749685e98ac96d03856eae"><td class="mdescLeft">&#160;</td><td class="mdescRight">Converts a real to a string. <br /></td></tr>
 <tr class="separator:ga04380e51ee749685e98ac96d03856eae"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga9b3ec25e8291f90ac2c4e028590c09e8"><td class="memItemLeft" align="right" valign="top">character(len=:) function, allocatable, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__fms__mod.html#ga9b3ec25e8291f90ac2c4e028590c09e8">fms_c2f_string</a> (cstring)</td></tr>
+<tr class="memdesc:ga9b3ec25e8291f90ac2c4e028590c09e8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Converts a C-string returned from a TYPE(C_PTR) function to a fortran string with type character.  <a href="group__fms__mod.html#ga9b3ec25e8291f90ac2c4e028590c09e8">More...</a><br /></td></tr>
+<tr class="separator:ga9b3ec25e8291f90ac2c4e028590c09e8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga0c093df98a75dbd9e0f3add67aa6c23a"><td class="memItemLeft" align="right" valign="top">
 subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__fms__mod.html#ga0c093df98a75dbd9e0f3add67aa6c23a">write_version_number</a> (version, tag, unit)</td></tr>
 <tr class="memdesc:ga0c093df98a75dbd9e0f3add67aa6c23a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Prints to the log file (or a specified unit) the version id string and tag name. <br /></td></tr>
@@ -249,7 +258,7 @@ logical, private&#160;</td><td class="memItemRight" valign="bottom"><b>only</b><
 <p>Calls the termination routines for all modules in the MPP package. </p>
 <p>Termination routine for the fms module. It also calls destructor routines for the mpp, mpp_domains, and mpp_io modules. If this routine is called more than once it will return silently. There are no arguments. </p>
 
-<p class="definition">Definition at line <a class="el" href="fms_8F90_source.html#l00447">447</a> of file <a class="el" href="fms_8F90_source.html">fms.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="fms_8F90_source.html#l00462">462</a> of file <a class="el" href="fms_8F90_source.html">fms.F90</a>.</p>
 
 </div>
 </div>

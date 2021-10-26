@@ -215,6 +215,8 @@ var annotated_dup =
       [ "string2", "interfacefms__io__utils__mod_1_1string2.html", "interfacefms__io__utils__mod_1_1string2" ]
     ] ],
     [ "fms_mod", null, [
+      [ "c_free", "interfacefms__mod_1_1c__free.html", "interfacefms__mod_1_1c__free" ],
+      [ "c_strlen", "interfacefms__mod_1_1c__strlen.html", "interfacefms__mod_1_1c__strlen" ],
       [ "nml_errors_type", "structfms__mod_1_1nml__errors__type.html", "structfms__mod_1_1nml__errors__type" ],
       [ "string", "interfacefms__mod_1_1string.html", "interfacefms__mod_1_1string" ]
     ] ],
@@ -471,6 +473,9 @@ var annotated_dup =
       [ "stock_type", "structstock__constants__mod_1_1stock__type.html", "structstock__constants__mod_1_1stock__type" ]
     ] ],
     [ "test_domains_utility_mod", "namespacetest__domains__utility__mod.html", "namespacetest__domains__utility__mod" ],
+    [ "test_fms_mod", null, [
+      [ "strPoint", "interfacetest__fms__mod_1_1strPoint.html", "interfacetest__fms__mod_1_1strPoint" ]
+    ] ],
     [ "time_interp_external2_mod", null, [
       [ "ext_fieldtype", "structtime__interp__external2__mod_1_1ext__fieldtype.html", "structtime__interp__external2__mod_1_1ext__fieldtype" ],
       [ "filetype", "structtime__interp__external2__mod_1_1filetype.html", "structtime__interp__external2__mod_1_1filetype" ],

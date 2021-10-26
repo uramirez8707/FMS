@@ -103,18 +103,18 @@ $(document).ready(function(){initNavTree('interfacediag__output__mod_1_1write__a
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pri-methods"></a>
 Private Member Functions</h2></td></tr>
-<tr class="memitem:aabfccaa674d4aeeb172509c131018cfd"><td class="memItemLeft" align="right" valign="top">subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interfacediag__output__mod_1_1write__attribute__meta.html#aabfccaa674d4aeeb172509c131018cfd">write_attribute_meta_fms2_io</a> (file_unit, num_attributes, attributes, time_method, err_msg, varname, fileob)</td></tr>
-<tr class="memdesc:aabfccaa674d4aeeb172509c131018cfd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Write out attribute meta data to file.  <a href="interfacediag__output__mod_1_1write__attribute__meta.html#aabfccaa674d4aeeb172509c131018cfd">More...</a><br /></td></tr>
-<tr class="separator:aabfccaa674d4aeeb172509c131018cfd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a58a5a76c6b422cbaeacf366924dc9777"><td class="memItemLeft" align="right" valign="top">subroutine&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interfacediag__output__mod_1_1write__attribute__meta.html#a58a5a76c6b422cbaeacf366924dc9777">write_attribute_meta_fms2_io</a> (file_unit, id, num_attributes, attributes, time_method, err_msg, varname, fileob)</td></tr>
+<tr class="memdesc:a58a5a76c6b422cbaeacf366924dc9777"><td class="mdescLeft">&#160;</td><td class="mdescRight">Write out attribute meta data to file.  <a href="interfacediag__output__mod_1_1write__attribute__meta.html#a58a5a76c6b422cbaeacf366924dc9777">More...</a><br /></td></tr>
+<tr class="separator:a58a5a76c6b422cbaeacf366924dc9777"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Private interface to write metadata for an attribute to a file. </p>
 <dl class="section note"><dt>Note</dt><dd>Added for mpp_io support </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="diag__output_8F90_source.html#l00115">115</a> of file <a class="el" href="diag__output_8F90_source.html">diag_output.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="diag__output_8F90_source.html#l00124">124</a> of file <a class="el" href="diag__output_8F90_source.html">diag_output.F90</a>.</p>
 </div><h2 class="groupheader">Member Function/Subroutine Documentation</h2>
-<a id="aabfccaa674d4aeeb172509c131018cfd"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aabfccaa674d4aeeb172509c131018cfd">&#9670;&nbsp;</a></span>write_attribute_meta_fms2_io()</h2>
+<a id="a58a5a76c6b422cbaeacf366924dc9777"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a58a5a76c6b422cbaeacf366924dc9777">&#9670;&nbsp;</a></span>write_attribute_meta_fms2_io()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -127,6 +127,12 @@ Private Member Functions</h2></td></tr>
           <td>(</td>
           <td class="paramtype">integer, intent(in)&#160;</td>
           <td class="paramname"><em>file_unit</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">integer, intent(in)&#160;</td>
+          <td class="paramname"><em>id</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -181,6 +187,7 @@ Private Member Functions</h2></td></tr>
 <p>Write out the attribute meta data to file, for field and axes </p><dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramdir">[in]</td><td class="paramname">file_unit</td><td>File unit number </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">id</td><td>ID of field, file, axis to get attribute meta data </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">num_attributes</td><td>Number of attributes to write </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">attributes</td><td>Array of attributes </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">time_method</td><td>To include in cell_methods attribute if present </td></tr>
@@ -190,7 +197,7 @@ Private Member Functions</h2></td></tr>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="diag__output_8F90_source.html#l00763">763</a> of file <a class="el" href="diag__output_8F90_source.html">diag_output.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="diag__output_8F90_source.html#l01093">1093</a> of file <a class="el" href="diag__output_8F90_source.html">diag_output.F90</a>.</p>
 
 </div>
 </div>

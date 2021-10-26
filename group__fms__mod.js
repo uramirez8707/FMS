@@ -13,6 +13,7 @@ var group__fms__mod =
     ] ],
     [ "check_nml_error", "group__fms__mod.html#ga05e7686befc1e49d2be9bdb81d479a76", null ],
     [ "error_mesg", "group__fms__mod.html#gae5c7420e421293e2be14717dd7b3d97f", null ],
+    [ "fms_c2f_string", "group__fms__mod.html#ga9b3ec25e8291f90ac2c4e028590c09e8", null ],
     [ "fms_error_handler", "group__fms__mod.html#ga6695d901d751a75f108c27aa385d9579", null ],
     [ "fms_init", "group__fms__mod.html#ga76099928e3f2e58ea5efe717c7809fce", null ],
     [ "monotonic_array", "group__fms__mod.html#gae80e64e737312192624678ecd590acd6", null ],

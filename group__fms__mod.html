@@ -142,6 +142,9 @@ subroutine, private&#160;</td><td class="memItemRight" valign="bottom"><a class=
 character(len=32) function&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__fms__mod.html#ga04380e51ee749685e98ac96d03856eae">string_from_real</a> (a)</td></tr>
 <tr class="memdesc:ga04380e51ee749685e98ac96d03856eae"><td class="mdescLeft">&#160;</td><td class="mdescRight">Converts a real to a string. <br /></td></tr>
 <tr class="separator:ga04380e51ee749685e98ac96d03856eae"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga9b3ec25e8291f90ac2c4e028590c09e8"><td class="memItemLeft" align="right" valign="top">character(len=:) function, allocatable, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__fms__mod.html#ga9b3ec25e8291f90ac2c4e028590c09e8">fms_c2f_string</a> (cstring)</td></tr>
+<tr class="memdesc:ga9b3ec25e8291f90ac2c4e028590c09e8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Converts a C-string returned from a TYPE(C_PTR) function to a fortran string with type character.  <a href="group__fms__mod.html#ga9b3ec25e8291f90ac2c4e028590c09e8">More...</a><br /></td></tr>
+<tr class="separator:ga9b3ec25e8291f90ac2c4e028590c09e8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga0c093df98a75dbd9e0f3add67aa6c23a"><td class="memItemLeft" align="right" valign="top"><a id="ga0c093df98a75dbd9e0f3add67aa6c23a"></a>
 subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__fms__mod.html#ga0c093df98a75dbd9e0f3add67aa6c23a">write_version_number</a> (version, tag, unit)</td></tr>
 <tr class="memdesc:ga0c093df98a75dbd9e0f3add67aa6c23a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Prints to the log file (or a specified unit) the version id string and tag name. <br /></td></tr>
@@ -283,7 +286,7 @@ Examples<br  />
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="fms_8F90_source.html#l00556">556</a> of file <a class="el" href="fms_8F90_source.html">fms.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="fms_8F90_source.html#l00571">571</a> of file <a class="el" href="fms_8F90_source.html">fms.F90</a>.</p>
 
 </div>
 </div>
@@ -334,7 +337,31 @@ Example usage: </p><div class="fragment"><div class="line"><span class="keywordt
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="fms_8F90_source.html#l00474">474</a> of file <a class="el" href="fms_8F90_source.html">fms.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="fms_8F90_source.html#l00489">489</a> of file <a class="el" href="fms_8F90_source.html">fms.F90</a>.</p>
+
+</div>
+</div>
+<a id="ga9b3ec25e8291f90ac2c4e028590c09e8"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga9b3ec25e8291f90ac2c4e028590c09e8">&#9670;&nbsp;</a></span>fms_c2f_string()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">character(len=:) function, allocatable, public fms_mod::fms_c2f_string </td>
+          <td>(</td>
+          <td class="paramtype">type (c_ptr)&#160;</td>
+          <td class="paramname"><em>cstring</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Converts a C-string returned from a TYPE(C_PTR) function to a fortran string with type character. </p>
+<dl class="section return"><dt>Returns</dt><dd>The fortran string returned </dd></dl>
+<p>Set the length of fstring</p>
+
+<p class="definition">Definition at line <a class="el" href="fms_8F90_source.html#l00818">818</a> of file <a class="el" href="fms_8F90_source.html">fms.F90</a>.</p>
 
 </div>
 </div>
@@ -382,7 +409,7 @@ Example usage: </p><div class="fragment"><div class="line"><span class="keywordt
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="fms_8F90_source.html#l00501">501</a> of file <a class="el" href="fms_8F90_source.html">fms.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="fms_8F90_source.html#l00516">516</a> of file <a class="el" href="fms_8F90_source.html">fms.F90</a>.</p>
 
 </div>
 </div>
@@ -422,7 +449,7 @@ Example usage: </p><div class="fragment"><div class="line"><span class="keywordt
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="fms_8F90_source.html#l00325">325</a> of file <a class="el" href="fms_8F90_source.html">fms.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="fms_8F90_source.html#l00340">340</a> of file <a class="el" href="fms_8F90_source.html">fms.F90</a>.</p>
 
 </div>
 </div>
@@ -468,7 +495,7 @@ Example usage: </p><div class="fragment"><div class="line"><span class="keywordt
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>If the input array of real values either increases or decreases monotonically then TRUE is returned, otherwise FALSE is returned. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="fms_8F90_source.html#l00736">736</a> of file <a class="el" href="fms_8F90_source.html">fms.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="fms_8F90_source.html#l00751">751</a> of file <a class="el" href="fms_8F90_source.html">fms.F90</a>.</p>
 
 </div>
 </div>
@@ -523,7 +550,7 @@ Examples<br  />
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>If an exact match was found then TRUE is returned, otherwise FALSE is returned. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="fms_8F90_source.html#l00705">705</a> of file <a class="el" href="fms_8F90_source.html">fms.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="fms_8F90_source.html#l00720">720</a> of file <a class="el" href="fms_8F90_source.html">fms.F90</a>.</p>
 
 </div>
 </div>
@@ -560,14 +587,14 @@ Examples<br  />
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>String converted frominteger </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="fms_8F90_source.html#l00779">779</a> of file <a class="el" href="fms_8F90_source.html">fms.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="fms_8F90_source.html#l00794">794</a> of file <a class="el" href="fms_8F90_source.html">fms.F90</a>.</p>
 
 </div>
 </div>
 </div><!-- contents -->
 </div><!-- doc-content -->
-<div class="ttc" id="ainterfacefms__mod_1_1string_html"><div class="ttname"><a href="interfacefms__mod_1_1string.html">fms_mod::string</a></div><div class="ttdoc">Converts a number to a string.</div><div class="ttdef"><b>Definition:</b> <a href="fms_8F90_source.html#l00297">fms.F90:297</a></div></div>
-<div class="ttc" id="agroup__fms__mod_html_gae5c7420e421293e2be14717dd7b3d97f"><div class="ttname"><a href="group__fms__mod.html#gae5c7420e421293e2be14717dd7b3d97f">fms_mod::error_mesg</a></div><div class="ttdeci">subroutine, public error_mesg(routine, message, level)</div><div class="ttdoc">Print notes, warnings and error messages; terminates program for warning and error messages....</div><div class="ttdef"><b>Definition:</b> <a href="fms_8F90_source.html#l00474">fms.F90:474</a></div></div>
+<div class="ttc" id="ainterfacefms__mod_1_1string_html"><div class="ttname"><a href="interfacefms__mod_1_1string.html">fms_mod::string</a></div><div class="ttdoc">Converts a number to a string.</div><div class="ttdef"><b>Definition:</b> <a href="fms_8F90_source.html#l00299">fms.F90:299</a></div></div>
+<div class="ttc" id="agroup__fms__mod_html_gae5c7420e421293e2be14717dd7b3d97f"><div class="ttname"><a href="group__fms__mod.html#gae5c7420e421293e2be14717dd7b3d97f">fms_mod::error_mesg</a></div><div class="ttdeci">subroutine, public error_mesg(routine, message, level)</div><div class="ttdoc">Print notes, warnings and error messages; terminates program for warning and error messages....</div><div class="ttdef"><b>Definition:</b> <a href="fms_8F90_source.html#l00489">fms.F90:489</a></div></div>
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
