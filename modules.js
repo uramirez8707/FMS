@@ -25,6 +25,7 @@ var modules =
     [ "Monin Obukhov", "group__monin__obukhov.html", "group__monin__obukhov" ],
     [ "Mosaic", "group__mosaic.html", "group__mosaic" ],
     [ "Mosaic2", "group__mosaic2.html", "group__mosaic2" ],
+    [ "Parser", "group__parser.html", "group__parser" ],
     [ "Platform", "group__platform.html", "group__platform" ],
     [ "Random Numbers", "group__random__numbers.html", "group__random__numbers" ],
     [ "Saturation Vapor Pressure", "group__sat__vapor__pres.html", "group__sat__vapor__pres" ],
@@ -32,6 +33,5 @@ var modules =
     [ "Time Manager", "group__time__manager.html", "group__time__manager" ],
     [ "Topography", "group__topography.html", "group__topography" ],
     [ "Tracer Manager", "group__tracer__manager.html", "group__tracer__manager" ],
-    [ "Tridiagonal", "group__tridiagonal.html", "group__tridiagonal" ],
-    [ "yaml_parser_mod", "group__yaml__parser__mod.html", null ]
+    [ "Tridiagonal", "group__tridiagonal.html", "group__tridiagonal" ]
 ];
