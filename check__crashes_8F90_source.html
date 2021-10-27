@@ -130,7 +130,7 @@ $(document).ready(function(){initNavTree('check__crashes_8F90_source.html',''); 
 <div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;<span class="comment">!&gt; @brief This is to check if the parser crashes correctly if user tries to open a missing file. </span></div>
 <div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;<span class="keyword">subroutine </span>check_read_and_parse_file_missing</div>
 <div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;   <span class="keywordtype">integer</span> :: yaml_file_id</div>
-<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;   yaml_file_id = open_and_parse_file(<span class="stringliteral">&quot;missing&quot;</span>)</div>
+<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;   yaml_file_id = <a class="code" href="group__yaml__parser__mod.html#ga3d600290bb55dd9edd575555d217cfeb">open_and_parse_file</a>(<span class="stringliteral">&quot;missing&quot;</span>)</div>
 <div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;<span class="keyword">end subroutine </span>check_read_and_parse_file_missing</div>
 <div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;<span class="comment"></span> </div>
 <div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;<span class="comment">!&gt; @brief This is to check if the parser crashes correctly if user sends a buffer of the wrong type</span></div>
@@ -138,8 +138,8 @@ $(document).ready(function(){initNavTree('check__crashes_8F90_source.html',''); 
 <div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;   <span class="keywordtype">integer</span> :: yaml_file_id</div>
 <div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;<span class="keywordtype">   real</span> :: buffer</div>
 <div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160; </div>
-<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;   yaml_file_id = open_and_parse_file(<span class="stringliteral">&quot;diag_table.yaml&quot;</span>)</div>
-<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;   <span class="keyword">call </span>get_value_from_key(yaml_file_id, 9, <span class="stringliteral">&quot;varName&quot;</span>, buffer)</div>
+<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;   yaml_file_id = <a class="code" href="group__yaml__parser__mod.html#ga3d600290bb55dd9edd575555d217cfeb">open_and_parse_file</a>(<span class="stringliteral">&quot;diag_table.yaml&quot;</span>)</div>
+<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;   <span class="keyword">call </span><a class="code" href="interfaceyaml__parser__mod_1_1get__value__from__key.html">get_value_from_key</a>(yaml_file_id, 9, <span class="stringliteral">&quot;varName&quot;</span>, buffer)</div>
 <div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;<span class="keyword">end subroutine </span>check_bad_conversion</div>
 <div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;<span class="comment"></span> </div>
 <div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;<span class="comment">!&gt; @brief This is to check if the parser crashes correctly if user tries to get they value for a key</span></div>
@@ -148,16 +148,16 @@ $(document).ready(function(){initNavTree('check__crashes_8F90_source.html',''); 
 <div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;   <span class="keywordtype">integer</span> :: yaml_file_id</div>
 <div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;<span class="keywordtype">   real</span> :: buffer</div>
 <div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160; </div>
-<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;   yaml_file_id = open_and_parse_file(<span class="stringliteral">&quot;diag_table.yaml&quot;</span>)</div>
-<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;   <span class="keyword">call </span>get_value_from_key(yaml_file_id, 9, <span class="stringliteral">&quot;missing&quot;</span>, buffer)</div>
+<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;   yaml_file_id = <a class="code" href="group__yaml__parser__mod.html#ga3d600290bb55dd9edd575555d217cfeb">open_and_parse_file</a>(<span class="stringliteral">&quot;diag_table.yaml&quot;</span>)</div>
+<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;   <span class="keyword">call </span><a class="code" href="interfaceyaml__parser__mod_1_1get__value__from__key.html">get_value_from_key</a>(yaml_file_id, 9, <span class="stringliteral">&quot;missing&quot;</span>, buffer)</div>
 <div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;<span class="keyword">end subroutine </span>check_missing_key</div>
 <div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160; </div>
 <div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;<span class="keyword">subroutine </span>check_get_key_name_bad_id</div>
 <div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;    <span class="keywordtype">integer</span> :: yaml_file_id</div>
 <div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;    <span class="keywordtype">character(len=10)</span> :: buffer</div>
 <div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160; </div>
-<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;   yaml_file_id = open_and_parse_file(<span class="stringliteral">&quot;diag_table.yaml&quot;</span>)</div>
-<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;   <span class="keyword">call </span>get_key_value(yaml_file_id, 666, buffer)</div>
+<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;   yaml_file_id = <a class="code" href="group__yaml__parser__mod.html#ga3d600290bb55dd9edd575555d217cfeb">open_and_parse_file</a>(<span class="stringliteral">&quot;diag_table.yaml&quot;</span>)</div>
+<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;   <span class="keyword">call </span><a class="code" href="group__yaml__parser__mod.html#gaf4da6a3ca1bdc64af6f37d7545fdedfe">get_key_value</a>(yaml_file_id, 666, buffer)</div>
 <div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160; </div>
 <div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;<span class="keyword">end subroutine </span>check_get_key_name_bad_id</div>
 <div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160; </div>
@@ -165,8 +165,8 @@ $(document).ready(function(){initNavTree('check__crashes_8F90_source.html',''); 
 <div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;   <span class="keywordtype">integer</span> :: yaml_file_id</div>
 <div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;   <span class="keywordtype">integer</span> :: file_ids(1)</div>
 <div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160; </div>
-<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;   yaml_file_id = open_and_parse_file(<span class="stringliteral">&quot;diag_table.yaml&quot;</span>)</div>
-<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;   <span class="keyword">call </span>get_block_ids(yaml_file_id, <span class="stringliteral">&quot;diag_files&quot;</span>, file_ids)</div>
+<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;   yaml_file_id = <a class="code" href="group__yaml__parser__mod.html#ga3d600290bb55dd9edd575555d217cfeb">open_and_parse_file</a>(<span class="stringliteral">&quot;diag_table.yaml&quot;</span>)</div>
+<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;   <span class="keyword">call </span><a class="code" href="group__yaml__parser__mod.html#ga991ef792715cfaaf77a9929ffe718879">get_block_ids</a>(yaml_file_id, <span class="stringliteral">&quot;diag_files&quot;</span>, file_ids)</div>
 <div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;   print *, file_ids</div>
 <div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160; </div>
 <div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;<span class="keyword">end subroutine </span>check_wrong_buffer_size</div>
@@ -174,8 +174,12 @@ $(document).ready(function(){initNavTree('check__crashes_8F90_source.html',''); 
 <div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;<span class="preprocessor"></span><span class="keyword">end program </span>check_crashes</div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
+<div class="ttc" id="ainterfaceyaml__parser__mod_1_1get__value__from__key_html"><div class="ttname"><a href="interfaceyaml__parser__mod_1_1get__value__from__key.html">yaml_parser_mod::get_value_from_key</a></div><div class="ttdoc">Dermine the value of a key from a keyname.</div><div class="ttdef"><b>Definition:</b> <a href="yaml__parser_8F90_source.html#l00034">yaml_parser.F90:34</a></div></div>
+<div class="ttc" id="agroup__yaml__parser__mod_html_ga3d600290bb55dd9edd575555d217cfeb"><div class="ttname"><a href="group__yaml__parser__mod.html#ga3d600290bb55dd9edd575555d217cfeb">yaml_parser_mod::open_and_parse_file</a></div><div class="ttdeci">integer function, public open_and_parse_file(filename)</div><div class="ttdoc">Opens and parses a yaml file.</div><div class="ttdef"><b>Definition:</b> <a href="yaml__parser_8F90_source.html#l00158">yaml_parser.F90:158</a></div></div>
 <div class="ttc" id="ainterfacempp__mod_1_1mpp__error_html"><div class="ttname"><a href="interfacempp__mod_1_1mpp__error.html">mpp_mod::mpp_error</a></div><div class="ttdoc">Error handler.</div><div class="ttdef"><b>Definition:</b> <a href="mpp_8F90_source.html#l00386">mpp.F90:386</a></div></div>
+<div class="ttc" id="agroup__yaml__parser__mod_html_ga991ef792715cfaaf77a9929ffe718879"><div class="ttname"><a href="group__yaml__parser__mod.html#ga991ef792715cfaaf77a9929ffe718879">yaml_parser_mod::get_block_ids</a></div><div class="ttdeci">subroutine, public get_block_ids(file_id, block_name, block_ids, parent_block_id)</div><div class="ttdoc">Gets the the ids of the blocks with block_name in the yaml file If parent_block_id is present,...</div><div class="ttdef"><b>Definition:</b> <a href="yaml__parser_8F90_source.html#l00304">yaml_parser.F90:304</a></div></div>
 <div class="ttc" id="agroup__fms__mod_html_ga76099928e3f2e58ea5efe717c7809fce"><div class="ttname"><a href="group__fms__mod.html#ga76099928e3f2e58ea5efe717c7809fce">fms_mod::fms_init</a></div><div class="ttdeci">subroutine, public fms_init(localcomm, alt_input_nml_path)</div><div class="ttdoc">Initializes the FMS module and also calls the initialization routines for all modules in the MPP pack...</div><div class="ttdef"><b>Definition:</b> <a href="fms_8F90_source.html#l00340">fms.F90:340</a></div></div>
+<div class="ttc" id="agroup__yaml__parser__mod_html_gaf4da6a3ca1bdc64af6f37d7545fdedfe"><div class="ttname"><a href="group__yaml__parser__mod.html#gaf4da6a3ca1bdc64af6f37d7545fdedfe">yaml_parser_mod::get_key_value</a></div><div class="ttdeci">subroutine, public get_key_value(file_id, key_id, key_value)</div><div class="ttdoc">Gets the value from a file id.</div><div class="ttdef"><b>Definition:</b> <a href="yaml__parser_8F90_source.html#l00181">yaml_parser.F90:181</a></div></div>
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
