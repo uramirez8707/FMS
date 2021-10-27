@@ -106,8 +106,8 @@ Data Types</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">interface &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interfaceyaml__parser__mod_1_1get__value__from__key.html">get_value_from_key</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Dermine the value of a key from a keyname.  <a href="interfaceyaml__parser__mod_1_1get__value__from__key.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">interface &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interfaceyaml__parser__mod_1_1c__functions.html">c_functions</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">c functions binding  <a href="interfaceyaml__parser__mod_1_1c__functions.html#details">More...</a><br /></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">interface &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interfaceyaml__parser__mod_1_1open__and__parse__file__wrap.html">open_and_parse_file_wrap</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">c functions binding  <a href="interfaceyaml__parser__mod_1_1open__and__parse__file__wrap.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
@@ -128,10 +128,10 @@ Functions/Subroutines</h2></td></tr>
 <tr class="memdesc:ga734f8c898afc2da442aaa74a1b6d84ee"><td class="mdescLeft">&#160;</td><td class="mdescRight">Used' to dermine the 1D value of a key from a keyname.  <a href="group__yaml__parser__mod.html#ga734f8c898afc2da442aaa74a1b6d84ee">More...</a><br /></td></tr>
 <tr class="separator:ga734f8c898afc2da442aaa74a1b6d84ee"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gabeac7c228a3c6057474cb7aac407cbca"><td class="memItemLeft" align="right" valign="top">integer function, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__yaml__parser__mod.html#gabeac7c228a3c6057474cb7aac407cbca">get_num_blocks</a> (file_id, block_name, parent_block_id)</td></tr>
-<tr class="memdesc:gabeac7c228a3c6057474cb7aac407cbca"><td class="mdescLeft">&#160;</td><td class="mdescRight">Determines the number of blocks with block_name in the yaml file If parent_block_id is present, it only counts those that belong' to that block.  <a href="group__yaml__parser__mod.html#gabeac7c228a3c6057474cb7aac407cbca">More...</a><br /></td></tr>
+<tr class="memdesc:gabeac7c228a3c6057474cb7aac407cbca"><td class="mdescLeft">&#160;</td><td class="mdescRight">Determines the number of blocks with block_name in the yaml file If parent_block_id is present, it only counts those that belong to that block.  <a href="group__yaml__parser__mod.html#gabeac7c228a3c6057474cb7aac407cbca">More...</a><br /></td></tr>
 <tr class="separator:gabeac7c228a3c6057474cb7aac407cbca"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga991ef792715cfaaf77a9929ffe718879"><td class="memItemLeft" align="right" valign="top">subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__yaml__parser__mod.html#ga991ef792715cfaaf77a9929ffe718879">get_block_ids</a> (file_id, block_name, block_ids, parent_block_id)</td></tr>
-<tr class="memdesc:ga991ef792715cfaaf77a9929ffe718879"><td class="mdescLeft">&#160;</td><td class="mdescRight">Gets the the ids of the blocks with block_name in the yaml file If parent_block_id is present, it only gets those that belong' to that block.  <a href="group__yaml__parser__mod.html#ga991ef792715cfaaf77a9929ffe718879">More...</a><br /></td></tr>
+<tr class="memdesc:ga991ef792715cfaaf77a9929ffe718879"><td class="mdescLeft">&#160;</td><td class="mdescRight">Gets the the ids of the blocks with block_name in the yaml file If parent_block_id is present, it only gets those that belong to that block.  <a href="group__yaml__parser__mod.html#ga991ef792715cfaaf77a9929ffe718879">More...</a><br /></td></tr>
 <tr class="separator:ga991ef792715cfaaf77a9929ffe718879"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
@@ -175,10 +175,10 @@ Functions/Subroutines</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Gets the the ids of the blocks with block_name in the yaml file If parent_block_id is present, it only gets those that belong' to that block. </p>
+<p>Gets the the ids of the blocks with block_name in the yaml file If parent_block_id is present, it only gets those that belong to that block. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">file_id</td><td>File id of the yaml file' to search </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">file_id</td><td>File id of the yaml file to search </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">block_name</td><td>The name of the block you are looking for </td></tr>
     <tr><td class="paramdir">[in,out]</td><td class="paramname">block_ids</td><td>Id of blocks with block_name </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">parent_block_id</td><td>Id of the parent_block </td></tr>
@@ -186,7 +186,7 @@ Functions/Subroutines</h2></td></tr>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="yaml__parser_8F90_source.html#l00304">304</a> of file <a class="el" href="yaml__parser_8F90_source.html">yaml_parser.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="yaml__parser_8F90_source.html#l00323">323</a> of file <a class="el" href="yaml__parser_8F90_source.html">yaml_parser.F90</a>.</p>
 
 </div>
 </div>
@@ -226,12 +226,12 @@ Functions/Subroutines</h2></td></tr>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramdir">[in]</td><td class="paramname">key_id</td><td>Id of the key-value pair of interest </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">file_id</td><td>File id of the yaml file' to search </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">file_id</td><td>File id of the yaml file to search </td></tr>
   </table>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="yaml__parser_8F90_source.html#l00171">171</a> of file <a class="el" href="yaml__parser_8F90_source.html">yaml_parser.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="yaml__parser_8F90_source.html#l00190">190</a> of file <a class="el" href="yaml__parser_8F90_source.html">yaml_parser.F90</a>.</p>
 
 </div>
 </div>
@@ -271,12 +271,12 @@ Functions/Subroutines</h2></td></tr>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramdir">[in]</td><td class="paramname">key_id</td><td>Id of the key-value pair of interest </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">file_id</td><td>File id of the yaml file' to search </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">file_id</td><td>File id of the yaml file to search </td></tr>
   </table>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="yaml__parser_8F90_source.html#l00181">181</a> of file <a class="el" href="yaml__parser_8F90_source.html">yaml_parser.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="yaml__parser_8F90_source.html#l00200">200</a> of file <a class="el" href="yaml__parser_8F90_source.html">yaml_parser.F90</a>.</p>
 
 </div>
 </div>
@@ -312,18 +312,18 @@ Functions/Subroutines</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Determines the number of blocks with block_name in the yaml file If parent_block_id is present, it only counts those that belong' to that block. </p>
+<p>Determines the number of blocks with block_name in the yaml file If parent_block_id is present, it only counts those that belong to that block. </p>
 <dl class="section return"><dt>Returns</dt><dd>Number of blocks with block_name </dd></dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">file_id</td><td>File id of the yaml file' to search </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">file_id</td><td>File id of the yaml file to search </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">block_name</td><td>The name of the block you are looking for </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">parent_block_id</td><td>Id of the parent block </td></tr>
   </table>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="yaml__parser_8F90_source.html#l00288">288</a> of file <a class="el" href="yaml__parser_8F90_source.html">yaml_parser.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="yaml__parser_8F90_source.html#l00307">307</a> of file <a class="el" href="yaml__parser_8F90_source.html">yaml_parser.F90</a>.</p>
 
 </div>
 </div>
@@ -382,16 +382,16 @@ Functions/Subroutines</h2></td></tr>
 <p>Used to dermine the value of a key from a keyname. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">file_id</td><td>File id of the yaml file' to search </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">block_id</td><td>ID corresponding' to the block you want the key for </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">file_id</td><td>File id of the yaml file to search </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">block_id</td><td>ID corresponding to the block you want the key for </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">key_name</td><td>Name of the key you want the value for </td></tr>
     <tr><td class="paramdir">[in,out]</td><td class="paramname">key_value</td><td>Value of the key </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">is_optional</td><td>Flag indicating if it is okay for they key' to not exist. If the key does not exist key_value will not be set, so it is the user's responsibility' to initialize it before the call </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">is_optional</td><td>Flag indicating if it is okay for they key to not exist. If the key does not exist key_value will not be set, so it is the user's responsibility to initialize it before the call </td></tr>
   </table>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="yaml__parser_8F90_source.html#l00191">191</a> of file <a class="el" href="yaml__parser_8F90_source.html">yaml_parser.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="yaml__parser_8F90_source.html#l00210">210</a> of file <a class="el" href="yaml__parser_8F90_source.html">yaml_parser.F90</a>.</p>
 
 </div>
 </div>
@@ -450,16 +450,16 @@ Functions/Subroutines</h2></td></tr>
 <p>Used' to dermine the 1D value of a key from a keyname. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">file_id</td><td>File id of the yaml file' to search </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">block_id</td><td>ID corresponding' to the block you want the key for </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">file_id</td><td>File id of the yaml file to search </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">block_id</td><td>ID corresponding to the block you want the key for </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">key_name</td><td>Name of the key you want the value for </td></tr>
     <tr><td class="paramdir">[in,out]</td><td class="paramname">key_value</td><td>Value of the key </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">is_optional</td><td>Flag indicating if it is okay for they key' to not exist. If the key does not exist key_value will not be set, so it is the user's responsibility' to initialize it before the call </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">is_optional</td><td>Flag indicating if it is okay for they key' to not exist. If the key does not exist key_value will not be set, so it is the user's responsibility to initialize it before the call </td></tr>
   </table>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="yaml__parser_8F90_source.html#l00238">238</a> of file <a class="el" href="yaml__parser_8F90_source.html">yaml_parser.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="yaml__parser_8F90_source.html#l00257">257</a> of file <a class="el" href="yaml__parser_8F90_source.html">yaml_parser.F90</a>.</p>
 
 </div>
 </div>
@@ -480,7 +480,7 @@ Functions/Subroutines</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Opens and parses a yaml file. </p>
-<dl class="section return"><dt>Returns</dt><dd>A file id corresponding' to the file that was opened </dd></dl>
+<dl class="section return"><dt>Returns</dt><dd>A file id corresponding to the file that was opened </dd></dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramdir">[in]</td><td class="paramname">filename</td><td>Filename of the yaml file </td></tr>
@@ -488,7 +488,7 @@ Functions/Subroutines</h2></td></tr>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="yaml__parser_8F90_source.html#l00158">158</a> of file <a class="el" href="yaml__parser_8F90_source.html">yaml_parser.F90</a>.</p>
+<p class="definition">Definition at line <a class="el" href="yaml__parser_8F90_source.html#l00177">177</a> of file <a class="el" href="yaml__parser_8F90_source.html">yaml_parser.F90</a>.</p>
 
 </div>
 </div>

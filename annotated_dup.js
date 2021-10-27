@@ -542,8 +542,17 @@ var annotated_dup =
       [ "xmap_type", "structxgrid__mod_1_1xmap__type.html", "structxgrid__mod_1_1xmap__type" ]
     ] ],
     [ "yaml_parser_mod", null, [
-      [ "c_functions", "interfaceyaml__parser__mod_1_1c__functions.html", "interfaceyaml__parser__mod_1_1c__functions" ],
-      [ "get_value_from_key", "interfaceyaml__parser__mod_1_1get__value__from__key.html", "interfaceyaml__parser__mod_1_1get__value__from__key" ]
+      [ "get_block_ids_all", "interfaceyaml__parser__mod_1_1get__block__ids__all.html", "interfaceyaml__parser__mod_1_1get__block__ids__all" ],
+      [ "get_block_ids_child", "interfaceyaml__parser__mod_1_1get__block__ids__child.html", "interfaceyaml__parser__mod_1_1get__block__ids__child" ],
+      [ "get_key", "interfaceyaml__parser__mod_1_1get__key.html", "interfaceyaml__parser__mod_1_1get__key" ],
+      [ "get_key_ids", "interfaceyaml__parser__mod_1_1get__key__ids.html", "interfaceyaml__parser__mod_1_1get__key__ids" ],
+      [ "get_nkeys", "interfaceyaml__parser__mod_1_1get__nkeys.html", "interfaceyaml__parser__mod_1_1get__nkeys" ],
+      [ "get_num_blocks_all", "interfaceyaml__parser__mod_1_1get__num__blocks__all.html", "interfaceyaml__parser__mod_1_1get__num__blocks__all" ],
+      [ "get_num_blocks_child", "interfaceyaml__parser__mod_1_1get__num__blocks__child.html", "interfaceyaml__parser__mod_1_1get__num__blocks__child" ],
+      [ "get_value", "interfaceyaml__parser__mod_1_1get__value.html", "interfaceyaml__parser__mod_1_1get__value" ],
+      [ "get_value_from_key", "interfaceyaml__parser__mod_1_1get__value__from__key.html", "interfaceyaml__parser__mod_1_1get__value__from__key" ],
+      [ "get_value_from_key_wrap", "interfaceyaml__parser__mod_1_1get__value__from__key__wrap.html", "interfaceyaml__parser__mod_1_1get__value__from__key__wrap" ],
+      [ "open_and_parse_file_wrap", "interfaceyaml__parser__mod_1_1open__and__parse__file__wrap.html", "interfaceyaml__parser__mod_1_1open__and__parse__file__wrap" ]
     ] ],
     [ "assertequals", "interfaceassertequals.html", null ],
     [ "atm_type", "structatm__type.html", "structatm__type" ],
