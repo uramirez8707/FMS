@@ -49,6 +49,8 @@ var group__data__override__mod =
     [ "data_override_unset_domains", "group__data__override__mod.html#gae6a3ddf1fdbcd12f51b04211c9b406bb", null ],
     [ "get_domain", "group__data__override__mod.html#ga6d9f6120e4f0ec9d4638595667f9f882", null ],
     [ "get_domainug", "group__data__override__mod.html#ga12523810e1d295fd71f8690f9b6bc032", null ],
+    [ "read_table", "group__data__override__mod.html#ga983078dc8074c2fa7e4dd6578bcfbcb6", null ],
+    [ "read_table_yaml", "group__data__override__mod.html#ga83ba6c6db3645bb1fe4b9cf2f9a939fd", null ],
     [ "data_table", "group__data__override__mod.html#ga836d40537b1b65012f0674526662bf90", null ],
     [ "num_fields", "group__data__override__mod.html#gabfaffcec6d80f4f9dd8232df6671d99b", null ],
     [ "override_array", "group__data__override__mod.html#ga18693b454bf695b32e482c65782160c1", null ],

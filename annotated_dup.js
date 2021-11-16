@@ -94,13 +94,6 @@ var annotated_dup =
       [ "send_data", "interfacediag__manager__mod_1_1send__data.html", "interfacediag__manager__mod_1_1send__data" ],
       [ "send_tile_averaged_data", "interfacediag__manager__mod_1_1send__tile__averaged__data.html", "interfacediag__manager__mod_1_1send__tile__averaged__data" ]
     ] ],
-    [ "diag_output_mod", null, [
-      [ "diag_field_write", "interfacediag__output__mod_1_1diag__field__write.html", "interfacediag__output__mod_1_1diag__field__write" ],
-      [ "diag_output_init", "interfacediag__output__mod_1_1diag__output__init.html", "interfacediag__output__mod_1_1diag__output__init" ],
-      [ "write_attribute_meta", "interfacediag__output__mod_1_1write__attribute__meta.html", "interfacediag__output__mod_1_1write__attribute__meta" ],
-      [ "write_axis_meta_data", "interfacediag__output__mod_1_1write__axis__meta__data.html", "interfacediag__output__mod_1_1write__axis__meta__data" ],
-      [ "write_field_meta_data", "interfacediag__output__mod_1_1write__field__meta__data.html", "interfacediag__output__mod_1_1write__field__meta__data" ]
-    ] ],
     [ "diag_table_mod", null, [
       [ "field_description_type", "structdiag__table__mod_1_1field__description__type.html", "structdiag__table__mod_1_1field__description__type" ],
       [ "file_description_type", "structdiag__table__mod_1_1file__description__type.html", "structdiag__table__mod_1_1file__description__type" ]
@@ -217,6 +210,7 @@ var annotated_dup =
     [ "fms_mod", null, [
       [ "c_free", "interfacefms__mod_1_1c__free.html", "interfacefms__mod_1_1c__free" ],
       [ "c_strlen", "interfacefms__mod_1_1c__strlen.html", "interfacefms__mod_1_1c__strlen" ],
+      [ "fms_cstring2cpointer", "interfacefms__mod_1_1fms__cstring2cpointer.html", "interfacefms__mod_1_1fms__cstring2cpointer" ],
       [ "nml_errors_type", "structfms__mod_1_1nml__errors__type.html", "structfms__mod_1_1nml__errors__type" ],
       [ "string", "interfacefms__mod_1_1string.html", "interfacefms__mod_1_1string" ]
     ] ],

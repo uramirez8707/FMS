@@ -21,7 +21,7 @@ var NAVTREEINDEX0 =
 ".html":[6,0,20],
 ".html":[6,0,21],
 ".html":[6,0,22],
-".html":[6,0,23],
+".html":[6,0,24],
 ".html":[6,0,25],
 ".html":[6,0,26],
 ".html":[6,0,27],
@@ -50,7 +50,7 @@ var NAVTREEINDEX0 =
 ".html":[6,0,50],
 ".html":[6,0,51],
 ".html":[6,0,52],
-".html":[6,0,53],
+".html":[6,0,54],
 ".html":[6,0,55],
 ".html":[6,0,56],
 ".html":[6,0,57],
@@ -59,7 +59,6 @@ var NAVTREEINDEX0 =
 ".html":[6,0,60],
 ".html":[6,0,61],
 ".html":[6,0,62],
-".html":[6,0,63],
 "affinity_8c.html":[7,0,0,0],
 "affinity_8c.html#a3afc273b2ff17b5c36bcbe39fbcf5363":[7,0,0,0,2],
 "affinity_8c.html#a71b5b491d6c8960803adf60a9b7d173a":[7,0,0,0,0],
@@ -249,5 +248,6 @@ var NAVTREEINDEX0 =
 "astronomy_8F90.html#ga867b18beb2aba0632e097f1701629f9b":[7,0,2,0,47],
 "astronomy_8F90.html#ga8851cf810eeeb692cc026113f97386b4":[7,0,2,0,48],
 "astronomy_8F90.html#ga89a3171b8c7d4c50c5c41fbaaca576e3":[7,0,2,0,59],
-"astronomy_8F90.html#ga8a9bd207af7b8495bb6768ab44b5a3f6":[7,0,2,0,17]
+"astronomy_8F90.html#ga8a9bd207af7b8495bb6768ab44b5a3f6":[7,0,2,0,17],
+"astronomy_8F90.html#ga8dccd51b88c5f26258bcaab0b250675d":[7,0,2,0,27]
 };
