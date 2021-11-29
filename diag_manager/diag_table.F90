@@ -229,11 +229,16 @@ MODULE diag_table_mod
   USE diag_data_mod, ONLY: global_descriptor, base_time, base_year, base_month, base_day, base_hour, base_minute, base_second,&
        & DIAG_OTHER, DIAG_OCEAN, DIAG_ALL, coord_type, append_pelist_name, pelist_name
   USE diag_util_mod, ONLY: init_file, check_duplicate_output_fields, init_input_field, init_output_field
+  USE yaml_parser_mod
 
   IMPLICIT NONE
 
   PRIVATE
+#ifndef use_yaml
   PUBLIC :: parse_diag_table
+#else
+  PUBLIC :: parse_the_beautiful_diag_table
+#endif
 
   !> Private type to hold field information for the diag table
   !> @ingroup diag_table_mod
@@ -275,6 +280,182 @@ MODULE diag_table_mod
   CHARACTER(len=*), PARAMETER :: UNALLOWED_ALL = UNALLOWED_QTE//","
 
 CONTAINS
+
+  SUBROUTINE set_base_time(pstat, err_msg)
+    integer, intent(inout), optional :: pstat
+    CHARACTER(len=*), INTENT(out), OPTIONAL :: err_msg !< Error message
+
+    CHARACTER(len=9) :: amonth !< Month name
+    integer :: stdlog_unit
+
+    ! get the stdlog unit number
+    stdlog_unit = stdlog()
+
+    ! Set up the time type for base time
+    IF ( get_calendar_type() /= NO_CALENDAR ) THEN
+       IF ( base_year==0 .OR. base_month==0 .OR. base_day==0 ) THEN
+          if (present(pstat)) pstat = 101
+          IF ( fms_error_handler('diag_table_mod::parse_diag_table', 'The base_year/month/day can not equal zero', err_msg) ) RETURN
+       END IF
+       base_time = set_date(base_year, base_month, base_day, base_hour, base_minute, base_second)
+       amonth = month_name(base_month)
+    ELSE
+       ! No calendar - ignore year and month
+       base_time = set_time(NINT(base_hour*SECONDS_PER_HOUR)+NINT(base_minute*SECONDS_PER_MINUTE)+base_second, base_day)
+       base_year = 0
+       base_month = 0
+       amonth = 'day'
+    END IF
+
+    IF ( mpp_pe() == mpp_root_pe() ) THEN
+       WRITE (stdlog_unit,'("base date used = ",I4,1X,A,2I3,2(":",I2.2)," gmt")') base_year, TRIM(amonth), base_day, &
+            & base_hour, base_minute, base_second
+    END IF
+  END SUBROUTINE
+
+  subroutine init_temp_file(temp_file)
+     TYPE(file_description_type), intent(out) :: temp_file
+
+     temp_file%output_freq = 0
+     temp_file%file_format = 1
+     temp_file%new_file_freq = 0
+     temp_file%file_duration = 0
+     temp_file%iTime_units = 0
+     temp_file%iOutput_freq_units = 0
+     temp_file%iNew_file_freq_units = 0
+     temp_file%iFile_duration_units = 0
+     temp_file%file_name = ""
+     temp_file%output_freq_units = ""
+     temp_file%time_units = ""
+     temp_file%long_name = ""
+     temp_file%new_file_freq_units = ""
+     temp_file%start_time_s = ""
+     temp_file%file_duration_units = ""
+     temp_file%filename_time_bounds = ""
+  end subroutine init_temp_file
+
+#ifdef use_yaml
+  subroutine get_region(file_id, region_id, regional_coords)
+    integer, intent(in) :: file_id
+    integer, intent(in) :: region_id
+    TYPE(coord_type), intent(out) :: regional_coords
+
+    call get_value_from_key(file_id, region_id, "xbegin", regional_coords%xbegin, is_optional=.true.)
+    call get_value_from_key(file_id, region_id, "xend", regional_coords%xend, is_optional=.true.)
+    call get_value_from_key(file_id, region_id, "ybegin", regional_coords%ybegin, is_optional=.true.)
+    call get_value_from_key(file_id, region_id, "yend", regional_coords%yend, is_optional=.true.)
+    call get_value_from_key(file_id, region_id, "zbegin", regional_coords%zbegin, is_optional=.true.)
+    call get_value_from_key(file_id, region_id, "zend", regional_coords%zend, is_optional=.true.)
+
+  end subroutine get_region
+
+  SUBROUTINE parse_the_beautiful_diag_table
+    integer :: diag_yaml_id
+    integer :: dummy(6)
+    integer :: nfiles
+    integer, allocatable :: fids(:)
+    integer :: nvariables
+    integer, allocatable :: vids(:)
+    integer :: i, j !< For do loops
+    TYPE(file_description_type) :: temp_file
+    TYPE(field_description_type) :: temp_field
+    integer :: nregion
+    integer :: rid(1)
+    TYPE(coord_type) :: regional_coords
+    character(len=10) :: kind_buffer
+
+    diag_yaml_id = open_and_parse_file("diag_table.yaml")
+    call get_value_from_key(diag_yaml_id, 0, "baseDate", dummy)
+    call get_value_from_key(diag_yaml_id, 0, "title", global_descriptor)
+
+    base_year = dummy(1)
+    base_month = dummy(2)
+    base_day = dummy(3)
+    base_hour = dummy(4)
+    base_minute = dummy(5)
+    base_second = dummy(6)
+
+    call set_base_time
+
+    nfiles = get_num_blocks(diag_yaml_id, "diag_files")
+    allocate(fids(nfiles))
+    call get_block_ids(diag_yaml_id, "diag_files", fids)
+
+    do i = 1, nfiles
+       call init_temp_file(temp_file)
+
+       call get_value_from_key(diag_yaml_id, fids(i), "file_name", temp_file%file_name)
+       call get_value_from_key(diag_yaml_id, fids(i), "freq", temp_file%output_freq)
+       call get_value_from_key(diag_yaml_id, fids(i), "freq_units", temp_file%Output_freq_units)
+       call get_value_from_key(diag_yaml_id, fids(i), "time_units", temp_file%Time_units)
+       call get_value_from_key(diag_yaml_id, fids(i), "unlimdim", temp_file%long_name)
+
+       dummy = 0
+       call get_value_from_key(diag_yaml_id, fids(i), "new_file_freq", temp_file%new_file_freq, is_optional=.true.)
+       call get_value_from_key(diag_yaml_id, fids(i), "new_file_freq_units", temp_file%new_file_freq_units, is_optional=.true.)
+       call get_value_from_key(diag_yaml_id, fids(i), "start_time", dummy, is_optional=.true.)
+       call get_value_from_key(diag_yaml_id, fids(i), "file_duration", temp_file%file_duration, is_optional=.true.)
+       call get_value_from_key(diag_yaml_id, fids(i), "file_duration_units", temp_file%file_duration_units, is_optional=.true.)
+       call get_value_from_key(diag_yaml_id, fids(i), "filename_time_bounds", temp_file%filename_time_bounds, is_optional=.true.)
+
+       if (dummy(1) .ne. 0) then
+           temp_file%start_time = set_date(dummy(1), dummy(2), dummy(3), dummy(4), dummy(5), dummy(6))
+       endif
+
+       temp_file%iTime_units = find_unit_ivalue(temp_file%time_units)
+       temp_file%iOutput_freq_units = find_unit_ivalue(temp_file%output_freq_units)
+       temp_file%iNew_file_freq_units = find_unit_ivalue(temp_file%new_file_freq_units)
+       temp_file%iFile_duration_units = find_unit_ivalue(temp_file%file_duration_units)
+
+       nregion = 0
+       nregion = get_num_blocks(diag_yaml_id, "region", parent_block_id=fids(i))
+       if (nregion .ne. 0 ) then
+          call get_block_ids(diag_yaml_id, "region", rid, parent_block_id=fids(i))
+          call get_region(diag_yaml_id, rid(1), regional_coords)
+       endif
+
+       IF ( temp_file%new_file_freq > 0 ) THEN ! Call the init_file subroutine.  The '1' is for the tile_count
+          CALL init_file(temp_file%file_name, temp_file%output_freq, temp_file%iOutput_freq_units, temp_file%file_format,&
+                       & temp_file%iTime_units, temp_file%long_name, 1, temp_file%new_file_freq, temp_file%iNew_file_freq_units,&
+                       & temp_file%start_time, temp_file%file_duration, temp_file%iFile_duration_units, temp_file%filename_time_bounds)
+       ELSE
+          CALL init_file(temp_file%file_name, temp_file%output_freq, temp_file%iOutput_freq_units, temp_file%file_format,&
+                       & temp_file%iTime_units, temp_file%long_name, 1)
+       END IF
+
+       nvariables = get_num_blocks(diag_yaml_id, "varlist", parent_block_id=fids(i))
+       allocate(vids(nvariables))
+       call get_block_ids(diag_yaml_id, "varlist", vids, parent_block_id=fids(i))
+
+       do j = 1, nvariables
+          temp_field%file_name = temp_file%file_name
+          temp_field%time_sampling = "all" !< Only "all" is allowed here!
+          call get_value_from_key(diag_yaml_id, vids(j), "var_name", temp_field%field_name)
+          call get_value_from_key(diag_yaml_id, vids(j), "module", temp_field%module_name)
+          call get_value_from_key(diag_yaml_id, vids(j), "reduction", temp_field%time_method)
+          call get_value_from_key(diag_yaml_id, vids(j), "output_name", temp_field%output_name)
+          call get_value_from_key(diag_yaml_id, vids(j), "kind", kind_buffer)
+          if (trim(kind_buffer) .eq. "double") then
+              temp_field%pack = 4
+          elseif (trim(kind_buffer) .eq. "float") then
+               temp_field%pack = 2
+          endif
+          if (nregion .ne. 0 ) then
+             temp_field%regional_coords = regional_coords
+             CALL init_input_field(temp_field%module_name, temp_field%field_name, 1)
+             CALL init_output_field(temp_field%module_name, temp_field%field_name, temp_field%output_name, temp_field%file_name,&
+                                  & temp_field%time_method, temp_field%pack, 1, temp_field%regional_coords)
+          else
+             CALL init_input_field(temp_field%module_name, temp_field%field_name, 1)
+             CALL init_output_field(temp_field%module_name, temp_field%field_name, temp_field%output_name, temp_field%file_name,&
+                                  & temp_field%time_method, temp_field%pack, 1)
+          endif
+       enddo
+        deallocate(vids)
+    enddo
+    deallocate(fids)
+  END SUBROUTINE parse_the_beautiful_diag_table
+#endif
 
   !> @brief Parse the <TT>diag_table</TT> in preparation for diagnostic output.
   !! @details <TT>parse_diag_table</TT> is the public interface to parse the diag_table, and setup the arrays needed to store the
@@ -328,9 +509,6 @@ CONTAINS
        diag_subset_output = DIAG_ALL
     END IF
 
-    ! get the stdlog unit number
-    stdlog_unit = stdlog()
-
     call ascii_read('diag_table', diag_table, num_lines=num_lines)
 
     ! Read in the global file labeling string
@@ -348,26 +526,8 @@ CONTAINS
        IF ( fms_error_handler('diag_manager_init', 'Error reading the base date from the diagnostic table.', err_msg) ) RETURN
     END IF
 
-    ! Set up the time type for base time
-    IF ( get_calendar_type() /= NO_CALENDAR ) THEN
-       IF ( base_year==0 .OR. base_month==0 .OR. base_day==0 ) THEN
-          pstat = 101
-          IF ( fms_error_handler('diag_table_mod::parse_diag_table', 'The base_year/month/day can not equal zero', err_msg) ) RETURN
-       END IF
-       base_time = set_date(base_year, base_month, base_day, base_hour, base_minute, base_second)
-       amonth = month_name(base_month)
-    ELSE
-       ! No calendar - ignore year and month
-       base_time = set_time(NINT(base_hour*SECONDS_PER_HOUR)+NINT(base_minute*SECONDS_PER_MINUTE)+base_second, base_day)
-       base_year = 0
-       base_month = 0
-       amonth = 'day'
-    END IF
-
-    IF ( mpp_pe() == mpp_root_pe() ) THEN
-       WRITE (stdlog_unit,'("base date used = ",I4,1X,A,2I3,2(":",I2.2)," gmt")') base_year, TRIM(amonth), base_day, &
-            & base_hour, base_minute, base_second
-    END IF
+    call set_base_time(pstat, err_msg)
+    if (pstat /= 0) RETURN
 
     nfiles=0
     nfields=0

@@ -1034,6 +1034,7 @@ CONTAINS
     ELSE
        files(num_files)%start_time = base_time
     END IF
+
     files(num_files)%next_open=diag_time_inc(files(num_files)%start_time,new_file_freq1,new_file_freq_units1)
     files(num_files)%close_time = diag_time_inc(files(num_files)%start_time,file_duration1, file_duration_units1)
     IF ( files(num_files)%close_time>files(num_files)%next_open ) THEN

@@ -222,7 +222,13 @@ use platform_mod
        & max_file_attributes, max_axis_attributes, prepend_date, DIAG_FIELD_NOT_FOUND, diag_init_time, diag_data_init, &
        & use_mpp_io
   USE diag_data_mod, ONLY:  fileobj, fileobjU, fnum_for_domain, fileobjND
+
+#ifdef use_yaml
+  USE diag_table_mod, ONLY: parse_the_beautiful_diag_table
+#else
   USE diag_table_mod, ONLY: parse_diag_table
+#endif
+
   USE diag_output_mod, ONLY: get_diag_global_att, set_diag_global_att
   USE diag_grid_mod, ONLY: diag_grid_init, diag_grid_end
   USE constants_mod, ONLY: SECONDS_PER_DAY
@@ -3676,11 +3682,16 @@ CONTAINS
        END IF
     END IF
 
+#ifdef use_yaml
+    CALL parse_the_beautiful_diag_table()
+#else
     CALL parse_diag_table(DIAG_SUBSET=diag_subset_output, ISTAT=mystat, ERR_MSG=err_msg_local)
+
     IF ( mystat /= 0 ) THEN
        IF ( fms_error_handler('diag_manager_mod::diag_manager_init',&
             & 'Error parsing diag_table. '//TRIM(err_msg_local), err_msg) ) RETURN
     END IF
+#endif
 
     !initialize files%bytes_written to zero
     files(:)%bytes_written = 0
