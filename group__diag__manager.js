@@ -7,5 +7,7 @@ var group__diag__manager =
     [ "diag_output_mod", "group__diag__output__mod.html", "group__diag__output__mod" ],
     [ "diag_table_mod", "group__diag__table__mod.html", "group__diag__table__mod" ],
     [ "diag_util_mod", "group__diag__util__mod.html", "group__diag__util__mod" ],
+    [ "fms_diag_yaml_mod", "group__fms__diag__yaml__mod.html", "group__fms__diag__yaml__mod" ],
+    [ "fms_diag_yaml_object_mod", "group__fms__diag__yaml__object__mod.html", "group__fms__diag__yaml__object__mod" ],
     [ "diag_table", "group__diag__manager.html#md_docs_diag_table", null ]
 ];
