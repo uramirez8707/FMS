@@ -41,11 +41,19 @@ private
 public :: diag_yaml_object_init, diag_yaml_object_end
 public :: diagYamlObject_type, get_diag_yaml_obj, get_title, get_basedate, get_diag_files, get_diag_fields
 public :: diagYamlFiles_type, diagYamlFilesVar_type
+public :: find_diag_field
 !> @}
 
 integer, parameter :: basedate_size = 6
 integer, parameter :: NUM_SUB_REGION_ARRAY = 8
 integer, parameter :: MAX_STR_LEN = 255
+
+!> @brief type to hold an array of sorted diag_fiels
+type varList
+  character(len=255), allocatable :: var(:) !< Array of diag_field
+  type(c_ptr), allocatable :: var_pointer(:) !< Array of pointers
+  integer, allocatable :: ids(:) !< Array of ids
+end type
 
 !> @brief type to hold the sub region information about a file
 type subRegion_type
@@ -162,6 +170,7 @@ type diagYamlObject_type
 end type diagYamlObject_type
 
 type (diagYamlObject_type) :: diag_yaml  !< Obj containing the contents of the diag_table.yaml
+type (varList) :: variable_list !< List of all the variables in the diag_table.yaml
 
 !> @addtogroup fms_diag_yaml_mod
 !> @{
@@ -240,6 +249,9 @@ subroutine diag_yaml_object_init
 
   total_nvars = get_total_num_vars(diag_yaml_id, diag_file_ids)
   allocate(diag_yaml%diag_fields(total_nvars))
+  allocate(variable_list%var(total_nvars))
+  allocate(variable_list%ids(total_nvars))
+  allocate(variable_list%var_pointer(total_nvars))
 
   var_count = 0
   nfiles_loop: do i = 1, nfiles
@@ -260,10 +272,17 @@ subroutine diag_yaml_object_init
 
       !> Save the variable name in the diag_file type
       diag_yaml%diag_files(i)%file_varlist(j) = diag_yaml%diag_fields(var_count)%var_varname
+
+      !> Save the variable name is the variable_list
+      variable_list%var(var_count) = trim(diag_yaml%diag_fields(var_count)%var_varname)//c_null_char
+      variable_list%ids(var_count) = var_count
+
     enddo nvars_loop
     deallocate(var_ids)
   enddo nfiles_loop
-
+  !> Sort the variable list in alphabetical order
+  variable_list%var_pointer = fms_array_to_pointer(variable_list%var)
+  call fms_sort_this(variable_list%var_pointer, total_nvars, variable_list%ids)
   deallocate(diag_file_ids)
 end subroutine
 
@@ -285,6 +304,9 @@ subroutine diag_yaml_object_end()
     if(allocated(diag_yaml%diag_fields(i)%var_attributes)) deallocate(diag_yaml%diag_fields(i)%var_attributes)
   enddo
   if(allocated(diag_yaml%diag_fields)) deallocate(diag_yaml%diag_fields)
+  if(allocated(variable_list%var_pointer)) deallocate(variable_list%var_pointer)
+  if(allocated(variable_list%var)) deallocate(variable_list%var)
+  if(allocated(variable_list%ids)) deallocate(variable_list%ids)
 
 end subroutine diag_yaml_object_end
 
@@ -474,6 +496,17 @@ result(total_nvars)
     total_nvars = total_nvars + get_num_blocks(diag_yaml_id, "varlist", parent_block_id=diag_file_ids(i))
   end do
 end function
+
+!> @brief Determines if a diag_field is in the diag_yaml_object
+!! @return Indices of the locations where the field was found
+function find_diag_field(diag_field_name) &
+result(indices)
+
+  character(len=*), intent(in) :: diag_field_name
+  integer, allocatable :: indices(:)
+
+  indices = fms_find_my_string(variable_list%var_pointer, size(variable_list%var_pointer), diag_field_name//c_null_char)
+end function find_diag_field
 
 !> @brief This checks if the file frequency in a diag file is valid and crashes if it isn't
 subroutine check_file_freq(fileobj)
