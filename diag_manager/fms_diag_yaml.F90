@@ -32,7 +32,9 @@ module fms_diag_yaml_mod
 #ifdef use_yaml
 use diag_data_mod, only: DIAG_NULL
 use yaml_parser_mod
+use fms_string_utils_mod
 use mpp_mod
+use, intrinsic :: iso_c_binding, only : c_ptr, c_null_char
 
 implicit none
 

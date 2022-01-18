@@ -53,6 +53,7 @@ integer :: io_status !< The status after reading the input.nml
 
 type(diagYamlFiles_type), allocatable, dimension (:) :: diag_files !< Files from the diag_yaml
 type(diagYamlFilesVar_type), allocatable, dimension(:) :: diag_fields !< Fields from the diag_yaml
+integer, allocatable :: indices(:) !< Array of indices where a diag_field was found
 
 namelist / check_crashes_nml / checking_crashes
 
@@ -76,6 +77,27 @@ if (.not. checking_crashes) then
   diag_fields = my_yaml%get_diag_fields()
   call compare_result("nfields", size(diag_fields), 3)
   call compare_diag_fields(diag_fields)
+
+  indices = find_diag_field("sst")
+  print *, "sst was found in ", indices
+  if (size(indices) .ne. 2) &
+    call mpp_error(FATAL, 'sst was supposed to be found twice!')
+  if (indices(1) .ne. 2 .and. indices(2) .ne. 1) &
+    call mpp_error(FATAL, 'sst was supposed to be found in indices 1 and 2')
+  deallocate(indices)
+
+  indices = find_diag_field("sstt")
+  print *, "sstt was found in ", indices
+  if (size(indices) .ne. 1) &
+    call mpp_error(FATAL, 'sstt was supposed to be found twice!')
+  if (indices(1) .ne. 3) &
+    call mpp_error(FATAL, 'sstt was supposed to be found in indices 1 and 2')
+  deallocate(indices)
+
+  indices = find_diag_field("tamales")
+  print *, "tamales was found in ", indices
+  if (indices(1) .ne. -999) &
+    call mpp_error(FATAL, "tamales is not in the diag_table!")
 
 endif
 deallocate(diag_files)
