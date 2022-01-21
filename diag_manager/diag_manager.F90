@@ -200,7 +200,7 @@ use platform_mod
   USE mpp_mod, ONLY: input_nml_file
 
   USE fms_mod, ONLY: error_mesg, FATAL, WARNING, NOTE, stdout, stdlog, write_version_number,&
-       & fms_error_handler, check_nml_error, lowercase
+       & fms_error_handler, check_nml_error, lowercase, string
   USE fms_io_mod, ONLY: get_instance_filename
   USE diag_axis_mod, ONLY: diag_axis_init, get_axis_length, get_axis_num, get_domain2d, get_tile_count,&
        & diag_axis_add_attribute, axis_compatible_check, CENTER, NORTH, EAST
@@ -491,20 +491,28 @@ integer, allocatable :: diag_table_indices(:)
 diag_table_indices = find_diag_field(field_name)
 
 if(diag_table_indices(1) .eq. diag_null) then
+   CALL error_mesg ('diag_manager_mod::register_diag_field', 'module/output_field '&
+     &//TRIM(module_name)//'/'// TRIM(field_name)//' NOT found in diag_table',&
+     & NOTE)
    register_diag_field_array_modern = diag_null
    deallocate(diag_table_indices)
    RETURN
 else
+   CALL error_mesg ('diag_manager_mod::register_diag_field', 'module/output_field '&
+     &//TRIM(module_name)//'/'// TRIM(field_name)//' found in diag_table '//&
+     &string(size(diag_table_indices))//' times',&
+     & NOTE)
    allocate( diag_obj )
+   call diag_obj%setID(1)
    call diag_obj%register (module_name, field_name, axes, init_time, &
      long_name, units, missing_value, Range, mask_variant, standard_name, &
       do_not_log, err_msg, interp_method, tile_count, area, volume, realm) !(no metadata here)
 
-   diag_obj_ptr => diag_obj
-   status_ic = the_diag_object_container%insert(diag_obj_ptr%get_id(), diag_obj_ptr)
-   if(status_ic .ne. 0) then
-      print *, "Insertion ERROR for id ", diag_obj_ptr%get_id()
-   endif
+   !diag_obj_ptr => diag_obj
+   !status_ic = the_diag_object_container%insert(diag_obj_ptr%get_id(), diag_obj_ptr)
+   !if(status_ic .ne. 0) then
+      !print *, "Insertion ERROR for id ", diag_obj_ptr%get_id()
+   !endif
    register_diag_field_array_modern = 1
 endif
 END FUNCTION register_diag_field_array_modern

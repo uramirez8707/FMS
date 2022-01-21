@@ -38,6 +38,7 @@ call diag_manager_init
 Time = set_date(2,1,1,0,0,0)
 id_z  = diag_axis_init('z',  (/1., 2., 3./),  'point_Z', 'z', long_name='point_Z')
 id_sst = register_diag_field  ('test_diag_manager_mod', 'sst', (/id_z/), Time, 'SST', 'K')
+id_sst = register_diag_field  ('test_diag_manager_mod', 'mullions', (/id_z/), Time, 'SST', 'K')
 
 call diag_manager_end(Time)
 call fms_end
