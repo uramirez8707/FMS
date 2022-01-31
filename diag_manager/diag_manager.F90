@@ -268,6 +268,7 @@ use platform_mod
   type(time_type) :: Time_end
 
   TYPE(FmsDiagObjectContainer_t), ALLOCATABLE :: the_diag_object_container
+  integer :: modern_nfields !< Number of fields registered
 
   !> @brief Send data over to output fields.
   !!
@@ -498,16 +499,17 @@ if(diag_table_indices(1) .eq. diag_null) then
    deallocate(diag_table_indices)
    RETURN
 else
-   CALL error_mesg ('diag_manager_mod::register_diag_field', 'module/output_field '&
-     &//TRIM(module_name)//'/'// TRIM(field_name)//' found in diag_table '//&
-     &string(size(diag_table_indices))//' times',&
-     & NOTE)
    allocate( diag_obj )
-   call diag_obj%setID(1)
+   modern_nfields = modern_nfields + 1
+   call diag_obj%setID(modern_nfields)
    call diag_obj%register (module_name, field_name, axes, init_time, &
      long_name, units, missing_value, Range, mask_variant, standard_name, &
       do_not_log, err_msg, interp_method, tile_count, area, volume, realm) !(no metadata here)
 
+   CALL error_mesg ('diag_manager_mod::register_diag_field', 'module/output_field '&
+      &//TRIM(module_name)//'/'// TRIM(field_name)//' found in diag_table '//&
+      &string(size(diag_table_indices))//' times! ID:'//string(modern_nfields),&
+      & NOTE)
    !diag_obj_ptr => diag_obj
    !status_ic = the_diag_object_container%insert(diag_obj_ptr%get_id(), diag_obj_ptr)
    !if(status_ic .ne. 0) then
@@ -3805,7 +3807,10 @@ END FUNCTION register_diag_field_array_modern
     END IF
 
 #ifdef use_yaml
-    if (use_modern_diag) CALL diag_yaml_object_init()
+    if (use_modern_diag) then
+      CALL diag_yaml_object_init()
+      modern_nfields = 0
+    endif
 #endif
 
     CALL parse_diag_table(DIAG_SUBSET=diag_subset_output, ISTAT=mystat, ERR_MSG=err_msg_local)

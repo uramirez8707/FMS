@@ -261,10 +261,8 @@ subroutine diag_yaml_object_init
   allocate(diag_yaml%diag_fields(total_nvars))
   allocate(variable_list%var(total_nvars))
   allocate(variable_list%ids(total_nvars))
-  allocate(variable_list%var_pointer(total_nvars))
   allocate(file_list%file_name(nfiles))
   allocate(file_list%ids(nfiles))
-  allocate(file_list%file_pointer(nfiles))
 
   var_count = 0
   nfiles_loop: do i = 1, nfiles
@@ -272,7 +270,7 @@ subroutine diag_yaml_object_init
     call fill_in_diag_files(diag_yaml_id, diag_file_ids(i), diag_yaml%diag_files(i))
 
     !> Save the file name in the file_list
-    file_list%file_name(i) = trim(diag_yaml%diag_files(i)%file_fname)
+    file_list%file_name(i) = trim(diag_yaml%diag_files(i)%file_fname)//c_null_char
     file_list%ids(i) = i
 
     nvars = 0
@@ -291,27 +289,17 @@ subroutine diag_yaml_object_init
       diag_yaml%diag_files(i)%file_varlist(j) = diag_yaml%diag_fields(var_count)%var_varname
 
       !> Save the variable name in the variable_list
-      print *, "WUT:", trim(diag_yaml%diag_fields(var_count)%var_varname), var_count
       variable_list%var(var_count) = trim(diag_yaml%diag_fields(var_count)%var_varname)//c_null_char
       variable_list%ids(var_count) = var_count
-      print *, "WUTT:", trim(variable_list%var(var_count)), var_count
 
     enddo nvars_loop
     deallocate(var_ids)
   enddo nfiles_loop
 
-  do i = 1, size(variable_list%var)
-    print *, "var_list: ", trim(variable_list%var(i)), " AND ", trim(diag_yaml%diag_fields(i)%var_varname)
-  enddo
-
   !> Sort the file list in alphabetical order
   file_list%file_pointer = fms_array_to_pointer(file_list%file_name)
   call fms_sort_this(file_list%file_pointer, nfiles, file_list%ids)
 
-  !> Sort the variable list in alphabetical order
-  do i = 1, size(variable_list%var)
-    print *, "var_list: ", trim(variable_list%var(i)), " AND ", trim(diag_yaml%diag_fields(i)%var_varname)
-  enddo
   variable_list%var_pointer = fms_array_to_pointer(variable_list%var)
   call fms_sort_this(variable_list%var_pointer, total_nvars, variable_list%ids)
   deallocate(diag_file_ids)
