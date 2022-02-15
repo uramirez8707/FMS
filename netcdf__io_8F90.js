@@ -47,7 +47,7 @@ var netcdf__io_8F90 =
     [ "netcdf_restore_state", "netcdf__io_8F90.html#ga057de75c09e46adae9c3ac38b9026c4c", null ],
     [ "netcdf_save_restart", "netcdf__io_8F90.html#gab32dc288fa0b8987a932f73f0d411fe6", null ],
     [ "netcdf_save_restart_wrap", "netcdf__io_8F90.html#gac167dfc2bfff3a09f9fa37e6e6444854", null ],
-    [ "read_restart_bc", "netcdf__io_8F90.html#ga5d3ebbbfc26e7a1b191ebd6eeb545929", null ],
+    [ "read_restart_bc", "netcdf__io_8F90.html#ga2309617c284b8fed35b42ec8cae6d611", null ],
     [ "register_compressed_dimension", "netcdf__io_8F90.html#ga8779a55a22d09959af7d1e93e101ca5f", null ],
     [ "set_fileobj_time_name", "netcdf__io_8F90.html#gaf65c213408cda5a8b185a3bb9756cef2", null ],
     [ "set_netcdf_mode", "netcdf__io_8F90.html#ga56db12e1a539a8e37929119a2796ecb3", null ],

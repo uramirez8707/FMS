@@ -162,24 +162,6 @@ var annotated_dup =
       [ "get_cpuset", "interfacefms__affinity__mod_1_1get__cpuset.html", "interfacefms__affinity__mod_1_1get__cpuset" ],
       [ "set_cpu_affinity", "interfacefms__affinity__mod_1_1set__cpu__affinity.html", "interfacefms__affinity__mod_1_1set__cpu__affinity" ]
     ] ],
-    [ "fms_diag_object_mod", null, [
-      [ "fms_diag_object", "structfms__diag__object__mod_1_1fms__diag__object.html", "structfms__diag__object__mod_1_1fms__diag__object" ],
-      [ "fms_diag_object_1d", "structfms__diag__object__mod_1_1fms__diag__object__1d.html", "structfms__diag__object__mod_1_1fms__diag__object__1d" ],
-      [ "fms_diag_object_2d", "structfms__diag__object__mod_1_1fms__diag__object__2d.html", "structfms__diag__object__mod_1_1fms__diag__object__2d" ],
-      [ "fms_diag_object_3d", "structfms__diag__object__mod_1_1fms__diag__object__3d.html", "structfms__diag__object__mod_1_1fms__diag__object__3d" ],
-      [ "fms_diag_object_4d", "structfms__diag__object__mod_1_1fms__diag__object__4d.html", "structfms__diag__object__mod_1_1fms__diag__object__4d" ],
-      [ "fms_diag_object_5d", "structfms__diag__object__mod_1_1fms__diag__object__5d.html", "structfms__diag__object__mod_1_1fms__diag__object__5d" ],
-      [ "fms_diag_object_scalar", "structfms__diag__object__mod_1_1fms__diag__object__scalar.html", "structfms__diag__object__mod_1_1fms__diag__object__scalar" ]
-    ] ],
-    [ "fms_diag_yaml_mod", null, [
-      [ "diag_yaml_object", "structfms__diag__yaml__mod_1_1diag__yaml__object.html", "structfms__diag__yaml__mod_1_1diag__yaml__object" ],
-      [ "get_region", "interfacefms__diag__yaml__mod_1_1get__region.html", "interfacefms__diag__yaml__mod_1_1get__region" ]
-    ] ],
-    [ "fms_diag_yaml_object_mod", null, [
-      [ "diag_yaml_files_type", "structfms__diag__yaml__object__mod_1_1diag__yaml__files__type.html", "structfms__diag__yaml__object__mod_1_1diag__yaml__files__type" ],
-      [ "diag_yaml_files_var_type", "structfms__diag__yaml__object__mod_1_1diag__yaml__files__var__type.html", "structfms__diag__yaml__object__mod_1_1diag__yaml__files__var__type" ],
-      [ "sub_region_type", "structfms__diag__yaml__object__mod_1_1sub__region__type.html", "structfms__diag__yaml__object__mod_1_1sub__region__type" ]
-    ] ],
     [ "fms_io_mod", null, [
       [ "ax_type", "structfms__io__mod_1_1ax__type.html", "structfms__io__mod_1_1ax__type" ],
       [ "fms_io_unstructured_read", "interfacefms__io__mod_1_1fms__io__unstructured__read.html", "interfacefms__io__mod_1_1fms__io__unstructured__read" ],
@@ -240,6 +222,10 @@ var annotated_dup =
     ] ],
     [ "fms_netcdf_unstructured_domain_io_mod", null, [
       [ "fmsnetcdfunstructureddomainfile_t", "structfms__netcdf__unstructured__domain__io__mod_1_1fmsnetcdfunstructureddomainfile__t.html", "structfms__netcdf__unstructured__domain__io__mod_1_1fmsnetcdfunstructureddomainfile__t" ]
+    ] ],
+    [ "fms_string_utils_mod", null, [
+      [ "fms_find_my_string_binding", "interfacefms__string__utils__mod_1_1fms__find__my__string__binding.html", "interfacefms__string__utils__mod_1_1fms__find__my__string__binding" ],
+      [ "fms_sort_this", "interfacefms__string__utils__mod_1_1fms__sort__this.html", "interfacefms__string__utils__mod_1_1fms__sort__this" ]
     ] ],
     [ "grid2_mod", null, [
       [ "get_grid_cell_area", "interfacegrid2__mod_1_1get__grid__cell__area.html", "interfacegrid2__mod_1_1get__grid__cell__area" ],

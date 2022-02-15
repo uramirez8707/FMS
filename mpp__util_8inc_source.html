@@ -33,7 +33,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">FMS
-   &#160;<span id="projectnumber">2021.04.0-dev</span>
+   &#160;<span id="projectnumber">2022.01.0-dev</span>
    </div>
    <div id="projectbrief">Flexible Modeling System</div>
   </td>
@@ -1184,7 +1184,7 @@ $(document).ready(function(){initNavTree('mpp__util_8inc_source.html',''); initR
 <div class="line"><a name="l01088"></a><span class="lineno"> 1088</span>&#160;    <span class="keywordtype">integer</span>,<span class="keywordtype">save</span> :: i</div>
 <div class="line"><a name="l01089"></a><span class="lineno"> 1089</span>&#160;    <span class="keywordtype">logical</span>      :: l_open</div>
 <div class="line"><a name="l01090"></a><span class="lineno"> 1090</span>&#160; </div>
-<div class="line"><a name="l01091"></a><span class="lineno"> 1091</span>&#160;    <span class="keyword">call </span>mpp_error(warning,<span class="stringliteral">&#39;get_unit is deprecated and will be removed in a future release, please use the Fortran intrinsic newunit&#39;</span>)</div>
+<div class="line"><a name="l01091"></a><span class="lineno"> 1091</span>&#160;    <span class="keywordflow">if</span> (pe == root_pe) <span class="keyword">call </span>mpp_error(warning,<span class="stringliteral">&#39;get_unit is deprecated and will be removed in a future release, please use the Fortran intrinsic newunit&#39;</span>)</div>
 <div class="line"><a name="l01092"></a><span class="lineno"> 1092</span>&#160;    <span class="keywordflow">do</span> i=10,99</div>
 <div class="line"><a name="l01093"></a><span class="lineno"> 1093</span>&#160;       <span class="keyword">inquire</span>(unit=i,opened=l_open)</div>
 <div class="line"><a name="l01094"></a><span class="lineno"> 1094</span>&#160;       <span class="keywordflow">if</span>(.not.l_open)<span class="keywordflow">exit</span></div>

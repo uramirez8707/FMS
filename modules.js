@@ -29,9 +29,11 @@ var modules =
     [ "Platform", "group__platform.html", "group__platform" ],
     [ "Random Numbers", "group__random__numbers.html", "group__random__numbers" ],
     [ "Saturation Vapor Pressure", "group__sat__vapor__pres.html", "group__sat__vapor__pres" ],
+    [ "String Utils", "group__string__utils.html", null ],
     [ "Time Interpolator", "group__time__interp.html", "group__time__interp" ],
     [ "Time Manager", "group__time__manager.html", "group__time__manager" ],
     [ "Topography", "group__topography.html", "group__topography" ],
     [ "Tracer Manager", "group__tracer__manager.html", "group__tracer__manager" ],
-    [ "Tridiagonal", "group__tridiagonal.html", "group__tridiagonal" ]
+    [ "Tridiagonal", "group__tridiagonal.html", "group__tridiagonal" ],
+    [ "fms_string_utils_mod", "group__fms__string__utils__mod.html", "group__fms__string__utils__mod" ]
 ];
