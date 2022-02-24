@@ -325,10 +325,13 @@ use platform_mod
   !! different weight. The default of weight is 1.
   !> @ingroup diag_manager_mod
   INTERFACE send_data
-     MODULE PROCEDURE send_data_0d
-     MODULE PROCEDURE send_data_1d
-     MODULE PROCEDURE send_data_2d
-     MODULE PROCEDURE send_data_3d
+     MODULE PROCEDURE send_data_0d_class_star
+     MODULE PROCEDURE send_data_1d_r8
+     MODULE PROCEDURE send_data_1d_r4
+     MODULE PROCEDURE send_data_2d_r8
+     MODULE PROCEDURE send_data_2d_r4
+     MODULE PROCEDURE send_data_3d_r8
+     MODULE PROCEDURE send_data_3d_r4
   END INTERFACE
 
   !> @brief Register a diagnostic field for a given module
@@ -1272,7 +1275,7 @@ CONTAINS
   END SUBROUTINE add_associated_files
 
   !> @return true if send is successful
-  LOGICAL FUNCTION send_data_0d(diag_field_id, field, time, err_msg)
+  LOGICAL FUNCTION send_data_0d_class_star(diag_field_id, field, time, err_msg)
     INTEGER, INTENT(in) :: diag_field_id
     CLASS(*), INTENT(in) :: field
     TYPE(time_type), INTENT(in), OPTIONAL :: time
@@ -1282,7 +1285,7 @@ CONTAINS
 
     ! If diag_field_id is < 0 it means that this field is not registered, simply return
     IF ( diag_field_id <= 0 ) THEN
-       send_data_0d = .FALSE.
+       send_data_0d_class_star = .FALSE.
        RETURN
     END IF
 
@@ -1293,15 +1296,66 @@ CONTAINS
     TYPE IS (real(kind=r8_kind))
        field_out(1, 1, 1) = real(field)
     CLASS DEFAULT
-       CALL error_mesg ('diag_manager_mod::send_data_0d',&
+       CALL error_mesg ('diag_manager_mod::send_data_0d_class_star',&
             & 'The field is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
     END SELECT
 
-    send_data_0d = send_data_3d(diag_field_id, field_out, time, err_msg=err_msg)
-  END FUNCTION send_data_0d
+    send_data_0d_class_star = send_data_3d_class_star(diag_field_id, field_out, time, err_msg=err_msg)
+  END FUNCTION send_data_0d_class_star
 
   !> @return true if send is successful
-  LOGICAL FUNCTION send_data_1d(diag_field_id, field, time, is_in, mask, rmask, ie_in, weight, err_msg)
+  LOGICAL FUNCTION send_data_1d_r8(diag_field_id, field, time, is_in, mask, rmask, ie_in, weight, err_msg)
+    INTEGER, INTENT(in) :: diag_field_id
+    real(kind=r8_kind), DIMENSION(:), INTENT(in) :: field
+    real(kind=r8_kind), INTENT(in), OPTIONAL :: weight
+    real(kind=r8_kind), INTENT(in), DIMENSION(:), OPTIONAL :: rmask
+    TYPE (time_type), INTENT(in), OPTIONAL :: time
+    INTEGER, INTENT(in), OPTIONAL :: is_in, ie_in
+    LOGICAL, INTENT(in), DIMENSION(:), OPTIONAL :: mask
+    CHARACTER(len=*), INTENT(out), OPTIONAL :: err_msg
+
+    if (present(weight) .and. present(rmask)) then
+      send_data_1d_r8 = send_data_1d_class_star(diag_field_id, field, time, &
+         is_in=is_in, mask=mask, rmask=rmask, ie_in=ie_in, weight=weight, err_msg=err_msg)
+    elseif (present(weight)) then
+      send_data_1d_r8 = send_data_1d_class_star(diag_field_id, field, time, &
+         is_in=is_in, mask=mask, ie_in=ie_in, weight=weight, err_msg=err_msg)
+    elseif (present(rmask)) then
+      send_data_1d_r8 = send_data_1d_class_star(diag_field_id, field, time, &
+         is_in=is_in, mask=mask, rmask=rmask, ie_in=ie_in, err_msg=err_msg)
+    else
+      send_data_1d_r8 = send_data_1d_class_star(diag_field_id, field, time, &
+         is_in=is_in, mask=mask, ie_in=ie_in, err_msg=err_msg)
+    endif
+   end function
+
+     !> @return true if send is successful
+  LOGICAL FUNCTION send_data_1d_r4(diag_field_id, field, time, is_in, mask, rmask, ie_in, weight, err_msg)
+  INTEGER, INTENT(in) :: diag_field_id
+  real(kind=r4_kind), DIMENSION(:), INTENT(in) :: field
+  real(kind=r4_kind), INTENT(in), OPTIONAL :: weight
+  real(kind=r4_kind), INTENT(in), DIMENSION(:), OPTIONAL :: rmask
+  TYPE (time_type), INTENT(in), OPTIONAL :: time
+  INTEGER, INTENT(in), OPTIONAL :: is_in, ie_in
+  LOGICAL, INTENT(in), DIMENSION(:), OPTIONAL :: mask
+  CHARACTER(len=*), INTENT(out), OPTIONAL :: err_msg
+
+  if (present(weight) .and. present(rmask)) then
+    send_data_1d_r4 = send_data_1d_class_star(diag_field_id, field, time, &
+       is_in=is_in, mask=mask, rmask=rmask, ie_in=ie_in, weight=weight, err_msg=err_msg)
+  elseif (present(weight)) then
+    send_data_1d_r4 = send_data_1d_class_star(diag_field_id, field, time, &
+       is_in=is_in, mask=mask, ie_in=ie_in, weight=weight, err_msg=err_msg)
+  elseif (present(rmask)) then
+    send_data_1d_r4 = send_data_1d_class_star(diag_field_id, field, time, &
+       is_in=is_in, mask=mask, rmask=rmask, ie_in=ie_in, err_msg=err_msg)
+  else
+    send_data_1d_r4 = send_data_1d_class_star(diag_field_id, field, time, &
+       is_in=is_in, mask=mask, ie_in=ie_in, err_msg=err_msg)
+  endif
+ end function
+  !> @return true if send is successful
+  LOGICAL FUNCTION send_data_1d_class_star(diag_field_id, field, time, is_in, mask, rmask, ie_in, weight, err_msg)
     INTEGER, INTENT(in) :: diag_field_id
     CLASS(*), DIMENSION(:), INTENT(in) :: field
     CLASS(*), INTENT(in), OPTIONAL :: weight
@@ -1316,7 +1370,7 @@ CONTAINS
 
     ! If diag_field_id is < 0 it means that this field is not registered, simply return
     IF ( diag_field_id <= 0 ) THEN
-       send_data_1d = .FALSE.
+       send_data_1d_class_star = .FALSE.
        RETURN
     END IF
 
@@ -1327,7 +1381,7 @@ CONTAINS
     TYPE IS (real(kind=r8_kind))
        field_out(:, 1, 1) = real(field)
     CLASS DEFAULT
-       CALL error_mesg ('diag_manager_mod::send_data_1d',&
+       CALL error_mesg ('diag_manager_mod::send_data_1d_class_star',&
             & 'The field is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
     END SELECT
 
@@ -1345,31 +1399,85 @@ CONTAINS
        TYPE IS (real(kind=r8_kind))
           WHERE (rmask < 0.5_r8_kind) mask_out(:, 1, 1) = .FALSE.
        CLASS DEFAULT
-          CALL error_mesg ('diag_manager_mod::send_data_1d',&
+          CALL error_mesg ('diag_manager_mod::send_data_1d_class_star',&
                & 'The rmask is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
        END SELECT
     END IF
 
     IF ( PRESENT(mask) .OR. PRESENT(rmask) ) THEN
        IF ( PRESENT(is_in) .OR. PRESENT(ie_in) ) THEN
-          send_data_1d = send_data_3d(diag_field_id, field_out, time, is_in=is_in, js_in=1, ks_in=1,&
+          send_data_1d_class_star = send_data_3d_class_star(diag_field_id, field_out, time, is_in=is_in, js_in=1, ks_in=1,&
                & mask=mask_out, ie_in=ie_in, je_in=1, ke_in=1, weight=weight, err_msg=err_msg)
        ELSE
-          send_data_1d = send_data_3d(diag_field_id, field_out, time, mask=mask_out,&
+          send_data_1d_class_star = send_data_3d_class_star(diag_field_id, field_out, time, mask=mask_out,&
                & weight=weight, err_msg=err_msg)
        END IF
     ELSE
        IF ( PRESENT(is_in) .OR. PRESENT(ie_in) ) THEN
-          send_data_1d = send_data_3d(diag_field_id, field_out, time, is_in=is_in, js_in=1, ks_in=1,&
+          send_data_1d_class_star = send_data_3d_class_star(diag_field_id, field_out, time, is_in=is_in, js_in=1, ks_in=1,&
                & ie_in=ie_in, je_in=1, ke_in=1, weight=weight, err_msg=err_msg)
        ELSE
-          send_data_1d = send_data_3d(diag_field_id, field_out, time, weight=weight, err_msg=err_msg)
+          send_data_1d_class_star = send_data_3d_class_star(diag_field_id, field_out, time, weight=weight, err_msg=err_msg)
        END IF
     END IF
-  END FUNCTION send_data_1d
+  END FUNCTION send_data_1d_class_star
+
+    !> @return true if send is successful
+  LOGICAL FUNCTION send_data_2d_r8(diag_field_id, field, time, is_in, js_in, &
+       & mask, rmask, ie_in, je_in, weight, err_msg)
+    INTEGER, INTENT(in) :: diag_field_id
+    real(kind=r8_kind), INTENT(in), DIMENSION(:,:) :: field
+    real(kind=r8_kind), INTENT(in), OPTIONAL :: weight
+    TYPE (time_type), INTENT(in), OPTIONAL :: time
+    INTEGER, INTENT(in), OPTIONAL :: is_in, js_in, ie_in, je_in
+    LOGICAL, INTENT(in), DIMENSION(:,:), OPTIONAL :: mask
+    real(kind=r8_kind), INTENT(in), DIMENSION(:,:),OPTIONAL :: rmask
+    CHARACTER(len=*), INTENT(out), OPTIONAL :: err_msg
+
+    if (present(rmask) .and. present(weight)) then
+      send_data_2d_r8 = send_data_2d_class_star(diag_field_id, field, time, &
+         is_in=is_in, js_in=js_in, mask=mask, rmask=rmask, ie_in=ie_in, je_in=je_in, weight=weight, err_msg=err_msg)
+    elseif (present(rmask)) then
+      send_data_2d_r8 = send_data_2d_class_star(diag_field_id, field, time, &
+         is_in=is_in, js_in=js_in, mask=mask, rmask=rmask, ie_in=ie_in, je_in=je_in, err_msg=err_msg)
+    elseif (present(weight)) then
+      send_data_2d_r8 = send_data_2d_class_star(diag_field_id, field, time, &
+         is_in=is_in, js_in=js_in, mask=mask, ie_in=ie_in, je_in=je_in, weight=weight, err_msg=err_msg)
+    else
+      send_data_2d_r8 = send_data_2d_class_star(diag_field_id, field, time, &
+         is_in=is_in, js_in=js_in, mask=mask, ie_in=ie_in, je_in=je_in, err_msg=err_msg)
+    endif
+   end function
+
+       !> @return true if send is successful
+  LOGICAL FUNCTION send_data_2d_r4(diag_field_id, field, time, is_in, js_in, &
+       & mask, rmask, ie_in, je_in, weight, err_msg)
+    INTEGER, INTENT(in) :: diag_field_id
+    real(kind=r4_kind), INTENT(in), DIMENSION(:,:) :: field
+    real(kind=r4_kind), INTENT(in), OPTIONAL :: weight
+    TYPE (time_type), INTENT(in), OPTIONAL :: time
+    INTEGER, INTENT(in), OPTIONAL :: is_in, js_in, ie_in, je_in
+    LOGICAL, INTENT(in), DIMENSION(:,:), OPTIONAL :: mask
+    real(kind=r4_kind), INTENT(in), DIMENSION(:,:),OPTIONAL :: rmask
+    CHARACTER(len=*), INTENT(out), OPTIONAL :: err_msg
+
+    if (present(rmask) .and. present(weight)) then
+      send_data_2d_r4 = send_data_2d_class_star(diag_field_id, field, time, &
+         is_in=is_in, js_in=js_in, mask=mask, rmask=rmask, ie_in=ie_in, je_in=je_in, weight=weight, err_msg=err_msg)
+    elseif (present(rmask)) then
+      send_data_2d_r4 = send_data_2d_class_star(diag_field_id, field, time, &
+         is_in=is_in, js_in=js_in, mask=mask, rmask=rmask, ie_in=ie_in, je_in=je_in, err_msg=err_msg)
+    elseif (present(weight)) then
+      send_data_2d_r4 = send_data_2d_class_star(diag_field_id, field, time, &
+         is_in=is_in, js_in=js_in, mask=mask, ie_in=ie_in, je_in=je_in, weight=weight, err_msg=err_msg)
+    else
+      send_data_2d_r4 = send_data_2d_class_star(diag_field_id, field, time, &
+         is_in=is_in, js_in=js_in, mask=mask, ie_in=ie_in, je_in=je_in, err_msg=err_msg)
+    endif
+   end function
 
   !> @return true if send is successful
-  LOGICAL FUNCTION send_data_2d(diag_field_id, field, time, is_in, js_in, &
+  LOGICAL FUNCTION send_data_2d_class_star(diag_field_id, field, time, is_in, js_in, &
        & mask, rmask, ie_in, je_in, weight, err_msg)
     INTEGER, INTENT(in) :: diag_field_id
     CLASS(*), INTENT(in), DIMENSION(:,:) :: field
@@ -1385,7 +1493,7 @@ CONTAINS
 
     ! If diag_field_id is < 0 it means that this field is not registered, simply return
     IF ( diag_field_id <= 0 ) THEN
-       send_data_2d = .FALSE.
+       send_data_2d_class_star = .FALSE.
        RETURN
     END IF
 
@@ -1396,7 +1504,7 @@ CONTAINS
     TYPE IS (real(kind=r8_kind))
        field_out(:, :, 1) = real(field)
     CLASS DEFAULT
-       CALL error_mesg ('diag_manager_mod::send_data_2d',&
+       CALL error_mesg ('diag_manager_mod::send_data_2d_class_star',&
             & 'The field is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
     END SELECT
 
@@ -1414,22 +1522,83 @@ CONTAINS
        TYPE IS (real(kind=r8_kind))
           WHERE ( rmask < 0.5_r8_kind ) mask_out(:, :, 1) = .FALSE.
        CLASS DEFAULT
-          CALL error_mesg ('diag_manager_mod::send_data_2d',&
+          CALL error_mesg ('diag_manager_mod::send_data_2d_class_star',&
                & 'The rmask is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
        END SELECT
     END IF
 
     IF ( PRESENT(mask) .OR. PRESENT(rmask) ) THEN
-       send_data_2d = send_data_3d(diag_field_id, field_out, time, is_in=is_in, js_in=js_in, ks_in=1, mask=mask_out,&
+       send_data_2d_class_star = send_data_3d_class_star(diag_field_id, field_out, time, is_in=is_in, js_in=js_in, ks_in=1, mask=mask_out,&
             & ie_in=ie_in, je_in=je_in, ke_in=1, weight=weight, err_msg=err_msg)
     ELSE
-       send_data_2d = send_data_3d(diag_field_id, field_out, time, is_in=is_in, js_in=js_in, ks_in=1,&
+       send_data_2d_class_star = send_data_3d_class_star(diag_field_id, field_out, time, is_in=is_in, js_in=js_in, ks_in=1,&
             & ie_in=ie_in, je_in=je_in, ke_in=1, weight=weight, err_msg=err_msg)
     END IF
-  END FUNCTION send_data_2d
+  END FUNCTION send_data_2d_class_star
 
   !> @return true if send is successful
-  LOGICAL FUNCTION send_data_3d(diag_field_id, field, time, is_in, js_in, ks_in, &
+  LOGICAL FUNCTION send_data_3d_r8(diag_field_id, field, time, is_in, js_in, ks_in, &
+    & mask, rmask, ie_in, je_in, ke_in, weight, err_msg)
+    INTEGER, INTENT(in) :: diag_field_id
+    real(kind=r8_kind), DIMENSION(:,:,:), INTENT(in) :: field
+    real(kind=r8_kind), INTENT(in), OPTIONAL :: weight
+    TYPE (time_type), INTENT(in), OPTIONAL :: time
+    INTEGER, INTENT(in), OPTIONAL :: is_in, js_in, ks_in,ie_in,je_in, ke_in
+    LOGICAL, DIMENSION(:,:,:), INTENT(in), OPTIONAL :: mask
+    real(kind=r8_kind), DIMENSION(:,:,:), INTENT(in), OPTIONAL :: rmask
+    CHARACTER(len=*), INTENT(out), OPTIONAL :: err_msg
+
+    if(present(rmask) .and. present(weight)) then
+      send_data_3d_r8 = send_data_3d_class_star(diag_field_id, field, time, &
+         is_in=is_in, js_in=js_in, ks_in=ks_in, mask=mask, rmask=rmask, &
+         ie_in=ie_in, je_in=je_in, ke_in=ke_in, weight=weight, err_msg=err_msg)
+    elseif(present(rmask)) then
+      send_data_3d_r8 = send_data_3d_class_star(diag_field_id, field, time, &
+         is_in=is_in, js_in=js_in, ks_in=ks_in, mask=mask, rmask=rmask, &
+         ie_in=ie_in, je_in=je_in, ke_in=ke_in, err_msg=err_msg)
+    elseif(present(weight)) then
+      send_data_3d_r8 = send_data_3d_class_star(diag_field_id, field, time, &
+         is_in=is_in, js_in=js_in, ks_in=ks_in, mask=mask, &
+         ie_in=ie_in, je_in=je_in, ke_in=ke_in, weight=weight, err_msg=err_msg)
+    else
+      send_data_3d_r8 = send_data_3d_class_star(diag_field_id, field, time, &
+         is_in=is_in, js_in=js_in, ks_in=ks_in, mask=mask, &
+         ie_in=ie_in, je_in=je_in, ke_in=ke_in, err_msg=err_msg)
+    endif
+   END FUNCTION
+
+!> @return true if send is successful
+LOGICAL FUNCTION send_data_3d_r4(diag_field_id, field, time, is_in, js_in, ks_in, &
+  & mask, rmask, ie_in, je_in, ke_in, weight, err_msg)
+  INTEGER, INTENT(in) :: diag_field_id
+  real(kind=r4_kind), DIMENSION(:,:,:), INTENT(in) :: field
+  real(kind=r4_kind), INTENT(in), OPTIONAL :: weight
+  TYPE (time_type), INTENT(in), OPTIONAL :: time
+  INTEGER, INTENT(in), OPTIONAL :: is_in, js_in, ks_in,ie_in,je_in, ke_in
+  LOGICAL, DIMENSION(:,:,:), INTENT(in), OPTIONAL :: mask
+  real(kind=r4_kind), DIMENSION(:,:,:), INTENT(in), OPTIONAL :: rmask
+  CHARACTER(len=*), INTENT(out), OPTIONAL :: err_msg
+
+  if(present(rmask) .and. present(weight)) then
+    send_data_3d_r4 = send_data_3d_class_star(diag_field_id, field, time, &
+       is_in=is_in, js_in=js_in, ks_in=ks_in, mask=mask, rmask=rmask, &
+       ie_in=ie_in, je_in=je_in, ke_in=ke_in, weight=weight, err_msg=err_msg)
+  elseif(present(rmask)) then
+    send_data_3d_r4 = send_data_3d_class_star(diag_field_id, field, time, &
+       is_in=is_in, js_in=js_in, ks_in=ks_in, mask=mask, rmask=rmask, &
+       ie_in=ie_in, je_in=je_in, ke_in=ke_in, err_msg=err_msg)
+  elseif(present(weight)) then
+    send_data_3d_r4 = send_data_3d_class_star(diag_field_id, field, time, &
+       is_in=is_in, js_in=js_in, ks_in=ks_in, mask=mask, &
+       ie_in=ie_in, je_in=je_in, ke_in=ke_in, weight=weight, err_msg=err_msg)
+  else
+    send_data_3d_r4 = send_data_3d_class_star(diag_field_id, field, time, &
+       is_in=is_in, js_in=js_in, ks_in=ks_in, mask=mask, &
+       ie_in=ie_in, je_in=je_in, ke_in=ke_in, err_msg=err_msg)
+  endif
+ END FUNCTION
+  !> @return true if send is successful
+  LOGICAL FUNCTION send_data_3d_class_star(diag_field_id, field, time, is_in, js_in, ks_in, &
              & mask, rmask, ie_in, je_in, ke_in, weight, err_msg)
     INTEGER, INTENT(in) :: diag_field_id
     CLASS(*), DIMENSION(:,:,:), INTENT(in) :: field
@@ -1475,15 +1644,15 @@ CONTAINS
 
     ! If diag_field_id is < 0 it means that this field is not registered, simply return
     IF ( diag_field_id <= 0 ) THEN
-       send_data_3d = .FALSE.
+       send_data_3d_class_star = .FALSE.
        RETURN
     ELSE
-       send_data_3d = .TRUE.
+       send_data_3d_class_star = .TRUE.
     END IF
 
     IF ( PRESENT(err_msg) ) err_msg = ''
     IF ( .NOT.module_is_initialized ) THEN
-       IF ( fms_error_handler('diag_manager_mod::send_data_3d', 'diag_manager NOT initialized', err_msg) ) RETURN
+       IF ( fms_error_handler('diag_manager_mod::send_data_3d_class_star', 'diag_manager NOT initialized', err_msg) ) RETURN
     END IF
     err_msg_local = ''
     ! The following lines are commented out as they have not been included in the code prior to now,
@@ -1500,7 +1669,7 @@ CONTAINS
     IF ( status .NE. 0 ) THEN
        WRITE (err_msg_local, FMT='("Unable to allocate field_out(",I5,",",I5,",",I5,"). (STAT: ",I5,")")')&
             & SIZE(field,1), SIZE(field,2), SIZE(field,3), status
-       IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) RETURN
+       IF ( fms_error_handler('diag_manager_mod::send_data_3d_class_star', err_msg_local, err_msg) ) RETURN
     END IF
     SELECT TYPE (field)
     TYPE IS (real(kind=r4_kind))
@@ -1508,7 +1677,7 @@ CONTAINS
     TYPE IS (real(kind=r8_kind))
        field_out = real(field)
     CLASS DEFAULT
-       CALL error_mesg ('diag_manager_mod::send_data_3d',&
+       CALL error_mesg ('diag_manager_mod::send_data_3d_class_star',&
             & 'The field is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
     END SELECT
 
@@ -1517,7 +1686,7 @@ CONTAINS
     IF ( status .NE. 0 ) THEN
        WRITE (err_msg_local, FMT='("Unable to allocate oor_mask(",I5,",",I5,",",I5,"). (STAT: ",I5,")")')&
             & SIZE(field,1), SIZE(field,2), SIZE(field,3), status
-       IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) RETURN
+       IF ( fms_error_handler('diag_manager_mod::send_data_3d_class_star', err_msg_local, err_msg) ) RETURN
     END IF
 
     IF ( PRESENT(mask) ) THEN
@@ -1533,7 +1702,7 @@ CONTAINS
        TYPE IS (real(kind=r8_kind))
           WHERE ( rmask < 0.5_r8_kind ) oor_mask = .FALSE.
        CLASS DEFAULT
-          CALL error_mesg ('diag_manager_mod::send_data_3d',&
+          CALL error_mesg ('diag_manager_mod::send_data_3d_class_star',&
                & 'The rmask is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
        END SELECT
     END IF
@@ -1551,14 +1720,14 @@ CONTAINS
     ! of presence/absence of is,ie,js,je. The checks below should catch improper combinations.
     IF ( PRESENT(ie_in) ) THEN
        IF ( .NOT.PRESENT(is_in) ) THEN
-          IF ( fms_error_handler('diag_manager_mod::send_data_3d', 'ie_in present without is_in', err_msg) ) THEN
+          IF ( fms_error_handler('diag_manager_mod::send_data_3d_class_star', 'ie_in present without is_in', err_msg) ) THEN
              DEALLOCATE(field_out)
              DEALLOCATE(oor_mask)
              RETURN
           END IF
        END IF
        IF ( PRESENT(js_in) .AND. .NOT.PRESENT(je_in) ) THEN
-          IF ( fms_error_handler('diag_manager_modsend_data_3d',&
+          IF ( fms_error_handler('diag_manager_modsend_data_3d_class_star',&
                & 'is_in and ie_in present, but js_in present without je_in', err_msg) ) THEN
              DEALLOCATE(field_out)
              DEALLOCATE(oor_mask)
@@ -1568,14 +1737,14 @@ CONTAINS
     END IF
     IF ( PRESENT(je_in) ) THEN
        IF ( .NOT.PRESENT(js_in) ) THEN
-          IF ( fms_error_handler('diag_manager_mod::send_data_3d', 'je_in present without js_in', err_msg) ) THEN
+          IF ( fms_error_handler('diag_manager_mod::send_data_3d_class_star', 'je_in present without js_in', err_msg) ) THEN
              DEALLOCATE(field_out)
              DEALLOCATE(oor_mask)
              RETURN
           END IF
        END IF
        IF ( PRESENT(is_in) .AND. .NOT.PRESENT(ie_in) ) THEN
-          IF ( fms_error_handler('diag_manager_mod::send_data_3d',&
+          IF ( fms_error_handler('diag_manager_mod::send_data_3d_class_star',&
                & 'js_in and je_in present, but is_in present without ie_in', err_msg)) THEN
              DEALLOCATE(field_out)
              DEALLOCATE(oor_mask)
@@ -1602,7 +1771,7 @@ CONTAINS
     IF ( PRESENT(ke_in) ) ke = ke_in
     twohi = n1-(ie-is+1)
     IF ( MOD(twohi,2) /= 0 ) THEN
-       IF ( fms_error_handler('diag_manager_mod::send_data_3d', 'non-symmetric halos in first dimension', err_msg) ) THEN
+       IF ( fms_error_handler('diag_manager_mod::send_data_3d_class_star', 'non-symmetric halos in first dimension', err_msg) ) THEN
           DEALLOCATE(field_out)
           DEALLOCATE(oor_mask)
           RETURN
@@ -1610,7 +1779,7 @@ CONTAINS
     END IF
     twohj = n2-(je-js+1)
     IF ( MOD(twohj,2) /= 0 ) THEN
-       IF ( fms_error_handler('diag_manager_mod::send_data_3d', 'non-symmetric halos in second dimension', err_msg) ) THEN
+       IF ( fms_error_handler('diag_manager_mod::send_data_3d_class_star', 'non-symmetric halos in second dimension', err_msg) ) THEN
           DEALLOCATE(field_out)
           DEALLOCATE(oor_mask)
           RETURN
@@ -1642,7 +1811,7 @@ CONTAINS
        TYPE IS (real(kind=r8_kind))
           weight1 = real(weight)
        CLASS DEFAULT
-          CALL error_mesg ('diag_manager_mod::send_data_3d',&
+          CALL error_mesg ('diag_manager_mod::send_data_3d_class_star',&
                & 'The weight is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
        END SELECT
     ELSE
@@ -1685,7 +1854,7 @@ CONTAINS
                 !   is outside the range [<lower_val>,<upper_val>] and not equal to the missing
                 !   value.
                 ! </ERROR>
-                CALL error_mesg('diag_manager_mod::send_data_3d',&
+                CALL error_mesg('diag_manager_mod::send_data_3d_class_star',&
                      & 'A value for '//&
                      &TRIM(input_fields(diag_field_id)%module_name)//' in field '//&
                      &TRIM(input_fields(diag_field_id)%field_name)//' '&
@@ -1702,7 +1871,7 @@ CONTAINS
                 !   A value for <module_name> in field <field_name> (Min: <min_val>, Max: <max_val>)
                 !   is outside the range [<lower_val>,<upper_val>].
                 ! </ERROR>
-                CALL error_mesg('diag_manager_mod::send_data_3d',&
+                CALL error_mesg('diag_manager_mod::send_data_3d_class_star',&
                      & 'A value for '//&
                      &TRIM(input_fields(diag_field_id)%module_name)//' in field '//&
                      &TRIM(input_fields(diag_field_id)%field_name)//' '&
@@ -1789,7 +1958,7 @@ CONTAINS
                 WRITE (error_string,'(a,"/",a)')&
                      & TRIM(input_fields(diag_field_id)%module_name),&
                      & TRIM(output_fields(out_num)%output_name)
-                IF ( fms_error_handler('diag_manager_mod::send_data_3d', 'module/output_field '//TRIM(error_string)//&
+                IF ( fms_error_handler('diag_manager_mod::send_data_3d_class_star', 'module/output_field '//TRIM(error_string)//&
                      & ', time must be present when output frequency = EVERY_TIME', err_msg)) THEN
                    DEALLOCATE(field_out)
                    DEALLOCATE(oor_mask)
@@ -1802,7 +1971,7 @@ CONTAINS
           WRITE (error_string,'(a,"/",a)')&
                & TRIM(input_fields(diag_field_id)%module_name), &
                & TRIM(output_fields(out_num)%output_name)
-          IF ( fms_error_handler('diag_manager_mod::send_data_3d', 'module/output_field '//TRIM(error_string)//&
+          IF ( fms_error_handler('diag_manager_mod::send_data_3d_class_star', 'module/output_field '//TRIM(error_string)//&
                & ', time must be present for nonstatic field', err_msg)) THEN
              DEALLOCATE(field_out)
              DEALLOCATE(oor_mask)
@@ -1822,7 +1991,7 @@ CONTAINS
                       WRITE (error_string,'(a,"/",a)')&
                            & TRIM(input_fields(diag_field_id)%module_name), &
                            & TRIM(output_fields(out_num)%output_name)
-                      IF ( fms_error_handler('diag_manager_mod::send_data_3d', 'module/output_field '//TRIM(error_string)//&
+                      IF ( fms_error_handler('diag_manager_mod::send_data_3d_class_star', 'module/output_field '//TRIM(error_string)//&
                            & ' is skipped one time level in output data', err_msg)) THEN
                          DEALLOCATE(field_out)
                          DEALLOCATE(oor_mask)
@@ -1834,7 +2003,7 @@ CONTAINS
                 status = writing_field(out_num, .FALSE., error_string, time)
                 IF(status == -1) THEN
                    IF ( mpp_pe() .EQ. mpp_root_pe() ) THEN
-                      IF(fms_error_handler('diag_manager_mod::send_data_3d','module/output_field '//TRIM(error_string)//&
+                      IF(fms_error_handler('diag_manager_mod::send_data_3d_class_star','module/output_field '//TRIM(error_string)//&
                            & ', write EMPTY buffer', err_msg)) THEN
                          DEALLOCATE(field_out)
                          DEALLOCATE(oor_mask)
@@ -1850,7 +2019,7 @@ CONTAINS
        IF ( .NOT.output_fields(out_num)%static .AND. .NOT.need_compute .AND. debug_diag_manager ) THEN
           CALL check_bounds_are_exact_dynamic(out_num, diag_field_id, Time, err_msg=err_msg_local)
           IF ( err_msg_local /= '' ) THEN
-             IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
+             IF ( fms_error_handler('diag_manager_mod::send_data_3d_class_star', err_msg_local, err_msg) ) THEN
                 DEALLOCATE(field_out)
                 DEALLOCATE(oor_mask)
                 RETURN
@@ -1865,7 +2034,7 @@ CONTAINS
                 WRITE (error_string,'(a,"/",a)')  &
                      & TRIM(input_fields(diag_field_id)%module_name), &
                      & TRIM(output_fields(out_num)%output_name)
-                IF ( fms_error_handler('diag_manager_mod::send_data_3d', 'module/output_field '//TRIM(error_string)//&
+                IF ( fms_error_handler('diag_manager_mod::send_data_3d_class_star', 'module/output_field '//TRIM(error_string)//&
                      & ', regional output NOT supported with mask_variant', err_msg)) THEN
                    DEALLOCATE(field_out)
                    DEALLOCATE(oor_mask)
@@ -1881,7 +2050,7 @@ CONTAINS
                       CALL update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
                       CALL check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
                       IF ( err_msg_local /= '' ) THEN
-                         IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
+                         IF ( fms_error_handler('diag_manager_mod::send_data_3d_class_star', err_msg_local, err_msg) ) THEN
                             DEALLOCATE(field_out)
                             DEALLOCATE(oor_mask)
                             RETURN
@@ -1981,7 +2150,7 @@ CONTAINS
                    WRITE (error_string,'(a,"/",a)')&
                         & TRIM(input_fields(diag_field_id)%module_name), &
                         & TRIM(output_fields(out_num)%output_name)
-                   IF ( fms_error_handler('diag_manager_mod::send_data_3d', 'module/output_field '//TRIM(error_string)//&
+                   IF ( fms_error_handler('diag_manager_mod::send_data_3d_class_star', 'module/output_field '//TRIM(error_string)//&
                         & ', variable mask but no missing value defined', err_msg)) THEN
                       DEALLOCATE(field_out)
                       DEALLOCATE(oor_mask)
@@ -1992,7 +2161,7 @@ CONTAINS
                 WRITE (error_string,'(a,"/",a)')&
                      & TRIM(input_fields(diag_field_id)%module_name), &
                      & TRIM(output_fields(out_num)%output_name)
-                IF(fms_error_handler('diag_manager_mod::send_data_3d','module/output_field '//TRIM(error_string)//&
+                IF(fms_error_handler('diag_manager_mod::send_data_3d_class_star','module/output_field '//TRIM(error_string)//&
                      & ', variable mask but no mask given', err_msg)) THEN
                    DEALLOCATE(field_out)
                    DEALLOCATE(oor_mask)
@@ -2117,7 +2286,7 @@ CONTAINS
                          CALL update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
                          CALL check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
                          IF ( err_msg_local /= '' ) THEN
-                            IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
+                            IF ( fms_error_handler('diag_manager_mod::send_data_3d_class_star', err_msg_local, err_msg) ) THEN
                                DEALLOCATE(field_out)
                                DEALLOCATE(oor_mask)
                                RETURN
@@ -2186,7 +2355,7 @@ CONTAINS
                       !   Mask will be ignored since missing values were not specified for field <field_name>
                       !   in module <module_name>
                       ! </ERROR>
-                      CALL error_mesg('diag_manager_mod::send_data_3d',&
+                      CALL error_mesg('diag_manager_mod::send_data_3d_class_star',&
                            & 'Mask will be ignored since missing values were not specified for field '//&
                            & trim(input_fields(diag_field_id)%field_name)//' in module '//&
                            & trim(input_fields(diag_field_id)%module_name), WARNING)
@@ -2272,7 +2441,7 @@ CONTAINS
                          CALL update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
                          CALL check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
                          IF ( err_msg_local /= '') THEN
-                            IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
+                            IF ( fms_error_handler('diag_manager_mod::send_data_3d_class_star', err_msg_local, err_msg) ) THEN
                                DEALLOCATE(field_out)
                                DEALLOCATE(oor_mask)
                                RETURN
@@ -2454,7 +2623,7 @@ CONTAINS
                          CALL update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
                          CALL check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
                          IF ( err_msg_local /= '' ) THEN
-                            IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
+                            IF ( fms_error_handler('diag_manager_mod::send_data_3d_class_star', err_msg_local, err_msg) ) THEN
                                DEALLOCATE(field_out)
                                DEALLOCATE(oor_mask)
                                RETURN
@@ -2597,7 +2766,7 @@ CONTAINS
                          CALL update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
                          CALL check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
                          IF ( err_msg_local /= '' ) THEN
-                            IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
+                            IF ( fms_error_handler('diag_manager_mod::send_data_3d_class_star', err_msg_local, err_msg) ) THEN
                                DEALLOCATE(field_out)
                                DEALLOCATE(oor_mask)
                                RETURN
@@ -2674,7 +2843,7 @@ CONTAINS
                    CALL update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
                    CALL check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
                    IF ( err_msg_local /= '' ) THEN
-                      IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
+                      IF ( fms_error_handler('diag_manager_mod::send_data_3d_class_star', err_msg_local, err_msg) ) THEN
                          DEALLOCATE(field_out)
                          DEALLOCATE(oor_mask)
                          RETURN
@@ -2712,7 +2881,7 @@ CONTAINS
                    CALL update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
                    CALL check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
                    IF ( err_msg_local /= '' ) THEN
-                      IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
+                      IF ( fms_error_handler('diag_manager_mod::send_data_3d_class_star', err_msg_local, err_msg) ) THEN
                          DEALLOCATE(field_out)
                          DEALLOCATE(oor_mask)
                          RETURN
@@ -2754,7 +2923,7 @@ CONTAINS
                    CALL update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
                    CALL check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
                    IF ( err_msg_local /= '' ) THEN
-                      IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
+                      IF ( fms_error_handler('diag_manager_mod::send_data_3d_class_star', err_msg_local, err_msg) ) THEN
                          DEALLOCATE(field_out)
                          DEALLOCATE(oor_mask)
                          RETURN
@@ -2792,7 +2961,7 @@ CONTAINS
                    CALL update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
                    CALL check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
                    IF ( err_msg_local /= '' ) THEN
-                      IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
+                      IF ( fms_error_handler('diag_manager_mod::send_data_3d_class_star', err_msg_local, err_msg) ) THEN
                          DEALLOCATE(field_out)
                          DEALLOCATE(oor_mask)
                          RETURN
@@ -2835,7 +3004,7 @@ CONTAINS
                    CALL update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
                    CALL check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
                    IF ( err_msg_local /= '' ) THEN
-                      IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
+                      IF ( fms_error_handler('diag_manager_mod::send_data_3d_class_star', err_msg_local, err_msg) ) THEN
                          DEALLOCATE(field_out)
                          DEALLOCATE(oor_mask)
                          RETURN
@@ -2874,7 +3043,7 @@ CONTAINS
                    CALL update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
                    CALL check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
                    IF ( err_msg_local /= '' ) THEN
-                      IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
+                      IF ( fms_error_handler('diag_manager_mod::send_data_3d_class_star', err_msg_local, err_msg) ) THEN
                          DEALLOCATE(field_out)
                          DEALLOCATE(oor_mask)
                          RETURN
@@ -2909,7 +3078,7 @@ CONTAINS
                 CALL update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
                 CALL check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
                 IF ( err_msg_local /= '' ) THEN
-                   IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
+                   IF ( fms_error_handler('diag_manager_mod::send_data_3d_class_star', err_msg_local, err_msg) ) THEN
                       DEALLOCATE(field_out)
                       DEALLOCATE(oor_mask)
                       RETURN
@@ -2962,7 +3131,7 @@ CONTAINS
        IF ( output_fields(out_num)%static .AND. .NOT.need_compute .AND. debug_diag_manager ) THEN
           CALL check_bounds_are_exact_static(out_num, diag_field_id, err_msg=err_msg_local)
           IF ( err_msg_local /= '' ) THEN
-             IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg)) THEN
+             IF ( fms_error_handler('diag_manager_mod::send_data_3d_class_star', err_msg_local, err_msg)) THEN
                 DEALLOCATE(field_out)
                 DEALLOCATE(oor_mask)
                 RETURN
@@ -3003,7 +3172,7 @@ CONTAINS
                    END DO
                 END DO
              CLASS DEFAULT
-                CALL error_mesg ('diag_manager_mod::send_data_3d',&
+                CALL error_mesg ('diag_manager_mod::send_data_3d_class_star',&
                      & 'The rmask is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
              END SELECT
           ELSE IF ( reduced_k_range ) THEN
@@ -3031,7 +3200,7 @@ CONTAINS
                    END DO
                 END DO
              CLASS DEFAULT
-                CALL error_mesg ('diag_manager_mod::send_data_3d',&
+                CALL error_mesg ('diag_manager_mod::send_data_3d_class_star',&
                      & 'The rmask is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
              END SELECT
           ELSE
@@ -3055,7 +3224,7 @@ CONTAINS
                    END DO
                 END DO
              CLASS DEFAULT
-                CALL error_mesg ('diag_manager_mod::send_data_3d',&
+                CALL error_mesg ('diag_manager_mod::send_data_3d_class_star',&
                      & 'The rmask is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
              END SELECT
           END IF
@@ -3065,7 +3234,7 @@ CONTAINS
 
     DEALLOCATE(field_out)
     DEALLOCATE(oor_mask)
-  END FUNCTION send_data_3d
+  END FUNCTION send_data_3d_class_star
 
   !> @return true if send is successful
   LOGICAL FUNCTION send_tile_averaged_data1d ( id, field, area, time, mask )
