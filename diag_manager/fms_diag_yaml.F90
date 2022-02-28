@@ -30,12 +30,12 @@
 !> @{
 module fms_diag_yaml_mod
 #ifdef use_yaml
-use diag_data_mod, only: DIAG_NULL
-use yaml_parser_mod
-use fms_string_utils_mod
-use mpp_mod
 use, intrinsic :: iso_c_binding, only : c_ptr, c_null_char
-
+use diag_data_mod,   only: DIAG_NULL
+use yaml_parser_mod, only: open_and_parse_file, get_value_from_key, get_num_blocks, get_nkeys, &
+                           get_block_ids, get_key_value, get_key_ids, get_key_name
+use mpp_mod,         only: mpp_error, FATAL
+use fms_string_utils_mod
 implicit none
 
 private
@@ -113,6 +113,8 @@ type diagYamlFiles_type
                                                                                         !! meta data to the file
 
  contains
+ !> All getter functions (functions named get_x(), for member field named x)
+ !! return copies of the member variables unless explicitly noted.
  procedure :: get_file_fname
  procedure :: get_file_frequnit
  procedure :: get_file_freq
@@ -129,6 +131,24 @@ type diagYamlFiles_type
  procedure :: get_file_varlist
  procedure :: get_file_global_meta
  procedure :: is_global_meta
+ !> Has functions to determine if allocatable variables are true.  If a variable is not an allocatable
+ !! then is will always return .true.
+ procedure :: has_file_fname 
+ procedure :: has_file_frequnit 
+ procedure :: has_file_freq 
+ procedure :: has_file_timeunit 
+ procedure :: has_file_unlimdim 
+ procedure :: has_file_write 
+ procedure :: has_string_file_write 
+ procedure :: has_file_realm 
+ procedure :: has_file_sub_region 
+ procedure :: has_file_new_file_freq 
+ procedure :: has_file_new_file_freq_units 
+ procedure :: has_file_start_time 
+ procedure :: has_file_duration 
+ procedure :: has_file_duration_units 
+ procedure :: has_file_varlist 
+ procedure :: has_file_global_meta 
 
 end type diagYamlFiles_type
 
@@ -151,6 +171,8 @@ type diagYamlFilesVar_type
   character (len=MAX_STR_LEN), dimension (:, :), private, allocatable :: var_attributes !< Attributes to overwrite or
                                                                                         !! add from diag_yaml
  contains
+ !> All getter functions (functions named get_x(), for member field named x)
+ !! return copies of the member variables unless explicitly noted.
   procedure :: get_var_fname
   procedure :: get_var_varname
   procedure :: get_var_reduction
@@ -162,6 +184,18 @@ type diagYamlFilesVar_type
   procedure :: get_var_write
   procedure :: get_var_attributes
   procedure :: is_var_attributes
+  procedure :: has_var_fname 
+  procedure :: has_var_varname 
+  procedure :: has_var_reduction 
+  procedure :: has_var_module 
+  procedure :: has_var_skind 
+  procedure :: has_string_var_write 
+  procedure :: has_var_write 
+  procedure :: has_var_outname 
+  procedure :: has_var_longname 
+  procedure :: has_var_units 
+  procedure :: has_var_attributes 
+
 end type diagYamlFilesVar_type
 
 !> @brief Object that holds the information of the diag_yaml
@@ -176,6 +210,12 @@ type diagYamlObject_type
   procedure :: get_basedate     !< Returns the basedate array
   procedure :: get_diag_files   !< Returns the diag_files array
   procedure :: get_diag_fields  !< Returns the diag_field array
+
+  procedure :: has_diag_title                   
+  procedure :: has_diag_basedate           
+  procedure :: has_diag_files
+  procedure :: has_diag_fields 
+
 end type diagYamlObject_type
 
 type (diagYamlObject_type), save :: diag_yaml  !< Obj containing the contents of the diag_table.yaml
@@ -188,7 +228,7 @@ contains
 
 !> @brief gets the diag_yaml module variable
 !! @return a copy of the diag_yaml module variable
-function get_diag_yaml_obj() &
+pure function get_diag_yaml_obj() &
 result(res)
   type (diagYamlObject_type) :: res
 
@@ -531,8 +571,8 @@ end function find_diag_field
 subroutine check_file_freq(fileobj)
   type(diagYamlFiles_type), intent(inout) :: fileobj      !< diagYamlFiles_type obj to check
 
-  if (fileobj%file_freq < 1 ) &
-    call mpp_error(FATAL, "freq must be greater than 0. &
+  if (.not. (fileobj%file_freq >= -1) ) &
+    call mpp_error(FATAL, "freq must be greater than or equal to -1. &
       &Check you entry for"//trim(fileobj%file_fname))
   if(.not. is_valid_time_units(fileobj%file_frequnit)) &
     call mpp_error(FATAL, trim(fileobj%file_frequnit)//" is not a valid file_frequnit. &
@@ -621,14 +661,14 @@ subroutine check_field_reduction(field)
   n_diurnal = 0
   pow_value = 0
   ioerror = 0
-  if (field%var_reduction(1:7) .eq. "diurnal") then
+  if (index(field%var_reduction, "diurnal") .ne. 0) then
     READ (UNIT=field%var_reduction(8:LEN_TRIM(field%var_reduction)), FMT=*, IOSTAT=ioerror) n_diurnal
     if (ioerror .ne. 0) &
       call mpp_error(FATAL, "Error getting the number of diurnal samples from "//trim(field%var_reduction))
     if (n_diurnal .le. 0) &
       call mpp_error(FATAL, "Diurnal samples should be greater than 0. &
         & Check your entry for file:"//trim(field%var_varname)//" in file "//trim(field%var_fname))
-  elseif (field%var_reduction(1:3) .eq. "pow") then
+  elseif (index(field%var_reduction, "pow") .ne. 0) then
     READ (UNIT=field%var_reduction(4:LEN_TRIM(field%var_reduction)), FMT=*, IOSTAT=ioerror) pow_value
     if (ioerror .ne. 0) &
       call mpp_error(FATAL, "Error getting the power value from "//trim(field%var_reduction))
@@ -922,6 +962,203 @@ subroutine get_diag_entries(indices, diag_fields, diag_files)
   enddo
 
 end subroutine
+!> @brief Checks if obj%file_fname is allocated
+!! @return true if obj%file_fname is allocated
+pure logical function has_file_fname (obj)
+  class(diagYamlFiles_type), intent(in) :: obj !< diagYamlFiles_type object to initialize
+  has_file_fname = allocated(obj%file_fname)
+end function has_file_fname
+!> @brief Checks if obj%file_frequnit is allocated
+!! @return true if obj%file_frequnit is allocated
+pure logical function has_file_frequnit (obj)
+  class(diagYamlFiles_type), intent(in) :: obj !< diagYamlFiles_type object to initialize
+  has_file_frequnit = allocated(obj%file_frequnit)
+end function has_file_frequnit
+!> @brief obj%file_freq is on the stack, so the object always has it
+!! @return true if obj%file_freq is allocated
+pure logical function has_file_freq (obj)
+  class(diagYamlFiles_type), intent(in) :: obj !< diagYamlFiles_type object to initialize
+  has_file_freq = .true.
+end function has_file_freq
+!> @brief Checks if obj%file_timeunit is allocated
+!! @return true if obj%file_timeunit is allocated
+pure logical function has_file_timeunit (obj)
+  class(diagYamlFiles_type), intent(in) :: obj !< diagYamlFiles_type object to initialize
+  has_file_timeunit = allocated(obj%file_timeunit)
+end function has_file_timeunit
+!> @brief Checks if obj%file_unlimdim is allocated
+!! @return true if obj%file_unlimdim is allocated
+pure logical function has_file_unlimdim (obj)
+  class(diagYamlFiles_type), intent(in) :: obj !< diagYamlFiles_type object to initialize
+  has_file_unlimdim = allocated(obj%file_unlimdim)
+end function has_file_unlimdim
+!> @brief Checks if obj%file_write is on the stack, so this will always be true
+!! @return true 
+pure logical function has_file_write (obj)
+  class(diagYamlFiles_type), intent(in) :: obj !< diagYamlFiles_type object to initialize
+  has_file_write = .true.
+end function has_file_write
+!> @brief Checks if obj%string_file_write is allocated
+!! @return true if obj%string_file_write is allocated
+pure logical function has_string_file_write (obj)
+  class(diagYamlFiles_type), intent(in) :: obj !< diagYamlFiles_type object to initialize
+  has_string_file_write = allocated(obj%string_file_write)
+end function has_string_file_write
+!> @brief Checks if obj%file_realm is allocated
+!! @return true if obj%file_realm is allocated
+pure logical function has_file_realm (obj)
+  class(diagYamlFiles_type), intent(in) :: obj !< diagYamlFiles_type object to initialize
+  has_file_realm = allocated(obj%file_realm)
+end function has_file_realm
+!> @brief Checks if obj%file_sub_region is being used and has the sub region variables allocated
+!! @return true if obj%file_sub_region sub region variables are allocated
+pure logical function has_file_sub_region (obj)
+  class(diagYamlFiles_type), intent(in) :: obj !< diagYamlFiles_type object to initialize
+  if ( (allocated(obj%file_sub_region%grid_type) .and. allocated(obj%file_sub_region%lat_lon_sub_region)) &
+   .or.(allocated(obj%file_sub_region%grid_type) .and. allocated(obj%file_sub_region%index_sub_region)))  &
+   then
+       has_file_sub_region = .true.
+  else
+       has_file_sub_region = .false.
+  endif
+end function has_file_sub_region
+!> @brief obj%file_new_file_freq is defined on the stack, so this will return true
+!! @return true 
+pure logical function has_file_new_file_freq (obj)
+  class(diagYamlFiles_type), intent(in) :: obj !< diagYamlFiles_type object to initialize
+  has_file_new_file_freq = .true.
+end function has_file_new_file_freq
+!> @brief Checks if obj%file_new_file_freq_units is allocated
+!! @return true if obj%file_new_file_freq_units is allocated
+pure logical function has_file_new_file_freq_units (obj)
+  class(diagYamlFiles_type), intent(in) :: obj !< diagYamlFiles_type object to initialize
+  has_file_new_file_freq_units = allocated(obj%file_new_file_freq_units)
+end function has_file_new_file_freq_units
+!> @brief Checks if obj%file_start_time is allocated
+!! @return true if obj%file_start_time is allocated
+pure logical function has_file_start_time (obj)
+  class(diagYamlFiles_type), intent(in) :: obj !< diagYamlFiles_type object to initialize
+  has_file_start_time = allocated(obj%file_start_time)
+end function has_file_start_time
+!> @brief obj%file_duration is allocated on th stack, so this is always true
+!! @return true 
+pure logical function has_file_duration (obj)
+  class(diagYamlFiles_type), intent(in) :: obj !< diagYamlFiles_type object to initialize
+  has_file_duration = .true.
+end function has_file_duration
+!> @brief obj%file_duration_units is on the stack, so this will retrun true
+!! @return true 
+pure logical function has_file_duration_units (obj)
+  class(diagYamlFiles_type), intent(in) :: obj !< diagYamlFiles_type object to initialize
+  has_file_duration_units = .true.
+end function has_file_duration_units
+!> @brief Checks if obj%file_varlist is allocated
+!! @return true if obj%file_varlist is allocated
+pure logical function has_file_varlist (obj)
+  class(diagYamlFiles_type), intent(in) :: obj !< diagYamlFiles_type object to initialize
+  has_file_varlist = allocated(obj%file_varlist)
+end function has_file_varlist
+!> @brief Checks if obj%file_global_meta is allocated
+!! @return true if obj%file_global_meta is allocated
+pure logical function has_file_global_meta (obj)
+  class(diagYamlFiles_type), intent(in) :: obj !< diagYamlFiles_type object to initialize
+  has_file_global_meta = allocated(obj%file_global_meta)
+end function has_file_global_meta
+
+!> @brief Checks if obj%var_fname is allocated
+!! @return true if obj%var_fname is allocated
+pure logical function has_var_fname (obj)
+  class(diagYamlFilesVar_type), intent(in) :: obj !< diagYamlvar_type object to initialize
+  has_var_fname = allocated(obj%var_fname)
+end function has_var_fname
+!> @brief Checks if obj%var_varname is allocated
+!! @return true if obj%var_varname is allocated
+pure logical function has_var_varname (obj)
+  class(diagYamlFilesVar_type), intent(in) :: obj !< diagYamlvar_type object to initialize
+  has_var_varname = allocated(obj%var_varname)
+end function has_var_varname
+!> @brief Checks if obj%var_reduction is allocated
+!! @return true if obj%var_reduction is allocated
+pure logical function has_var_reduction (obj)
+  class(diagYamlFilesVar_type), intent(in) :: obj !< diagYamlvar_type object to initialize
+  has_var_reduction = allocated(obj%var_reduction)
+end function has_var_reduction
+!> @brief Checks if obj%var_module is allocated
+!! @return true if obj%var_module is allocated
+pure logical function has_var_module (obj)
+  class(diagYamlFilesVar_type), intent(in) :: obj !< diagYamlvar_type object to initialize
+  has_var_module = allocated(obj%var_module)
+end function has_var_module
+!> @brief Checks if obj%var_skind is allocated
+!! @return true if obj%var_skind is allocated
+pure logical function has_var_skind (obj)
+  class(diagYamlFilesVar_type), intent(in) :: obj !< diagYamlvar_type object to initialize
+  has_var_skind = allocated(obj%var_skind)
+end function has_var_skind
+!> @brief Checks if obj%string_var_write is allocated
+!! @return true if obj%string_var_write is allocated
+pure logical function has_string_var_write (obj)
+  class(diagYamlFilesVar_type), intent(in) :: obj !< diagYamlvar_type object to initialize
+  has_string_var_write = allocated(obj%string_var_write)
+end function has_string_var_write
+!> @brief obj%var_write is on the stack, so this returns true
+!! @return true 
+pure logical function has_var_write (obj)
+  class(diagYamlFilesVar_type), intent(in) :: obj !< diagYamlvar_type object to initialize
+  has_var_write = .true.
+end function has_var_write
+!> @brief Checks if obj%var_outname is allocated
+!! @return true if obj%var_outname is allocated
+pure logical function has_var_outname (obj)
+  class(diagYamlFilesVar_type), intent(in) :: obj !< diagYamlvar_type object to initialize
+  has_var_outname = allocated(obj%var_outname)
+end function has_var_outname
+!> @brief Checks if obj%var_longname is allocated
+!! @return true if obj%var_longname is allocated
+pure logical function has_var_longname (obj)
+  class(diagYamlFilesVar_type), intent(in) :: obj !< diagYamlvar_type object to initialize
+  has_var_longname = allocated(obj%var_longname)
+end function has_var_longname
+!> @brief Checks if obj%var_units is allocated
+!! @return true if obj%var_units is allocated
+pure logical function has_var_units (obj)
+  class(diagYamlFilesVar_type), intent(in) :: obj !< diagYamlvar_type object to initialize
+  has_var_units = allocated(obj%var_units)
+end function has_var_units
+!> @brief Checks if obj%var_attributes is allocated
+!! @return true if obj%var_attributes is allocated
+pure logical function has_var_attributes (obj)
+  class(diagYamlFilesVar_type), intent(in) :: obj !< diagYamlvar_type object to initialize
+  has_var_attributes = allocated(obj%var_attributes)
+end function has_var_attributes
+
+
+
+!> @brief Checks if obj%diag_title is allocated
+!! @return true if obj%diag_title is allocated
+pure logical function has_diag_title (obj)
+  class(diagYamlObject_type), intent(in) :: obj !< diagYamlObject_type object to initialize
+  has_diag_title = allocated(obj%diag_title)
+end function has_diag_title                    
+!> @brief obj%diag_basedate is on the stack, so this is always true
+!! @return true
+pure logical function has_diag_basedate (obj)
+  class(diagYamlObject_type), intent(in) :: obj !< diagYamlObject_type object to initialize
+  has_diag_basedate = .true.
+end function has_diag_basedate            
+!> @brief Checks if obj%diag_files is allocated
+!! @return true if obj%diag_files is allocated
+pure logical function has_diag_files (obj)
+  class(diagYamlObject_type), intent(in) :: obj !< diagYamlObject_type object to initialize
+  has_diag_files = allocated(obj%diag_files)
+end function has_diag_files
+!> @brief Checks if obj%diag_fields is allocated
+!! @return true if obj%diag_fields is allocated
+pure logical function has_diag_fields (obj)
+  class(diagYamlObject_type), intent(in) :: obj !< diagYamlObject_type object to initialize
+  has_diag_fields = allocated(obj%diag_fields)
+end function has_diag_fields  
+
 #endif
 end module fms_diag_yaml_mod
 !> @}
