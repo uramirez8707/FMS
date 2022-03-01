@@ -114,6 +114,11 @@ printf "&diag_manager_nml \n use_modern_diag = .true. \n/" | cat > input.nml
 cp $top_srcdir/test_fms/diag_manager/diagTables/diag_table_yaml_26 diag_table.yaml
 run_test test_register_diag_field 1 $parser_skip
 
+echo "Test the diag_ocean 'feature' in diag_manager_init"
+printf "&diag_manager_nml \n use_modern_diag = .true. \n/" | cat > input.nml
+cp $top_srcdir/test_fms/diag_manager/diagTables/diag_table_yaml_27 diag_table.yaml
+run_test test_diag_ocean 2 $parser_skip
+
 echo "Test container"
 rm -f input.nml diag_table
 touch input.nml

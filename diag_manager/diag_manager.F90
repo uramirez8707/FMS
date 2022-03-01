@@ -3806,7 +3806,7 @@ END FUNCTION register_diag_field_array_modern
 
 #ifdef use_yaml
     if (use_modern_diag) then
-      CALL diag_yaml_object_init()
+      CALL diag_yaml_object_init(diag_subset_output)
       modern_nfields = 0
     endif
 #endif
