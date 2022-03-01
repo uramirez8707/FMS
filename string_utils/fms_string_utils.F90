@@ -18,7 +18,7 @@
 !***********************************************************************
 
 !> @defgroup fms_string_utils_mod fms_string_utils_mod
-!> @ingroup parser
+!> @ingroup string_utils
 !> @brief Routines to use for string manipulation
 
 !> @file
