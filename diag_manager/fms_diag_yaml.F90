@@ -1157,7 +1157,8 @@ result(indices)
   character(len=*), intent(in) :: diag_field_name
   integer, allocatable :: indices(:)
 
-  indices = fms_find_my_string(variable_list%var_pointer, size(variable_list%var_pointer), diag_field_name//c_null_char)
+  indices = fms_find_my_string(variable_list%var_pointer, size(variable_list%var_pointer), &
+                               & diag_field_name//c_null_char)
 end function find_diag_field
 
 #endif
