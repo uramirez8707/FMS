@@ -24,7 +24,7 @@
 !! "test_diag_manager_mod", "sst", "sst", "ocn%4yr%2mo%2dy%2hr",  "all", .true., "none", 2
 
 program test_diag_manager_time
-
+#ifdef use_yaml
 use   mpp_domains_mod
 use   diag_manager_mod
 use   fms_mod
@@ -95,5 +95,5 @@ if (id_sst4 .ne. 3) call mpp_error(FATAL, "The id of sst4 is not 3")
 
 call diag_manager_end(Time)
 call fms_end
-
+#endif
 end program test_diag_manager_time
