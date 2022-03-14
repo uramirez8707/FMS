@@ -35,7 +35,7 @@ use yaml_parser_mod, only: open_and_parse_file, get_value_from_key, get_num_bloc
                            get_block_ids, get_key_value, get_key_ids, get_key_name
 use mpp_mod,         only: mpp_error, FATAL
 use, intrinsic :: iso_c_binding, only : c_ptr, c_null_char
-use fms_string_utils_mod
+use fms_string_utils_mod, only: fms_array_to_pointer, fms_find_my_string, fms_sort_this, fms_find_unique
 
 implicit none
 
@@ -44,7 +44,8 @@ private
 public :: diag_yaml_object_init, diag_yaml_object_end
 public :: diagYamlObject_type, get_diag_yaml_obj, get_title, get_basedate, get_diag_files, get_diag_fields
 public :: diagYamlFiles_type, diagYamlFilesVar_type
-public :: find_diag_field
+public :: find_diag_field, get_num_unique_fields
+
 !> @}
 
 integer, parameter :: basedate_size = 6
@@ -1161,6 +1162,16 @@ result(indices)
                                & diag_field_name//c_null_char)
 end function find_diag_field
 
+!> @brief Determine the number of unique diag_fields in the diag_yaml_object
+!! @return The number of unique diag_fields
+function get_num_unique_fields() &
+  result(nfields)
+
+  integer :: nfields
+
+  nfields = fms_find_unique(variable_list%var_pointer, size(variable_list%var_pointer))
+
+end function get_num_unique_fields
 #endif
 end module fms_diag_yaml_mod
 !> @}

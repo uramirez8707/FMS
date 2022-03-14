@@ -637,4 +637,45 @@ test_expect_success "test_diag_dlinked_list (test $my_test_count)" '
   mpirun -n 1 ../test_diag_dlinked_list
 '
 
+cat <<_EOF > diag_table.yaml
+title: test_diag_manager
+base_date: 2 1 1 0 0 0
+diag_files:
+- file_name: file1
+  freq: 6
+  freq_units: hours
+  time_units: hours
+  unlimdim: time
+  varlist:
+  - module: test_diag_manager_mod
+    var_name: sst1
+    output_name: sst1
+    reduction: average
+    kind: float
+  - module: test_diag_manager_mod
+    var_name: sst2
+    output_name: sst2
+    reduction: average
+    kind: float
+- file_name: file2
+  freq: 6
+  freq_units: hours
+  time_units: hours
+  unlimdim: time
+  varlist:
+  - module: test_diag_manager_mod
+    var_name: sst2
+    output_name: sst2
+    reduction: average
+    kind: float
+  - module: test_diag_manager_mod
+    var_name: sst4
+    output_name: sst4
+    reduction: average
+    kind: float
+_EOF
+
+test_expect_success "test_modern_diag_manager (test $my_test_count)" '
+  mpirun -n 1 ../test_modern_diag_manager
+'
 test_done
