@@ -464,6 +464,7 @@ end function register_diag_field_array
     INTEGER, OPTIONAL, INTENT(in) :: area, volume
     CHARACTER(len=*), OPTIONAL, INTENT(in):: realm !< String to set as the value to the modeling_realm attribute
 
+#ifdef use_yaml
     integer, allocatable :: diag_table_indices(:)
     diag_table_indices = find_diag_field(field_name)
 
@@ -479,6 +480,10 @@ end function register_diag_field_array
       register_diag_field_scalar_modern = registered_variables
       deallocate(diag_table_indices)
    endif
+#else
+  call mpp_error(FATAL, "use_diag_yaml is required if using modern diag_manager!")
+  register_diag_field_scalar_modern = diag_null
+#endif
 
   end function register_diag_field_scalar_modern
 
@@ -504,6 +509,7 @@ end function register_diag_field_array
     INTEGER, OPTIONAL, INTENT(in) :: volume !< diag_field_id containing the cell volume field
     CHARACTER(len=*), OPTIONAL, INTENT(in):: realm !< String to set as the value to the modeling_realm attribute
 
+#ifdef use_yaml
     integer, allocatable :: diag_table_indices(:)
     diag_table_indices = find_diag_field(field_name)
 
@@ -524,6 +530,10 @@ end function register_diag_field_array
       register_diag_field_array_modern = registered_variables
       deallocate(diag_table_indices)
    endif
+#else
+  call mpp_error(FATAL, "use_yaml is required if using modern diag_manager")
+  register_diag_field_array_modern = diag_null
+#endif
 
    end function register_diag_field_array_modern
 
