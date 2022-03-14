@@ -3663,7 +3663,7 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
     if (allocated(fileobj)) deallocate(fileobj)
     if (allocated(fileobjND)) deallocate(fileobjND)
     if (allocated(fnum_for_domain)) deallocate(fnum_for_domain)
-
+    if (allocated(diag_objs)) deallocate(diag_objs)
 #ifdef use_yaml
     if (use_modern_diag) call diag_yaml_object_end
 #endif
@@ -3888,6 +3888,7 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
 #ifdef use_yaml
     if (use_modern_diag) CALL diag_yaml_object_init(diag_subset_output)
     allocate(diag_objs(get_num_unique_fields()))
+    registered_variables = 0
 #endif
    if (.not. use_modern_diag) then
      CALL parse_diag_table(DIAG_SUBSET=diag_subset_output, ISTAT=mystat, ERR_MSG=err_msg_local)
