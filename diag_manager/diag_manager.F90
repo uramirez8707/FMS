@@ -439,13 +439,13 @@ CONTAINS
     if (use_modern_diag) then
       register_diag_field_array = register_diag_field_array_modern(module_name, field_name, axes, init_time, &
        & long_name=long_name, units=units, missing_value=missing_value, range=range, mask_variant=mask_variant, &
-       & standard_name=standard_name, verbose=verbose, do_not_log=do_not_log, err_msg=err_msg, interp_method=interp_method, &
-       & tile_count=tile_count, area=area, volume=volume, realm=realm)
+       & standard_name=standard_name, verbose=verbose, do_not_log=do_not_log, err_msg=err_msg, &
+       & interp_method=interp_method, tile_count=tile_count, area=area, volume=volume, realm=realm)
     else
       register_diag_field_array = register_diag_field_array_old(module_name, field_name, axes, init_time, &
        & long_name=long_name, units=units, missing_value=missing_value, range=range, mask_variant=mask_variant, &
-       & standard_name=standard_name, verbose=verbose, do_not_log=do_not_log, err_msg=err_msg, interp_method=interp_method, &
-       & tile_count=tile_count, area=area, volume=volume, realm=realm)
+       & standard_name=standard_name, verbose=verbose, do_not_log=do_not_log, err_msg=err_msg, &
+       & interp_method=interp_method, tile_count=tile_count, area=area, volume=volume, realm=realm)
     endif
 end function register_diag_field_array
 
