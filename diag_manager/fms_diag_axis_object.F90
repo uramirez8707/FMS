@@ -36,7 +36,7 @@ module fms_diag_axis_object_mod
 
   PRIVATE
 
-  public :: diag_axis_t, register, set_subaxis
+  public :: diag_axis_t, diag_axis_init, set_subaxis
   !> @}
 
   !> @brief Type to hold the domain info for an axis
@@ -71,7 +71,7 @@ module fms_diag_axis_object_mod
     CHARACTER(len=:), ALLOCATABLE :: subaxis_name   !< Name of the subaxis
     INTEGER                       :: starting_index !< Starting index of the subaxis relative to the parent axis
     INTEGER                       :: ending_index   !< Ending index of the subaxis relative to the parent axis
-    class(*)                      :: bounds         !< Bounds of the subaxis (lat/lon or indices)
+    class(*)        , ALLOCATABLE :: bounds         !< Bounds of the subaxis (lat/lon or indices)
     contains
       procedure :: exists => check_if_subaxis_exists
   END TYPE subaxis_t
@@ -206,8 +206,8 @@ module fms_diag_axis_object_mod
 
   !> @brief Set the subaxis of the axis obj
   subroutine set_subaxis(obj, bounds)
-    class(diag_axis_t), INTENT(INOUT)) :: obj       !< diag_axis obj
-    class(*),            INTENT(INOUT) :: bounds(:) !< bound of the subaxis
+    class(diag_axis_t), INTENT(INOUT) :: obj       !< diag_axis obj
+    class(*),           INTENT(INOUT) :: bounds(:) !< bound of the subaxis
 
     integer :: i !< For do loops
 
