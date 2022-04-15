@@ -178,7 +178,7 @@ module fms_diag_axis_object_mod
 
     !< TO DO Check for valid direction
     obj%direction = 0
-    if (direction) obj%direction = direction
+    if (present(direction)) obj%direction = direction
 
     !< TO DO Check if id is valid and with the same parameters
     obj%edges = 0
