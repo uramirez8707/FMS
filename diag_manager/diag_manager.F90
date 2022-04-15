@@ -213,7 +213,7 @@ use platform_mod
   USE fms_mod, ONLY: error_mesg, FATAL, WARNING, NOTE, stdout, stdlog, write_version_number,&
        & fms_error_handler, check_nml_error, lowercase
   USE fms_io_mod, ONLY: get_instance_filename
-  USE diag_axis_mod, ONLY: diag_axis_init, get_axis_length, get_axis_num, get_domain2d, get_tile_count,&
+  USE diag_axis_mod, ONLY: diag_axis_init_old, get_axis_length, get_axis_num, get_domain2d, get_tile_count,&
        & diag_axis_add_attribute, axis_compatible_check, CENTER, NORTH, EAST
   USE diag_util_mod, ONLY: get_subfield_size, log_diag_field_info, update_bounds,&
        & check_out_of_bounds, check_bounds_are_exact_dynamic, check_bounds_are_exact_static,&
@@ -239,9 +239,12 @@ use platform_mod
   USE diag_grid_mod, ONLY: diag_grid_init, diag_grid_end
   USE fms_diag_object_mod, ONLY: fmsDiagObject_type
 
+  !> Modern diag_manager specific
 #ifdef use_yaml
   use fms_diag_yaml_mod, only: diag_yaml_object_init, diag_yaml_object_end, get_num_unique_fields, find_diag_field
 #endif
+  use fms_diag_axis_object_mod, only: diag_axis_t, register_diag_axis
+  use mpp_domains_mod, only: domain1D, domain2D, domainUG
 
   USE constants_mod, ONLY: SECONDS_PER_DAY
 
@@ -278,9 +281,11 @@ use platform_mod
 
   type(time_type) :: Time_end
 
+  !> Modern diag_manager specific!
   TYPE(fmsDiagObject_type), ALLOCATABLE :: diag_objs(:) !< Array of diag objects, one for each registered variable
+  type(diag_axis_t), ALLOCATABLE :: registered_diag_axis(:) !< Array of registered diag_axis
   integer :: registered_variables !< Number of registered variables
-
+  integer :: registered_axis !< Number of registered axis
   !> @brief Send data over to output fields.
   !!
   !> <TT>send_data</TT> is overloaded for fields having zero dimension
@@ -3680,6 +3685,7 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
     if (use_modern_diag) then
       call diag_yaml_object_end
       if (allocated(diag_objs)) deallocate(diag_objs)
+      if (allocated(registered_diag_axis)) deallocate(registered_diag_axis)
     endif
 #endif
   END SUBROUTINE diag_manager_end
@@ -3897,7 +3903,9 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
     if (use_modern_diag) then
       CALL diag_yaml_object_init(diag_subset_output)
       allocate(diag_objs(get_num_unique_fields()))
+      allocate(registered_diag_axis(10)) !< TO DO Linked list to avoid harcodding limit
       registered_variables = 0
+      registered_axis = 0
     endif
 #else
     if (use_modern_diag) &
@@ -4255,6 +4263,36 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
        END DO
     END IF
   END SUBROUTINE diag_field_add_cell_measures
+
+   INTEGER FUNCTION diag_axis_init(name, DATA, units, cart_name, long_name, direction,&
+       & set_name, edges, Domain, Domain2, DomainU, aux, req, tile_count, domain_position )
+    CHARACTER(len=*), INTENT(in) :: name !< Short name for axis
+    REAL, DIMENSION(:), INTENT(in) :: DATA !< Array of coordinate values
+    CHARACTER(len=*), INTENT(in) :: units !< Units for the axis
+    CHARACTER(len=*), INTENT(in) :: cart_name !< Cartesian axis ("X", "Y", "Z", "T")
+    CHARACTER(len=*), INTENT(in), OPTIONAL :: long_name !< Long name for the axis.
+    CHARACTER(len=*), INTENT(in), OPTIONAL :: set_name
+    INTEGER, INTENT(in), OPTIONAL :: direction !< Indicates the direction of the axis
+    INTEGER, INTENT(in), OPTIONAL :: edges !< Axis ID for the previously defined "edges axis"
+    TYPE(domain1d), INTENT(in), OPTIONAL :: Domain
+    TYPE(domain2d), INTENT(in), OPTIONAL :: Domain2
+    TYPE(domainUG), INTENT(in), OPTIONAL :: DomainU
+    CHARACTER(len=*), INTENT(in), OPTIONAL :: aux !< Auxiliary name, can only be <TT>geolon_t</TT> or <TT>geolat_t</TT>
+    CHARACTER(len=*), INTENT(in), OPTIONAL :: req !< Required field names.
+    INTEGER, INTENT(in), OPTIONAL :: tile_count
+    INTEGER, INTENT(in), OPTIONAL :: domain_position
+
+   if (use_modern_diag) then
+      registered_axis = registered_axis + 1
+      call registered_diag_axis(registered_axis)%register(name, DATA, units, cart_name, long_name, direction,&
+      & set_name, edges, Domain, Domain2, DomainU, aux, req, tile_count, domain_position )
+      diag_axis_init = registered_axis
+   else
+      diag_axis_init = diag_axis_init_old(name, DATA, units, cart_name, long_name, direction,&
+      & set_name, edges, Domain, Domain2, DomainU, aux, req, tile_count, domain_position )
+   endif
+
+  END FUNCTION
 
 END MODULE diag_manager_mod
 !> @}

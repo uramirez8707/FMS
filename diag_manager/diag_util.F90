@@ -55,7 +55,7 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
        & DIAG_FIELD_NOT_FOUND, diag_init_time
   USE diag_data_mod, ONLY: fileobjU, fileobj, fnum_for_domain, fileobjND
   USE diag_axis_mod, ONLY: get_diag_axis_data, get_axis_global_length, get_diag_axis_cart,&
-       & get_domain1d, get_domain2d, diag_subaxes_init, diag_axis_init, get_diag_axis, get_axis_aux,&
+       & get_domain1d, get_domain2d, diag_subaxes_init, diag_axis_init_old, get_diag_axis, get_axis_aux,&
        & get_axes_shift, get_diag_axis_name, get_diag_axis_domain_name, get_domainUG, &
        & get_axis_reqfld, axis_is_compressed, get_compressed_axes_ids
   USE diag_output_mod, ONLY: diag_output_init, write_axis_meta_data,&
@@ -1054,10 +1054,10 @@ CONTAINS
     WRITE(time_units_str, 11) TRIM(time_unit_list(files(num_files)%time_units)), get_base_year(),&
          & get_base_month(), get_base_day(), get_base_hour(), get_base_minute(), get_base_second()
 11  FORMAT(a, ' since ', i4.4, '-', i2.2, '-', i2.2, ' ', i2.2, ':', i2.2, ':', i2.2)
-    files(num_files)%time_axis_id = diag_axis_init (TRIM(long_name), tdata, time_units_str, 'T',&
+    files(num_files)%time_axis_id = diag_axis_init_old (TRIM(long_name), tdata, time_units_str, 'T',&
          & TRIM(long_name) , set_name=TRIM(name) )
     !---- register axis for storing time boundaries
-    files(num_files)%time_bounds_id = diag_axis_init( 'nv',(/1.,2./),'none','N','vertex number',&
+    files(num_files)%time_bounds_id = diag_axis_init_old( 'nv',(/1.,2./),'none','N','vertex number',&
          & set_name='nv')
   END SUBROUTINE init_file
 

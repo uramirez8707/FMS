@@ -36,7 +36,7 @@ module fms_diag_axis_object_mod
 
   PRIVATE
 
-  public :: diag_axis_t, diag_axis_init, set_subaxis
+  public :: diag_axis_t, register_diag_axis, set_subaxis
   !> @}
 
   !> @brief Type to hold the domain info for an axis
@@ -101,7 +101,7 @@ module fms_diag_axis_object_mod
 
      contains
 
-     PROCEDURE :: register => diag_axis_init
+     PROCEDURE :: register => register_diag_axis
      PROCEDURE :: axis_length => get_axis_length
      PROCEDURE :: set_subaxis
 
@@ -118,7 +118,7 @@ module fms_diag_axis_object_mod
 
   !!!!!!!!!!!!!!!!! DIAG AXIS PROCEDURES !!!!!!!!!!!!!!!!!
   !> @brief Initialize the axis
-  subroutine diag_axis_init(obj, name, axis_data, units, cart_name, long_name, direction,&
+  subroutine register_diag_axis(obj, name, axis_data, units, cart_name, long_name, direction,&
   & set_name, edges, Domain, Domain2, DomainU, aux, req, tile_count, domain_position )
     class(diag_axis_t)                       :: obj             !< Diag_axis obj
     CHARACTER(len=*),   INTENT(in)           :: name            !< Name of the axis
@@ -188,7 +188,7 @@ module fms_diag_axis_object_mod
     if (present(req)) obj%req = diag_copy_string(req)
 
     obj%nsubaxis = 0
-  end subroutine diag_axis_init
+  end subroutine register_diag_axis
 
   !> @brief Get the length of the axis
   !> @return axis length

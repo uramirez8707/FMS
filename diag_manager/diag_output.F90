@@ -40,7 +40,7 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
        & OPERATOR(.NE.), mpp_get_layout, OPERATOR(.EQ.), mpp_get_io_domain, &
        & mpp_get_compute_domain, mpp_get_global_domain
   USE mpp_mod, ONLY: mpp_npes, mpp_pe, mpp_root_pe, mpp_get_current_pelist
-  USE diag_axis_mod, ONLY: diag_axis_init, get_diag_axis, get_axis_length,&
+  USE diag_axis_mod, ONLY: get_diag_axis, get_axis_length,&
        & get_axis_global_length, get_domain1d, get_domain2d, get_axis_aux, get_tile_count,&
        & get_domainUG, get_diag_axis_name
   USE diag_data_mod, ONLY: pack_size, diag_fieldtype, diag_global_att_type, CMOR_MISSING_VALUE, diag_atttype, files

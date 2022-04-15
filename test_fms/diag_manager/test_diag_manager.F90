@@ -1053,9 +1053,9 @@ CONTAINS
                                                  mpp_get_UG_compute_domain, &
                                                  mpp_get_UG_domain_grid_index, &
                                                  mpp_get_UG_domain_ntiles
-        use diag_axis_mod,                 only: diag_axis_init, diag_axis_add_attribute
+        use diag_axis_mod,                 only: diag_axis_add_attribute
         use diag_manager_mod,              only: register_diag_field, &
-                                                 send_data
+                                                 send_data, diag_axis_init
         use time_manager_mod,              only: time_type, &
                                                  set_time, &
                                                  operator(+), &
