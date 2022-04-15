@@ -218,7 +218,8 @@ CONTAINS
        Axes(diag_axis_init_old)%cart_name = TRIM(uppercase(cart_name))
     ELSE
        ! <ERROR STATUS="FATAL">Invalid cart_name name.</ERROR>
-       CALL error_mesg('diag_axis_mod::diag_axis_init_old', 'Invalid cart_name name. '//TRIM(uppercase(cart_name)), FATAL)
+       CALL error_mesg('diag_axis_mod::diag_axis_init_old', &
+                      &'Invalid cart_name name. '//TRIM(uppercase(cart_name)), FATAL)
     END IF
 
     !---- allocate storage for coordinate values of axis ----
