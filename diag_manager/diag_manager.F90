@@ -3935,7 +3935,8 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
 
     module_is_initialized = .TRUE.
     ! create axis_id for scalars here
-    null_axis_id = diag_axis_init('scalar_axis', (/0./), 'none', 'N', 'none')
+    ! LOL no need for a null axis in the modern diag manager #FFS
+    if (.not. use_modern_diag) null_axis_id = diag_axis_init('scalar_axis', (/0./), 'none', 'N', 'none')
     RETURN
   END SUBROUTINE diag_manager_init
 

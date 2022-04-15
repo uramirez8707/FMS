@@ -628,6 +628,44 @@ test_expect_success "Test the diag_ocean feature in diag_manager_init (test $my_
   mpirun -n 2 ../test_diag_ocean
 '
 
+printf "&diag_manager_nml \n use_modern_diag = .true. \n/" | cat > input.nml
+cat <<_EOF > diag_table.yaml
+title: test_diag_manager
+base_date: 2 1 1 0 0 0
+diag_files:
+- file_name: hourly_file
+  freq: 1
+  freq_units: hours
+  time_units: hours
+  unlimdim: time
+  varlist:
+  - module: test_diag_manager_mod
+    var_name: sst
+    output_name: sst3
+    reduction: average
+    kind: r4
+  - module: test_diag_manager_mod
+    var_name: ice
+    output_name: sst4
+    reduction: average
+    kind: r4
+- file_name: daily_file
+  freq: 1
+  freq_units: days
+  time_units: hours
+  unlimdim: time
+  varlist:
+  - module: test_diag_manager_mod
+    var_name: sst
+    output_name: sst3
+    reduction: average
+    kind: r4
+_EOF
+
+test_expect_success "Test the modern diag end to end (test $my_test_count)" '
+  mpirun -n 1 ../test_modern_diag
+'
+
 test_expect_success "test_diag_object_container (test $my_test_count)" '
   mpirun -n 1 ../test_diag_object_container
 '
