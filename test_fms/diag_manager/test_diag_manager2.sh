@@ -24,6 +24,10 @@
 # Set common test settings.
 . ../test-lib.sh
 
+if [ ! -z $parser_skip ]; then
+  SKIP_TESTS='test_diag_manager2.[42-42]'
+fi
+
 setup_test () {
   local tnum=$(printf "%2.2d" $my_test_count)
   # Clean up any remaining files from previous tests
