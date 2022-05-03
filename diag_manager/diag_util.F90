@@ -69,7 +69,7 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
        & mpp_get_ntile_count, mpp_get_current_ntile, mpp_get_tile_id, mpp_mosaic_defined, mpp_get_tile_npes,&
        & domainUG, null_domainUG
   USE time_manager_mod,ONLY: time_type, OPERATOR(==), OPERATOR(>), NO_CALENDAR, increment_date,&
-       & increment_time, get_calendar_type, get_date, get_time, leap_year, OPERATOR(-),&
+       & increment_time, get_calendar_type, get_date, get_time, set_date, leap_year, OPERATOR(-),&
        & OPERATOR(<), OPERATOR(>=), OPERATOR(<=), OPERATOR(==)
   USE mpp_mod, ONLY: mpp_npes
   USE constants_mod, ONLY: SECONDS_PER_DAY, SECONDS_PER_HOUR, SECONDS_PER_MINUTE
@@ -1103,6 +1103,13 @@ CONTAINS
                                                        !! time was found successfully.
 
     CHARACTER(len=128) :: error_message_local
+    integer :: cyear   !< The current year stored in the time type
+    integer :: cmonth  !< The current month stored in the time type
+    integer :: cday    !< The current day stored in the time type
+    integer :: chour   !< The current hour stored in the time type
+    integer :: cmin    !< The current minute stored in the time type
+    integer :: csecond !< The current second stored in the time type
+    type(time_type) :: my_time !< Time set at the begining of the <output_freq>
 
     IF ( PRESENT(err_msg) ) err_msg = ''
     error_message_local = ''
@@ -1114,6 +1121,8 @@ CONTAINS
        diag_time_inc = time
        RETURN
     END IF
+
+    call get_date(Time, cyear, cmonth, cday, chour, cmin, csecond)
 
     ! Make sure calendar was not set after initialization
     IF ( output_units == DIAG_SECONDS ) THEN
@@ -1133,25 +1142,29 @@ CONTAINS
        IF ( get_calendar_type() == NO_CALENDAR ) THEN
           diag_time_inc = increment_time(time, NINT(output_freq*SECONDS_PER_HOUR), 0, err_msg=error_message_local)
        ELSE
-          diag_time_inc = increment_date(time, 0, 0, 0, output_freq, 0, 0, err_msg=error_message_local)
+          my_time = set_date(cyear, cmonth, cday, chour, 0, 0) !< set my_time to the begining of the hour
+          diag_time_inc = increment_date(my_time, 0, 0, 0, output_freq, 0, 0, err_msg=error_message_local)
        END IF
     ELSE IF ( output_units == DIAG_DAYS ) THEN
        IF (get_calendar_type() == NO_CALENDAR) THEN
           diag_time_inc = increment_time(time, 0, output_freq, err_msg=error_message_local)
        ELSE
-          diag_time_inc = increment_date(time, 0, 0, output_freq, 0, 0, 0, err_msg=error_message_local)
+          my_time = set_date(cyear, cmonth, cday, 0, 0, 0) !< set my_time to the begining of the day
+          diag_time_inc = increment_date(my_time, 0, 0, output_freq, 0, 0, 0, err_msg=error_message_local)
        END IF
     ELSE IF ( output_units == DIAG_MONTHS ) THEN
        IF (get_calendar_type() == NO_CALENDAR) THEN
           error_message_local = 'output units of months NOT allowed with no calendar'
        ELSE
-          diag_time_inc = increment_date(time, 0, output_freq, 0, 0, 0, 0, err_msg=error_message_local)
+          my_time = set_date(cyear, cmonth, 1, 0, 0, 0) !< set my_time to the begining of the month
+          diag_time_inc = increment_date(my_time, 0, output_freq, 0, 0, 0, 0, err_msg=error_message_local)
        END IF
     ELSE IF ( output_units == DIAG_YEARS ) THEN
        IF ( get_calendar_type() == NO_CALENDAR ) THEN
           error_message_local = 'output units of years NOT allowed with no calendar'
        ELSE
-          diag_time_inc = increment_date(time, output_freq, 0, 0, 0, 0, 0, err_msg=error_message_local)
+          my_time = set_date(cyear, 1, 1, 0, 0, 0) !< set my_time to the begining of the year
+          diag_time_inc = increment_date(my_time, output_freq, 0, 0, 0, 0, 0, err_msg=error_message_local)
        END IF
     ELSE
        error_message_local = 'illegal output units'
