@@ -113,7 +113,7 @@ module fms_diag_axis_object_mod
   END TYPE diagAxis_t
 
   integer                        :: number_of_axis !< Number of axis that has been registered
-  type(diag_axis_t), ALLOCATABLE :: axis_obj(:)    !< Diag_axis objects
+  type(diagAxis_t), ALLOCATABLE  :: axis_obj(:)    !< Diag_axis objects
   logical                        :: module_is_initialized !< Flaf indicating if the module is initialized
 
   !> @addtogroup fms_diag_yaml_mod
