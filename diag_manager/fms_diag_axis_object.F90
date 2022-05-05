@@ -97,7 +97,7 @@ module fms_diag_axis_object_mod
      INTEGER                        , private :: tile_count      !< The number of tiles
      TYPE(diag_atttype),allocatable , private :: attributes(:)   !< Array to hold user definable attributes
      INTEGER                        , private :: num_attributes  !< Number of defined attibutes
-     INTEGER                        , private :: domain_position !< The position in the doman (NORTH or EAST or CENTER)
+     INTEGER                        , private :: domain_position !< The position in the doman (NORTH, EAST or CENTER)
 
      contains
 
@@ -330,9 +330,9 @@ module fms_diag_axis_object_mod
 
     number_of_axis = number_of_axis + 1
 
-    call axis_obj(number_of_axis)%register(name, axis_data, units, cart_name, long_name=long_name, direction=direction,&
-    & set_name=set_name, edges=edges, Domain=Domain, Domain2=Domain2, DomainU=DomainU, aux=aux, req=req, &
-    & tile_count=tile_count, domain_position=domain_position)
+    call axis_obj(number_of_axis)%register(name, axis_data, units, cart_name, long_name=long_name, &
+    & direction=direction, set_name=set_name, edges=edges, Domain=Domain, Domain2=Domain2, DomainU=DomainU, aux=aux, &
+    & req=req, tile_count=tile_count, domain_position=domain_position)
 
     id = number_of_axis
   end function

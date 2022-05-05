@@ -24,7 +24,7 @@
 !! "test_diag_manager_mod", "sst", "sst", "ocn%4yr%2mo%2dy%2hr",  "all", .true., "none", 2
 
 program test_modern_diag
-
+#ifdef use_yaml
 use   mpp_domains_mod,  only: domain2d, mpp_domains_set_stack_size, mpp_define_domains, mpp_define_io_domain
 use   diag_manager_mod, only: diag_manager_init, diag_manager_end, diag_axis_init
 use   fms_mod,          only: fms_init, fms_end
@@ -85,5 +85,5 @@ if (id_z .ne. 3) call mpp_error(FATAL, "The z axis does not have the expected id
 
 call diag_manager_end(Time)
 call fms_end
-
+#endif
 end program test_modern_diag
