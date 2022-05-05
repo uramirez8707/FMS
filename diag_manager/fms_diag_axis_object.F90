@@ -36,7 +36,8 @@ module fms_diag_axis_object_mod
 
   PRIVATE
 
-  public :: diag_axis_t, diag_axis_init, set_subaxis
+  public :: diag_axis_t, set_subaxis, modern_diag_axis_init, fms_diag_axis_object_init, fms_diag_axis_object_end
+
   !> @}
 
   !> @brief Type to hold the domain info for an axis
@@ -100,7 +101,7 @@ module fms_diag_axis_object_mod
 
      contains
 
-     PROCEDURE :: register => diag_axis_init
+     PROCEDURE :: register => register_diag_axis
      PROCEDURE :: axis_length => get_axis_length
      PROCEDURE :: set_subaxis
 
@@ -111,13 +112,17 @@ module fms_diag_axis_object_mod
      ! Get/has/is subroutines as needed
   END TYPE diag_axis_t
 
+  integer                        :: number_of_axis !< Number of axis that has been registered
+  type(diag_axis_t), ALLOCATABLE :: axis_obj(:)    !< Diag_axis objects
+  logical                        :: module_is_initialized !< Flaf indicating if the module is initialized
+
   !> @addtogroup fms_diag_yaml_mod
   !> @{
   contains
 
   !!!!!!!!!!!!!!!!! DIAG AXIS PROCEDURES !!!!!!!!!!!!!!!!!
   !> @brief Initialize the axis
-  subroutine diag_axis_init(obj, name, axis_data, units, cart_name, long_name, direction,&
+  subroutine register_diag_axis(obj, name, axis_data, units, cart_name, long_name, direction,&
   & set_name, edges, Domain, Domain2, DomainU, aux, req, tile_count, domain_position )
     class(diag_axis_t)                       :: obj             !< Diag_axis obj
     CHARACTER(len=*),   INTENT(in)           :: name            !< Name of the axis
@@ -187,7 +192,7 @@ module fms_diag_axis_object_mod
     if (present(req)) obj%req = diag_copy_string(req)
 
     obj%nsubaxis = 0
-  end subroutine diag_axis_init
+  end subroutine register_diag_axis
 
   !> @brief Get the length of the axis
   !> @return axis length
@@ -280,6 +285,56 @@ module fms_diag_axis_object_mod
     allocate(character(len=len_trim(string_in)) :: string_out)
     string_out = trim(string_in)
 
+  end function
+
+  subroutine fms_diag_axis_object_init()
+
+    if (module_is_initialized) return
+
+    number_of_axis = 0
+    allocate(axis_obj(20))
+
+    module_is_initialized = .true.
+  end subroutine fms_diag_axis_object_init
+
+  subroutine fms_diag_axis_object_end()
+    deallocate(axis_obj)
+
+    module_is_initialized = .false.
+  end subroutine fms_diag_axis_object_end
+
+  !> @brief Wrapper for the register_diag_axis subroutine. This is needed to keep the diag_axis_init
+  !! interface the same
+  !> @return Axis id
+  FUNCTION modern_diag_axis_init(name, axis_data, units, cart_name, long_name, direction,&
+    & set_name, edges, Domain, Domain2, DomainU, aux, req, tile_count, domain_position ) &
+    & result(id)
+
+    CHARACTER(len=*),   INTENT(in)           :: name            !< Name of the axis
+    REAL,               INTENT(in)           :: axis_data(:)    !< Array of coordinate values
+    CHARACTER(len=*),   INTENT(in)           :: units           !< Units for the axis
+    CHARACTER(len=*),   INTENT(in)           :: cart_name       !< Cartesian axis ("X", "Y", "Z", "T", "U", "N")
+    CHARACTER(len=*),   INTENT(in), OPTIONAL :: long_name       !< Long name for the axis.
+    CHARACTER(len=*),   INTENT(in), OPTIONAL :: set_name        !< Name of the parent axis, if it is a subaxis
+    INTEGER,            INTENT(in), OPTIONAL :: direction       !< Indicates the direction of the axis
+    INTEGER,            INTENT(in), OPTIONAL :: edges           !< Axis ID for the previously defined "edges axis"
+    TYPE(domain1d),     INTENT(in), OPTIONAL :: Domain          !< 1D domain
+    TYPE(domain2d),     INTENT(in), OPTIONAL :: Domain2         !< 2D domain
+    TYPE(domainUG),     INTENT(in), OPTIONAL :: DomainU         !< Unstructured domain
+    CHARACTER(len=*),   INTENT(in), OPTIONAL :: aux             !< Auxiliary name, can only be <TT>geolon_t</TT>
+                                                                !! or <TT>geolat_t</TT>
+    CHARACTER(len=*),   INTENT(in), OPTIONAL :: req             !< Required field names.
+    INTEGER,            INTENT(in), OPTIONAL :: tile_count      !< Number of tiles
+    INTEGER,            INTENT(in), OPTIONAL :: domain_position !< Domain position, "NORTH" or "EAST"
+    integer :: id
+
+    number_of_axis = number_of_axis + 1
+
+    call axis_obj(number_of_axis)%register(name, axis_data, units, cart_name, long_name=long_name, direction=direction,&
+    & set_name=set_name, edges=edges, Domain=Domain, Domain2=Domain2, DomainU=DomainU, aux=aux, req=req, &
+    & tile_count=tile_count, domain_position=domain_position)
+
+    id = number_of_axis
   end function
 
 end module fms_diag_axis_object_mod
