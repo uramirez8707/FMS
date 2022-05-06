@@ -101,7 +101,7 @@ module fms_diag_axis_object_mod
 
      contains
 
-     PROCEDURE :: register => register_diag_axis
+     PROCEDURE :: register => diag_axis_init
      PROCEDURE :: axis_length => get_axis_length
      PROCEDURE :: set_subaxis
 
@@ -122,10 +122,10 @@ module fms_diag_axis_object_mod
 
   !!!!!!!!!!!!!!!!! DIAG AXIS PROCEDURES !!!!!!!!!!!!!!!!!
   !> @brief Initialize the axis
-  subroutine register_diag_axis(obj, name, axis_data, units, cart_name, long_name, direction,&
+  subroutine diag_axis_init(obj, axis_name, axis_data, units, cart_name, long_name, direction,&
   & set_name, edges, Domain, Domain2, DomainU, aux, req, tile_count, domain_position )
     class(diagAxis_t),  INTENT(out)          :: obj             !< Diag_axis obj
-    CHARACTER(len=*),   INTENT(in)           :: name            !< Name of the axis
+    CHARACTER(len=*),   INTENT(in)           :: axis_name       !< Name of the axis
     class(*),           INTENT(in)           :: axis_data(:)    !< Array of coordinate values
     CHARACTER(len=*),   INTENT(in)           :: units           !< Units for the axis
     CHARACTER(len=1),   INTENT(in)           :: cart_name       !< Cartesian axis ("X", "Y", "Z", "T", "U", "N")
@@ -142,10 +142,10 @@ module fms_diag_axis_object_mod
     INTEGER,            INTENT(in), OPTIONAL :: tile_count      !< Number of tiles
     INTEGER,            INTENT(in), OPTIONAL :: domain_position !< Domain position, "NORTH" or "EAST"
 
-    obj%axis_name = diag_copy_string(name)
-    obj%units = diag_copy_string(units)
-    obj%cart_name = diag_copy_string(cart_name) !< TO DO Check for valid cart_names
-    if (present(long_name)) obj%long_name = diag_copy_string(long_name)
+    obj%axis_name = trim(axis_name)
+    obj%units = trim(units)
+    obj%cart_name = trim(cart_name) !< TO DO Check for valid cart_names
+    if (present(long_name)) obj%long_name = trim(long_name)
 
     select type (axis_data)
     type is (real(kind=r8_kind))
@@ -188,11 +188,11 @@ module fms_diag_axis_object_mod
     obj%edges = 0
     if (present(edges)) obj%edges = edges
 
-    if (present(aux)) obj%aux = diag_copy_string(aux)
-    if (present(req)) obj%req = diag_copy_string(req)
+    if (present(aux)) obj%aux = trim(aux)
+    if (present(req)) obj%req = trim(req)
 
     obj%nsubaxis = 0
-  end subroutine register_diag_axis
+  end subroutine diag_axis_init
 
   !> @brief Get the length of the axis
   !> @return axis length
@@ -273,20 +273,6 @@ module fms_diag_axis_object_mod
     end select
   end subroutine set_axis_domain
 
-  !!!!!!!!!!!!!!!!! OTHER FUNCTIONS/SUBROUTINES !!!!!!!!!!!!!!!!!
-  !> @brief Copy to an allocatable string
-  !> @return Allocated string
-  !> TO DO Move this somewhere else?
-  function diag_copy_string(string_in) &
-  result(string_out)
-    character(len=*),             INTENT(IN) :: string_in !< String to copy
-    character(len=:), ALLOCATABLE            :: string_out
-
-    allocate(character(len=len_trim(string_in)) :: string_out)
-    string_out = trim(string_in)
-
-  end function
-
   subroutine fms_diag_axis_object_init()
 
     if (module_is_initialized) return
@@ -306,14 +292,14 @@ module fms_diag_axis_object_mod
   !> @brief Wrapper for the register_diag_axis subroutine. This is needed to keep the diag_axis_init
   !! interface the same
   !> @return Axis id
-  FUNCTION modern_diag_axis_init(name, axis_data, units, cart_name, long_name, direction,&
+  FUNCTION modern_diag_axis_init(axis_name, axis_data, units, cart_name, long_name, direction,&
     & set_name, edges, Domain, Domain2, DomainU, aux, req, tile_count, domain_position ) &
     & result(id)
 
-    CHARACTER(len=*),   INTENT(in)           :: name            !< Name of the axis
+    CHARACTER(len=*),   INTENT(in)           :: axis_name       !< Name of the axis
     REAL,               INTENT(in)           :: axis_data(:)    !< Array of coordinate values
     CHARACTER(len=*),   INTENT(in)           :: units           !< Units for the axis
-    CHARACTER(len=*),   INTENT(in)           :: cart_name       !< Cartesian axis ("X", "Y", "Z", "T", "U", "N")
+    CHARACTER(len=1),   INTENT(in)           :: cart_name       !< Cartesian axis ("X", "Y", "Z", "T", "U", "N")
     CHARACTER(len=*),   INTENT(in), OPTIONAL :: long_name       !< Long name for the axis.
     CHARACTER(len=*),   INTENT(in), OPTIONAL :: set_name        !< Name of the parent axis, if it is a subaxis
     INTEGER,            INTENT(in), OPTIONAL :: direction       !< Indicates the direction of the axis
@@ -330,7 +316,7 @@ module fms_diag_axis_object_mod
 
     number_of_axis = number_of_axis + 1
 
-    call axis_obj(number_of_axis)%register(name, axis_data, units, cart_name, long_name=long_name, &
+    call axis_obj(number_of_axis)%register(axis_name, axis_data, units, cart_name, long_name=long_name, &
     & direction=direction, set_name=set_name, edges=edges, Domain=Domain, Domain2=Domain2, DomainU=DomainU, aux=aux, &
     & req=req, tile_count=tile_count, domain_position=domain_position)
 
