@@ -33,11 +33,13 @@ module fms_diag_axis_object_mod
   use platform_mod,    only:  r8_kind, r4_kind
   use diag_data_mod,   only:  diag_atttype
   use mpp_mod,         only:  FATAL, mpp_error
+  use fms_mod,         only: lowercase
   implicit none
 
   PRIVATE
 
   public :: diagAxis_t, set_subaxis, modern_diag_axis_init, fms_diag_axis_object_init, fms_diag_axis_object_end
+  public :: axis_obj, get_axis_length
   !> @}
 
   !> @brief Type to hold the domain info for an axis
@@ -102,7 +104,7 @@ module fms_diag_axis_object_mod
      contains
 
      PROCEDURE :: register => diag_axis_init
-     PROCEDURE :: axis_length => get_axis_length
+     PROCEDURE :: get_axis_length
      PROCEDURE :: set_subaxis
 
      ! TO DO:
@@ -113,7 +115,7 @@ module fms_diag_axis_object_mod
   END TYPE diagAxis_t
 
   integer                        :: number_of_axis !< Number of axis that has been registered
-  type(diagAxis_t), ALLOCATABLE  :: axis_obj(:)    !< Diag_axis objects
+  type(diagAxis_t), ALLOCATABLE, SAVE  :: axis_obj(:)    !< Diag_axis objects
   logical                        :: module_is_initialized !< Flaf indicating if the module is initialized
 
   !> @addtogroup fms_diag_yaml_mod
@@ -252,8 +254,8 @@ module fms_diag_axis_object_mod
 
     select type (obj)
     type is(diagDomain2d_t)
-      if (trim(cart_axis) == "X") call mpp_get_compute_domain(obj%Domain2, xsize=length, position=domain_position)
-      if (trim(cart_axis) == "Y") call mpp_get_compute_domain(obj%Domain2, ysize=length, position=domain_position)
+      if (lowercase(trim(cart_axis)) == "x") call mpp_get_compute_domain(obj%Domain2, xsize=length, position=domain_position)
+      if (lowercase(trim(cart_axis)) == "y") call mpp_get_compute_domain(obj%Domain2, ysize=length, position=domain_position)
     class default
       !< If domain is 1D or UG, just set it to the global length
       length = global_length

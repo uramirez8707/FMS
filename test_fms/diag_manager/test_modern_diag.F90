@@ -26,7 +26,7 @@
 program test_modern_diag
 #ifdef use_yaml
 use   mpp_domains_mod,  only: domain2d, mpp_domains_set_stack_size, mpp_define_domains, mpp_define_io_domain
-use   diag_manager_mod, only: diag_manager_init, diag_manager_end, diag_axis_init
+use   diag_manager_mod, only: diag_manager_init, diag_manager_end, diag_axis_init, register_diag_field
 use   fms_mod,          only: fms_init, fms_end
 use   mpp_mod,          only: FATAL, mpp_error
 use   time_manager_mod, only: time_type, set_calendar_type, set_date, JULIAN, set_time
@@ -46,6 +46,7 @@ integer                           :: i                !< For do loops
 integer                           :: id_x             !< axis id for the x dimension
 integer                           :: id_y             !< axis id for the y dimension
 integer                           :: id_z             !< axis id for the z dimention
+integer                           :: id_var           !< field id for var
 
 call fms_init
 call set_calendar_type(JULIAN)
@@ -75,13 +76,16 @@ enddo
 Time = set_date(2,1,1,0,0,0)
 
 ! Register the diags axis
-id_x  = diag_axis_init('x',  x,  'point_E', 'x', long_name='point_E', Domain2=Domain)
-id_y  = diag_axis_init('y',  y,  'point_N', 'y', long_name='point_N', Domain2=Domain)
-id_z  = diag_axis_init('z',  z,  'point_Z', 'z', long_name='point_Z')
+id_x  = diag_axis_init('x',  x,  'point_E', 'X', long_name='point_E', Domain2=Domain)
+id_y  = diag_axis_init('y',  y,  'point_N', 'Y', long_name='point_N', Domain2=Domain)
+id_z  = diag_axis_init('z',  z,  'point_Z', 'Z', long_name='point_Z')
 
 if (id_x .ne. 1) call mpp_error(FATAL, "The x axis does not have the expected id")
 if (id_y .ne. 2) call mpp_error(FATAL, "The y axis does not have the expected id")
 if (id_z .ne. 3) call mpp_error(FATAL, "The z axis does not have the expected id")
+
+id_var = register_diag_field('test_diag_manager_mod', 'var', (/id_x,id_y/), Time, 'var', 'm')
+print *, "The id is", id_var
 
 call diag_manager_end(Time)
 call fms_end

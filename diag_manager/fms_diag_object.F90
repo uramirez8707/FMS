@@ -14,9 +14,13 @@ use diag_data_mod,  only: diag_null, diag_not_found, diag_not_registered, diag_r
 use diag_axis_mod,  only: diag_axis_type
 use mpp_mod, only: fatal, note, warning, mpp_error
 #ifdef use_yaml
-use fms_diag_yaml_mod, only: diagYamlFiles_type, diagYamlFilesVar_type
+use fms_diag_yaml_mod, only: diagYamlFiles_type, diagYamlFilesVar_type, get_diag_fields_entries
+use fms_diag_yaml_mod, only: get_diag_files_entries
 #endif
 use time_manager_mod, ONLY: time_type
+use fms_diag_axis_object_mod, only: diagAxis_t, axis_obj, get_axis_length
+use platform_mod, only: r4_kind, r8_kind, i4_kind, i8_kind
+
 !!!set_time, set_date, get_time, time_type, OPERATOR(>=), OPERATOR(>),&
 !!!       & OPERATOR(<), OPERATOR(==), OPERATOR(/=), OPERATOR(/), OPERATOR(+), ASSIGNMENT(=), get_date, &
 !!!       & get_ticks_per_second
@@ -24,11 +28,15 @@ use time_manager_mod, ONLY: time_type
 !use diag_util_mod,  only: int_to_cs, logical_to_cs
 !USE diag_data_mod, ONLY: fileobjU, fileobj, fnum_for_domain, fileobjND
 
-use fms2_io_mod
-use platform_mod
+use fms2_io_mod, only: FmsNetcdfFile_t
 use iso_c_binding
 
 implicit none
+
+!> \brief Object that holds the diag_field data
+type diagFieldData_t
+  class(*), allocatable, dimension(:) :: vardata1                       !< 1D data buffer
+end type diagFieldData_t
 
 !> \brief Object that holds all variable information
 type fmsDiagObject_type
@@ -67,14 +75,14 @@ type fmsDiagObject_type
      class(*), allocatable, private                   :: missing_value     !< The missing fill value
      class(*), allocatable, private                   :: data_RANGE        !< The range of the variable data
      type (diag_axis_type), allocatable, dimension(:) :: axis              !< The axis object
-     class(*), allocatable :: vardata0                                     !< Scalar data buffer 
-     class(*), allocatable, dimension(:) :: vardata1                       !< 1D data buffer
-     class(*), allocatable, dimension(:,:) :: vardata2                     !< 2D data buffer
-     class(*), allocatable, dimension(:,:,:) :: vardata3                   !< 3D data buffer
-     class(*), allocatable, dimension(:,:,:,:) :: vardata4                 !< 4D data buffer
-     class(*), allocatable, dimension(:,:,:,:,:) :: vardata5               !< 5D data buffer
+     type(diagFieldData_t), allocatable, dimension(:) :: vardata           !< The variable data, one for each time
+                                                                           !! the field is in the yaml
+     integer, allocatable, DIMENSION(:) :: var_size !< The size of each dimension of the variable
+
     contains
-!     procedure :: send_data => fms_send_data  !!TODO
+     procedure :: fms_send_data
+     procedure :: copy_data
+     procedure :: write_the_data
      procedure :: init_ob => diag_obj_init
      procedure :: get_id => fms_diag_get_id
      procedure :: id => fms_diag_get_id
@@ -187,14 +195,15 @@ end subroutine diag_obj_init
 !> \Description Fills in and allocates (when necessary) the values in the diagnostic object
 subroutine fms_register_diag_field_obj &
                 !(dobj, modname, varname, axes, time, longname, units, missing_value, metadata)
-       (dobj, modname, varname, axes, init_time, &
+       (dobj, modname, varname, init_time, yaml_field_indices, axes, &
        longname, units, missing_value, varRange, mask_variant, standname, &
        do_not_log, err_msg, interp_method, tile_count, area, volume, realm, metadata)
  class(fmsDiagObject_type)     , intent(inout)            :: dobj
  CHARACTER(len=*), INTENT(in) :: modname !< The module name
  CHARACTER(len=*), INTENT(in) :: varname !< The variable name
- INTEGER, INTENT(in) :: axes(:) !< The axes indicies
  TYPE(time_type), INTENT(in) :: init_time !< Initial time
+ integer, intent(in) :: yaml_field_indices(:) !< Array of indices to the field in the yaml object
+ INTEGER,          OPTIONAL, INTENT(in) :: axes(:) !< The axes indicies, if not present the variable is a scalar
  CHARACTER(len=*), OPTIONAL, INTENT(in) :: longname !< THe variables long name
  CHARACTER(len=*), OPTIONAL, INTENT(in) :: units !< The units of the variables
  CHARACTER(len=*), OPTIONAL, INTENT(in) :: standname !< The variables stanard name
@@ -212,23 +221,23 @@ subroutine fms_register_diag_field_obj &
  INTEGER, OPTIONAL, INTENT(in) :: volume !< diag_field_id containing the cell volume field
  CHARACTER(len=*), OPTIONAL, INTENT(in):: realm !< String to set as the value to the modeling_realm attribute
  character(len=*), optional, intent(in), dimension(:)     :: metadata !< metedata for the variable
+ integer :: i !< For do loops
 
 !> Fill in information from the register call
   allocate(character(len=MAX_LEN_VARNAME) :: dobj%varname)
   dobj%varname = trim(varname)
   allocate(character(len=len(modname)) :: dobj%modname)
   dobj%modname = trim(modname)
-!> Grab the information from the diag_table
-!  TO DO:
-!  dobj%diag_field = get_diag_table_field(trim(varname))
-!  dobj%diag_field = diag_yaml%get_diag_field(
-  !! TODO : Discuss design. Is this a premature return that somehow should
-  !! indicate a warning or failure to the calling function and/or the log files?
-!  if (is_field_type_null(dobj%diag_field)) then
-!     dobj%diag_id = diag_not_found
-!     dobj%vartype = diag_null
-!     return
-!  endif
+
+!> Fill in diag_field and diag_file and get the number of diurnal samples
+  dobj%diag_field = get_diag_fields_entries(yaml_field_indices)
+  dobj%diag_file = get_diag_files_entries(yaml_field_indices)
+
+!> Use the axes to get the size of the buffer and allocate it to the correct size
+  allocate(dobj%vardata(size(dobj%diag_field)))
+  do i = 1, size(dobj%diag_field)
+    call vardata_init(dobj%vardata(i), dobj%var_size, dobj%diag_field(i), axes)
+  end do
 
 !> get the optional arguments if included and the diagnostic is in the diag table
   if (present(longname)) then
@@ -281,6 +290,94 @@ subroutine fms_register_diag_field_obj &
  ! save it in the diag object container.
 
 end subroutine fms_register_diag_field_obj
+
+!> \brief allocate the vardata buffer for a field
+subroutine vardata_init(vardata, var_size, field_yaml, axes)
+  type(diagFieldData_t),       intent(inout) :: vardata    !< The variable data buffer that needs to be allocated
+  integer, allocatable,        intent(inout) :: var_size(:) !< The dimensions of the field
+  type(diagYamlFilesVar_type), intent(in)    :: field_yaml !< The diag_field yaml corresponding to the field
+  integer, optional,           intent(in)    :: axes(:)    !< Ids of the axes of the field
+
+  character (len=:), allocatable :: skind !< The type to allocate the variable
+
+  logical :: is_diurnal !< Flag indicating, if the field has diurnal samples
+  integer :: i !< For do loops
+
+  skind = field_yaml%get_var_skind()
+  is_diurnal = field_yaml%has_n_diurnal()
+
+  if_not_scalar: if (present(axes)) then
+  !< If the axes is present the variable is not a scalar "Od"
+    if (is_diurnal) then
+      allocate(var_size(size(axes)+1))
+    else
+      allocate(var_size(size(axes)))
+    endif
+
+    do i = 1, size(var_size)
+      if (is_diurnal .and. (i .eq. size(var_size))) then
+        var_size(i) = field_yaml%get_n_diurnal()
+      else
+        var_size(i) = axis_obj(axes(i))%get_axis_length()
+      endif
+    enddo
+  else
+    allocate(var_size(1))
+    var_size(1) = 1
+  endif if_not_scalar
+
+  if (trim(skind) .eq. "r8") then
+    allocate(real(kind=r8_kind) :: vardata%vardata1(product(var_size)))
+  elseif (trim(skind) .eq. "r4") then
+    allocate(real(kind=r4_kind) :: vardata%vardata1(product(var_size)))
+  elseif (trim(skind) .eq. "i8") then
+    allocate(integer(kind=i8_kind) :: vardata%vardata1(product(var_size)))
+  elseif (trim(skind) .eq. "i4") then
+    allocate(integer(kind=i4_kind) :: vardata%vardata1(product(var_size)))
+  endif
+end subroutine vardata_init
+
+function copy_data(dobj, buffer) &
+result(vardata)
+  class (fmsDiagObject_type) , intent(inout):: dobj
+  class(*), TARGET :: buffer(:)
+  class(*), POINTER :: vardata(:)
+
+  vardata => buffer
+  ! select type (vardata)
+  ! type is (integer(kind=i4_kind))
+  ! type is (integer(kind=i8_kind))
+  ! type is (real(kind=r4_kind))
+  ! type is (real(kind=r8_kind))
+  ! end select
+
+end function copy_data
+
+subroutine write_the_data(dobj, vardata)
+  class (fmsDiagObject_type) , intent(inout):: dobj
+  class(*), intent(inout), target :: vardata(:)
+
+  class(*), pointer :: buffer(:,:,:)
+
+  buffer(1:dobj%var_size(1), 1:dobj%var_size(2), 1:dobj%var_size(3)) => vardata
+end subroutine write_the_data
+
+subroutine fms_send_data(dobj, buffer)
+  class (fmsDiagObject_type) , intent(inout):: dobj
+  class(*), target :: buffer(:)
+  integer :: i !> For do loops
+
+  do i = 1, size(dobj%diag_field)
+    !> Do the math
+
+    !> Copy to the buffer
+    dobj%vardata(i)%vardata1 = dobj%copy_data(buffer)
+
+    !> Write the data or whatever
+    call dobj%write_the_data(dobj%vardata(i)%vardata1)
+  enddo
+
+end subroutine fms_send_data
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !> \brief Sets the diag_id.  This can only be done if a variable is unregistered
 subroutine set_diag_id(objin , id)
@@ -464,7 +561,7 @@ result(rslt)
      class (fmsDiagObject_type), intent(in) :: obj !< diag object
      character(len=:), allocatable, dimension(:) :: rslt
      if (allocated(obj%metadata)) then
-       allocate(character(len=(len(obj%metadata(1)))) :: rslt (size(obj%metadata)) )
+       allocate(character(len=(len(obj%metadata))) :: rslt (size(obj%metadata)) )
        rslt = obj%metadata
      else
        allocate(character(len=1) :: rslt(1:1))

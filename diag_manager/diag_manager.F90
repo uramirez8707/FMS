@@ -487,6 +487,11 @@ end function register_diag_field_array
     endif
 
     registered_variables = registered_variables + 1
+    call diag_objs(registered_variables)%register(module_name, field_name, init_time, diag_file_indices, &
+      & longname=long_name, units=units, missing_value=missing_value, varrange=var_range, &
+      & standname=standard_name, do_not_log=do_not_log, err_msg=err_msg, &
+      & area=area, volume=volume, realm=realm)
+
     register_diag_field_scalar_modern = registered_variables
 
     !< TO DO: Fill in the diag_obj
@@ -534,6 +539,11 @@ end function register_diag_field_array
     endif
 
     registered_variables = registered_variables + 1
+    call diag_objs(registered_variables)%register(module_name, field_name, init_time, axes, diag_file_indices, &
+      & longname=long_name, units=units, missing_value=missing_value, varrange=var_range, &
+      & mask_variant=mask_variant, standname=standard_name, do_not_log=do_not_log, err_msg=err_msg, &
+      & interp_method=interp_method, tile_count=tile_count, area=area, volume=volume, realm=realm)
+
     register_diag_field_array_modern = registered_variables
 
     !< TO DO: Fill in the diag_obj
@@ -1682,7 +1692,7 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
   LOGICAL FUNCTION send_data_3d(diag_field_id, field, time, is_in, js_in, ks_in, &
              & mask, rmask, ie_in, je_in, ke_in, weight, err_msg)
     INTEGER, INTENT(in) :: diag_field_id
-    REAL, DIMENSION(:,:,:), INTENT(in) :: field
+    REAL, INTENT(in), TARGET :: field(:,:,:)
     REAL, INTENT(in), OPTIONAL :: weight
     TYPE (time_type), INTENT(in), OPTIONAL :: time
     INTEGER, INTENT(in), OPTIONAL :: is_in, js_in, ks_in,ie_in,je_in, ke_in
@@ -1720,6 +1730,25 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
     LOGICAL, ALLOCATABLE, DIMENSION(:,:,:) :: oor_mask
     CHARACTER(len=256) :: err_msg_local
     CHARACTER(len=128) :: error_string, error_string1
+
+   REAL, pointer :: buffer(:)
+   real, allocatable, target :: wut(:,:,:)
+   integer :: foo
+
+   if(use_modern_diag) then
+      if (diag_field_id .eq. diag_null) then
+         send_data_3d = .FALSE.
+         RETURN
+      else
+         send_data_3d = .TRUE.
+      endif
+      allocate(wut(1:size(field,1), 1:size(field, 2), 1:size(field,3)))
+      wut = field
+      foo = size(field,1)*size(field,2)*size(field,3)
+      buffer(1:foo) => wut
+      call diag_objs(diag_field_id)%fms_send_data(buffer)
+      RETURN
+   endif
 
     ! If diag_field_id is < 0 it means that this field is not registered, simply return
     IF ( diag_field_id <= 0 ) THEN
