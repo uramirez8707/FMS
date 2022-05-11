@@ -43,8 +43,8 @@ private
 
 public :: diag_yaml_object_init, diag_yaml_object_end
 public :: diagYamlObject_type, get_diag_yaml_obj, get_title, get_basedate, get_diag_files, get_diag_fields
-public :: diagYamlFiles_type, diagYamlFilesVar_type
-public :: get_num_unique_fields, find_diag_field, get_diag_fields_entries, get_diag_files_entries
+public :: diagYamlFiles_type, diagYamlFilesVar_type, varList_type
+public :: get_num_unique_fields, find_diag_field, get_diag_fields_entries, get_diag_files_id
 
 !> @}
 
@@ -56,7 +56,7 @@ integer, parameter :: MAX_STR_LEN = 255
 type varList_type
   character(len=255), allocatable :: var_name(:) !< Array of diag_field
   type(c_ptr), allocatable :: var_pointer(:) !< Array of pointers
-  integer, allocatable :: diag_field_indices(:) !< Index of the field in the diag_field array
+  integer, allocatable :: var_ids(:) !< Index of the field in the diag_field array
 end type
 
 !> @brief type to hold an array of sorted diag_files
@@ -215,7 +215,7 @@ type diagYamlObject_type
 
 end type diagYamlObject_type
 
-type (diagYamlObject_type) :: diag_yaml  !< Obj containing the contents of the diag_table.yaml
+type (diagYamlObject_type), target :: diag_yaml  !< Obj containing the contents of the diag_table.yaml
 type (varList_type), save :: variable_list !< List of all the variables in the diag_table.yaml
 type (fileList_type), save :: file_list !< List of all files in the diag_table.yaml
 
@@ -340,7 +340,7 @@ subroutine diag_yaml_object_init(diag_subset_output)
   allocate(diag_yaml%diag_files(actual_num_files))
   allocate(diag_yaml%diag_fields(total_nvars))
   allocate(variable_list%var_name(total_nvars))
-  allocate(variable_list%diag_field_indices(total_nvars))
+  allocate(variable_list%var_ids(total_nvars))
   allocate(file_list%file_name(actual_num_files))
   allocate(file_list%diag_file_indices(actual_num_files))
 
@@ -381,7 +381,7 @@ subroutine diag_yaml_object_init(diag_subset_output)
 
       !> Save the variable name in the variable_list
       variable_list%var_name(var_count) = trim(diag_yaml%diag_fields(var_count)%var_varname)//c_null_char
-      variable_list%diag_field_indices(var_count) = var_count
+      variable_list%var_ids(var_count) = var_count
     enddo nvars_loop
     deallocate(var_ids)
   enddo nfiles_loop
@@ -391,7 +391,7 @@ subroutine diag_yaml_object_init(diag_subset_output)
   call fms_sort_this(file_list%file_pointer, actual_num_files, file_list%diag_file_indices)
 
   variable_list%var_pointer = fms_array_to_pointer(variable_list%var_name)
-  call fms_sort_this(variable_list%var_pointer, total_nvars, variable_list%diag_field_indices)
+  call fms_sort_this(variable_list%var_pointer, total_nvars, variable_list%var_ids)
 
   deallocate(diag_file_ids)
 end subroutine
@@ -421,7 +421,7 @@ subroutine diag_yaml_object_end()
 
   if(allocated(variable_list%var_pointer)) deallocate(variable_list%var_pointer)
   if(allocated(variable_list%var_name)) deallocate(variable_list%var_name)
-  if(allocated(variable_list%diag_field_indices)) deallocate(variable_list%diag_field_indices)
+  if(allocated(variable_list%var_ids)) deallocate(variable_list%var_ids)
 
 end subroutine diag_yaml_object_end
 
@@ -1196,46 +1196,47 @@ function get_diag_fields_entries(indices) &
   allocate(diag_field(size(indices)))
 
   do i = 1, size(indices)
-    field_id = variable_list%diag_field_indices(indices(i))
+    field_id = variable_list%var_ids(indices(i))
     diag_field(i) = diag_yaml%diag_fields(field_id)
   end do
 
 end function get_diag_fields_entries
 
-!> @brief Gets the diag_files entries corresponding to the indices of the sorted variable_list
-!! @return Array of diag_files
-function get_diag_files_entries(indices) &
-  result(diag_file)
+!> @brief Finds the indices of the diag_yaml%diag_files(:) corresponding to fields in variable_list(indices)
+!! @return indices of the diag_yaml%diag_files(:)
+function get_diag_files_id(indices) &
+  result(file_id)
 
   integer, intent(in) :: indices(:) !< Indices of the field in the sorted variable_list
-  type(diagYamlFiles_type), dimension (:), allocatable :: diag_file
+  integer, allocatable :: file_id(:)
 
+  integer :: field_id !< Indices of the field in the diag_yaml field array
   integer :: i !< For do loops
-  integer :: field_id !< Indices of the field in the diag_yaml array
-  integer :: file_id !< Indices of the file in the diag_yaml array
   character(len=120) :: filename !< Filename of the field
   integer, allocatable :: file_indices(:) !< Indices of the file in the sorted variable_list
-
-  allocate(diag_file(size(indices)))
+  
+  allocate(file_id(size(indices)))
 
   do i = 1, size(indices)
-    field_id = variable_list%diag_field_indices(indices(i))
+    field_id = variable_list%var_ids(indices(i))
+    !< Get the filename of the field
     filename = diag_yaml%diag_fields(field_id)%var_fname
 
+    !< File that file in the array of list of sorted files
     file_indices = fms_find_my_string(file_list%file_pointer, size(file_list%file_pointer), &
       & trim(filename)//c_null_char)
 
     if (size(file_indices) .ne. 1) &
-      & call mpp_error(FATAL, "get_diag_files_entries: Error getting the correct number of file indices!")
+      & call mpp_error(FATAL, "get_diag_files_id: Error getting the correct number of file indices!")
 
     if (file_indices(1) .eq. diag_null) &
-      & call mpp_error(FATAL, "get_diag_files_entries: Error finding the filename in the diag_files")
+      & call mpp_error(FATAL, "get_diag_files_id: Error finding the filename in the diag_files")
 
-    file_id = file_list%diag_file_indices(file_indices(1))
-    diag_file(i) = diag_yaml%diag_files(file_id)
+    !< Get the index of the file in the diag_yaml file
+    file_id(i) = file_list%diag_file_indices(file_indices(1))
   end do
 
-end function get_diag_files_entries
+end function get_diag_files_id
 #endif
 end module fms_diag_yaml_mod
 !> @}

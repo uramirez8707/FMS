@@ -15,7 +15,8 @@ use diag_axis_mod,  only: diag_axis_type
 use mpp_mod, only: fatal, note, warning, mpp_error
 #ifdef use_yaml
 use fms_diag_yaml_mod, only: diagYamlFiles_type, diagYamlFilesVar_type, get_diag_fields_entries
-use fms_diag_yaml_mod, only: get_diag_files_entries
+use fms_diag_yaml_mod, only: get_diag_files_id
+use fms_diag_file_mod, only: fmsDiagFile_type, set_field_as_registered
 #endif
 use time_manager_mod, ONLY: time_type
 use fms_diag_axis_object_mod, only: diagAxis_t, axis_obj, get_axis_length
@@ -41,12 +42,10 @@ end type diagFieldData_t
 !> \brief Object that holds all variable information
 type fmsDiagObject_type
 #ifdef use_yaml
-     type (diagYamlFilesVar_type), allocatable, dimension(:) :: diag_field !< info from diag_table
-     type (diagYamlFiles_type),    allocatable, dimension(:) :: diag_file  !< info from diag_table
+     type (diagYamlFilesVar_type), allocatable, dimension(:) :: diag_field !< info from diag_table for this variable
+     integer, allocatable, dimension(:) :: file_ids
 #endif
      integer, allocatable, private                    :: diag_id           !< unique id for varable
-     class(FmsNetcdfFile_t), dimension (:), pointer   :: fileob => NULL()  !< A pointer to all of the
-                                                                           !! file objects for this variable
      character(len=:), allocatable, dimension(:)      :: metadata          !< metadata for the variable
      logical, allocatable, private                    :: static            !< true if this is a static var
      logical, allocatable, private                    :: registered        !< true when registered
@@ -99,9 +98,7 @@ type fmsDiagObject_type
      procedure :: is_local => get_local
 ! Is variable allocated check functions
 !TODO     procedure :: has_diag_field
-!TODO     procedure :: has_diag_file
      procedure :: has_diag_id
-     procedure :: has_fileob
      procedure :: has_metadata
      procedure :: has_static
      procedure :: has_registered
@@ -221,6 +218,7 @@ subroutine fms_register_diag_field_obj &
  INTEGER, OPTIONAL, INTENT(in) :: volume !< diag_field_id containing the cell volume field
  CHARACTER(len=*), OPTIONAL, INTENT(in):: realm !< String to set as the value to the modeling_realm attribute
  character(len=*), optional, intent(in), dimension(:)     :: metadata !< metedata for the variable
+
  integer :: i !< For do loops
 
 !> Fill in information from the register call
@@ -231,7 +229,11 @@ subroutine fms_register_diag_field_obj &
 
 !> Fill in diag_field and diag_file and get the number of diurnal samples
   dobj%diag_field = get_diag_fields_entries(yaml_field_indices)
-  dobj%diag_file = get_diag_files_entries(yaml_field_indices)
+  dobj%file_ids = get_diag_files_id(yaml_field_indices)
+  call set_field_as_registered(dobj%file_ids, varname, dobj%diag_id)
+  !> Send the diag_obj id to the corresponding file obj and mark the field as registered
+
+  !dobj%diag_file = get_diag_files_entries(yaml_field_indices)
 
 !> Use the axes to get the size of the buffer and allocate it to the correct size
   allocate(dobj%vardata(size(dobj%diag_field)))
@@ -464,12 +466,8 @@ select type (objout)
   else
      call mpp_error("copy_diag_obj", "You can only copy objects that have been registered",warning)
   endif
-!     type (diag_fields_type)                           :: diag_field         !< info from diag_table
-!     type (diag_files_type),allocatable, dimension(:)  :: diag_file          !< info from diag_table
-
      objout%diag_id = objin%diag_id
 
-!     class (fms_io_obj), allocatable, dimension(:)    :: fms_fileobj        !< fileobjs
      if (allocated(objin%metadata)) objout%metadata = objin%metadata
      objout%static = objin%static
      if (allocated(objin%frequency)) objout%frequency = objin%frequency
@@ -876,24 +874,12 @@ end function get_data_RANGE
 !  class (fmsDiagObject_type), intent(in) :: obj !< diag object
 !  has_diag_field = allocated(obj%diag_field)
 !end function has_diag_field
-!!> @brief Checks if obj%diag_file is allocated
-!!! @return true if obj%diag_file is allocated
-!logical function has_diag_file (obj)
-!  class (fmsDiagObject_type), intent(in) :: obj !< diag object
-!  has_diag_file = allocated(obj%diag_file)
-!end function has_diag_file
 !> @brief Checks if obj%diag_id is allocated
 !! @return true if obj%diag_id is allocated
 pure logical function has_diag_id (obj)
   class (fmsDiagObject_type), intent(in) :: obj !< diag object
   has_diag_id = allocated(obj%diag_id)
 end function has_diag_id
-!> @brief Checks if obj%fileob pointer is associated
-!! @return true if obj%fileob is associated
-pure logical function has_fileob (obj)
-  class (fmsDiagObject_type), intent(in) :: obj !< diag object
-  has_fileob = associated(obj%fileob)
-end function has_fileob
 !> @brief Checks if obj%metadata is allocated
 !! @return true if obj%metadata is allocated
 pure logical function has_metadata (obj)

@@ -237,6 +237,7 @@ use platform_mod
   USE diag_output_mod, ONLY: get_diag_global_att, set_diag_global_att
   USE diag_grid_mod, ONLY: diag_grid_init, diag_grid_end
   USE fms_diag_object_mod, ONLY: fmsDiagObject_type
+  use fms_diag_file_mod, ONLY: fms_diag_file_init, fms_diag_file_end
 
 #ifdef use_yaml
   use fms_diag_yaml_mod, only: diag_yaml_object_init, diag_yaml_object_end, get_num_unique_fields, find_diag_field
@@ -487,6 +488,7 @@ end function register_diag_field_array
     endif
 
     registered_variables = registered_variables + 1
+    call diag_objs(registered_variables)%setID(registered_variables)
     call diag_objs(registered_variables)%register(module_name, field_name, init_time, diag_file_indices, &
       & longname=long_name, units=units, missing_value=missing_value, varrange=var_range, &
       & standname=standard_name, do_not_log=do_not_log, err_msg=err_msg, &
@@ -539,6 +541,7 @@ end function register_diag_field_array
     endif
 
     registered_variables = registered_variables + 1
+    call diag_objs(registered_variables)%setID(registered_variables)
     call diag_objs(registered_variables)%register(module_name, field_name, init_time, axes, diag_file_indices, &
       & longname=long_name, units=units, missing_value=missing_value, varrange=var_range, &
       & mask_variant=mask_variant, standname=standard_name, do_not_log=do_not_log, err_msg=err_msg, &
@@ -3710,6 +3713,7 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
       call diag_yaml_object_end
       call fms_diag_axis_object_end()
       if (allocated(diag_objs)) deallocate(diag_objs)
+      call fms_diag_file_end()
     endif
 #endif
   END SUBROUTINE diag_manager_end
@@ -3929,6 +3933,7 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
       CALL fms_diag_axis_object_init()
       allocate(diag_objs(get_num_unique_fields()))
       registered_variables = 0
+      call fms_diag_file_init()
     endif
 #else
     if (use_modern_diag) &
