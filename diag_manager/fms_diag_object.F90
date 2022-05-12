@@ -16,10 +16,10 @@ use mpp_mod, only: fatal, note, warning, mpp_error
 #ifdef use_yaml
 use fms_diag_yaml_mod, only: diagYamlFiles_type, diagYamlFilesVar_type, get_diag_fields_entries
 use fms_diag_yaml_mod, only: get_diag_files_id
-use fms_diag_file_mod, only: fmsDiagFile_type, set_field_as_registered
+use fms_diag_file_mod, only: fmsDiagFile_type, set_field_as_registered, set_domain_type
 #endif
 use time_manager_mod, ONLY: time_type
-use fms_diag_axis_object_mod, only: diagAxis_t, axis_obj, get_axis_length
+use fms_diag_axis_object_mod, only: diagAxis_t, axis_obj, get_axis_length, diagDomain_t, determine_the_domain_type
 use platform_mod, only: r4_kind, r8_kind, i4_kind, i8_kind
 
 !!!set_time, set_date, get_time, time_type, OPERATOR(>=), OPERATOR(>),&
@@ -76,6 +76,8 @@ type fmsDiagObject_type
      type (diag_axis_type), allocatable, dimension(:) :: axis              !< The axis object
      type(diagFieldData_t), allocatable, dimension(:) :: vardata           !< The variable data, one for each time
                                                                            !! the field is in the yaml
+     character(len=2) :: domain_type !< UG, 2d, ND
+     CLASS(diagDomain_t), ALLOCATABLE :: var_domain
      integer, allocatable, DIMENSION(:) :: var_size !< The size of each dimension of the variable
 
     contains
@@ -227,13 +229,18 @@ subroutine fms_register_diag_field_obj &
   allocate(character(len=len(modname)) :: dobj%modname)
   dobj%modname = trim(modname)
 
-!> Fill in diag_field and diag_file and get the number of diurnal samples
+!> Use the axes to determine the domain type and get the domain
+  if (present(axes)) then
+    call determine_the_domain_type(axes, dobj%domain_type, dobj%var_domain)
+  else
+    dobj%domain_type = "ND"
+  endif
+
+!> Fill in diag_field and find the ids of the files that this variable is on
   dobj%diag_field = get_diag_fields_entries(yaml_field_indices)
   dobj%file_ids = get_diag_files_id(yaml_field_indices)
   call set_field_as_registered(dobj%file_ids, varname, dobj%diag_id)
-  !> Send the diag_obj id to the corresponding file obj and mark the field as registered
-
-  !dobj%diag_file = get_diag_files_entries(yaml_field_indices)
+  call set_domain_type(dobj%file_ids, dobj%domain_type, dobj%var_domain)
 
 !> Use the axes to get the size of the buffer and allocate it to the correct size
   allocate(dobj%vardata(size(dobj%diag_field)))

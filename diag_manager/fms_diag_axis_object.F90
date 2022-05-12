@@ -39,6 +39,7 @@ module fms_diag_axis_object_mod
   PRIVATE
 
   public :: diagAxis_t, set_subaxis, modern_diag_axis_init, fms_diag_axis_object_init, fms_diag_axis_object_end
+  public :: diagDomain_t, determine_the_domain_type, diagDomain2d_t, diagDomainUG_t
   public :: axis_obj, get_axis_length
   !> @}
 
@@ -50,6 +51,7 @@ module fms_diag_axis_object_mod
     contains
       procedure :: set => set_axis_domain
       procedure :: length => get_length
+      procedure :: get_domain_type
   end type diagDomain_t
 
   !> @brief Type to hold the 1d domain
@@ -281,6 +283,21 @@ module fms_diag_axis_object_mod
     end select
   end subroutine set_axis_domain
 
+  function get_domain_type(obj) &
+  result(domain_type)
+    class(diagDomain_t) :: obj !< fms_domain obj
+    character(len=2) :: domain_type
+
+    select type(obj)
+    type is (diagDomain2d_t)
+      domain_type = "2D"
+    type is (diagDomainUg_t)
+      domain_type = "UG"
+    class default
+      domain_type = "ND"
+    end select
+  end function get_domain_type
+
   subroutine fms_diag_axis_object_init()
 
     if (module_is_initialized) return
@@ -331,6 +348,25 @@ module fms_diag_axis_object_mod
     id = number_of_axis
   end function
 
+  subroutine determine_the_domain_type(axes, domain_type, var_domain)
+    integer :: axes(:)
+    character(len=2) :: domain_type
+    CLASS(diagDomain_t), ALLOCATABLE :: var_domain
+
+    integer :: i
+    domain_type = "ND"
+    do i = 1, size(axes)
+      if (domain_type .ne. axis_obj(axes(i))%axis_domain%get_domain_type()) then
+        if (domain_type .eq. "ND") then
+          var_domain = axis_obj(axes(i))%axis_domain
+          domain_type = axis_obj(axes(i))%axis_domain%get_domain_type()
+        else
+          call mpp_error(FATAL, "No GOOD")
+        endif
+      endif
+    end do
+
+  end subroutine determine_the_domain_type
 end module fms_diag_axis_object_mod
 !> @}
 ! close documentation grouping

@@ -30,13 +30,16 @@ use fms2_io_mod, only: FmsNetcdfFile_t, FmsNetcdfUnstructuredDomainFile_t, FmsNe
 use fms_diag_yaml_mod, only: diagYamlObject_type, get_diag_yaml_obj, diagYamlFiles_type, varList_type
 #endif
 use fms_string_utils_mod, only: fms_array_to_pointer, fms_sort_this, fms_find_my_string
+use fms_diag_axis_object_mod, only: diagDomain_t, diagDomain2d_t
 use diag_data_mod, only: diag_null
 use, intrinsic :: iso_c_binding, only : c_ptr, c_null_char
+use mpp_mod, only: mpp_error, FATAL
 
 implicit none
 private
 
 public :: fmsDiagFile_type, FMS_diag_files, fms_diag_file_init, fms_diag_file_end, set_field_as_registered
+public :: set_domain_type, open_all_files
 
 integer, parameter :: var_string_len = 25
 
@@ -44,7 +47,8 @@ type :: fmsDiagFile_type
  private
   integer :: id !< The number associated with this file in the larger array of files
   class(FmsNetcdfFile_t), allocatable :: fileobj !< fms2_io file object for this history file 
-  character(len=1) :: file_domain_type !< (I don't think we will need this)
+  character(len=2) :: file_domain_type !< 
+  CLASS(diagDomain_t), POINTER :: domain
 #ifdef use_yaml
   type(diagYamlFiles_type) :: diag_yam_file !< Pointer to the diag_yaml file data
 #endif
@@ -59,6 +63,7 @@ type :: fmsDiagFile_type
                                                                  !! `file_var_index` has been set for the variable
 
  contains
+  procedure :: open_the_file
   procedure, public :: has_file_metadata_from_model
   procedure, public :: has_fileobj
   procedure, public :: get_id
@@ -90,12 +95,14 @@ subroutine fms_diag_file_init()
     varlist = FMS_diag_files(i)%diag_yam_file%get_file_varlist()
     nvar = size(varlist)
     allocate(FMS_diag_files(i)%var_list%var_name(nvar))
-    FMS_diag_files(i)%var_list%var_name = varlist
     allocate(FMS_diag_files(i)%var_list%var_pointer(nvar))
     allocate(FMS_diag_files(i)%var_list%var_ids(nvar))
+    allocate(FMS_diag_files(i)%var_index(nvar))
+    allocate(FMS_diag_files(i)%var_reg(nvar))
 
     do j = 1, nvar
       FMS_diag_files(i)%var_list%var_ids(j) = j
+      FMS_diag_files(i)%var_list%var_name = trim(varlist(j))//c_null_char
     enddo
 
     FMS_diag_files(i)%var_list%var_pointer =  &
@@ -103,6 +110,8 @@ subroutine fms_diag_file_init()
 
     call fms_sort_this(FMS_diag_files(i)%var_list%var_pointer,  &
       & nvar, FMS_diag_files(i)%var_list%var_ids)
+
+    FMS_diag_files%file_domain_type = "ND"
   enddo
 end subroutine fms_diag_file_init
 
@@ -126,12 +135,50 @@ subroutine set_field_as_registered(file_ids, varname, diag_obj_id)
       & trim(varname)//c_null_char)
 
     id = file_type%var_list%var_ids(var_ids(1))
+
     file_type%var_reg(id) = .true.
     file_type%var_index = diag_obj_id
   enddo
 
 
 end subroutine
+
+subroutine set_domain_type(file_ids, domain_type, domain)
+  integer :: file_ids(:)
+  character(len=2) :: domain_type
+  CLASS(diagDomain_t), TARGET :: domain
+
+  integer :: i
+  
+  do i = 1, size(file_ids)
+    if (FMS_diag_files(i)%file_domain_type .ne. domain_type) then
+      if (FMS_diag_files(i)%file_domain_type .eq. "ND") then
+        FMS_diag_files(i)%file_domain_type = domain_type
+        FMS_diag_files(i)%domain => domain
+      else
+        call mpp_error (FATAL, "No good")
+      endif
+    endif
+  end do
+end subroutine
+
+subroutine open_all_files()
+  integer :: i
+
+  do i = 1, size(FMS_diag_files)
+    call FMS_diag_files(i)%open_the_file(FMS_diag_files(i)%domain)
+  enddo
+end subroutine
+
+subroutine open_the_file(obj, domain)
+  class(fmsDiagFile_type), intent(in) :: obj !< The file object
+  CLASS(diagDomain_t) :: domain
+
+  select type (domain)
+  type is (diagDomain2d_t)
+      print *, "2D domain"
+  end select
+end subroutine open_the_file
 
 !> \brief Logical function to determine if the variable file_metadata_from_model has been allocated or associated
 !! \return .True. if file_metadata_from_model exists .False. if file_metadata_from_model has not been set

@@ -109,12 +109,12 @@ if (.not. checking_crashes) then
   call compare_result("sst - fieldname", diag_fields(2)%get_var_varname(), "sst")
   deallocate(diag_fields)
 
-  diag_files = get_diag_files_entries(indices)
-  call compare_result("sst - nfiles", size(diag_files), 2)
-  call compare_result("sst - filename", diag_files(1)%get_file_fname(), "normal")
-  call compare_result("sst - filename", diag_files(2)%get_file_fname(), "wild_card_name%4yr%2mo%2dy%2hr")
-  deallocate(diag_files)
-  deallocate(indices)
+  !diag_files = get_diag_files_entries(indices)
+  !call compare_result("sst - nfiles", size(diag_files), 2)
+  !call compare_result("sst - filename", diag_files(1)%get_file_fname(), "normal")
+  !call compare_result("sst - filename", diag_files(2)%get_file_fname(), "wild_card_name%4yr%2mo%2dy%2hr")
+  !deallocate(diag_files)
+  !deallocate(indices)
 
   indices = find_diag_field("sstt")
   print *, "sstt was found in ", indices

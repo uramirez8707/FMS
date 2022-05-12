@@ -237,7 +237,7 @@ use platform_mod
   USE diag_output_mod, ONLY: get_diag_global_att, set_diag_global_att
   USE diag_grid_mod, ONLY: diag_grid_init, diag_grid_end
   USE fms_diag_object_mod, ONLY: fmsDiagObject_type
-  use fms_diag_file_mod, ONLY: fms_diag_file_init, fms_diag_file_end
+  use fms_diag_file_mod, ONLY: fms_diag_file_init, fms_diag_file_end, open_all_files
 
 #ifdef use_yaml
   use fms_diag_yaml_mod, only: diag_yaml_object_init, diag_yaml_object_end, get_num_unique_fields, find_diag_field
@@ -281,6 +281,7 @@ use platform_mod
 
   TYPE(fmsDiagObject_type), ALLOCATABLE :: diag_objs(:) !< Array of diag objects, one for each registered variable
   integer :: registered_variables !< Number of registered variables
+  logical :: files_opened !< True if the files have already been opened/setup 
 
   !> @brief Send data over to output fields.
   !!
@@ -542,7 +543,7 @@ end function register_diag_field_array
 
     registered_variables = registered_variables + 1
     call diag_objs(registered_variables)%setID(registered_variables)
-    call diag_objs(registered_variables)%register(module_name, field_name, init_time, axes, diag_file_indices, &
+    call diag_objs(registered_variables)%register(module_name, field_name, init_time, diag_file_indices, axes,  &
       & longname=long_name, units=units, missing_value=missing_value, varrange=var_range, &
       & mask_variant=mask_variant, standname=standard_name, do_not_log=do_not_log, err_msg=err_msg, &
       & interp_method=interp_method, tile_count=tile_count, area=area, volume=volume, realm=realm)
@@ -1739,6 +1740,11 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
    integer :: foo
 
    if(use_modern_diag) then
+      if (.not. files_opened) then
+         call open_all_files()
+         files_opened = .true.
+      endif
+
       if (diag_field_id .eq. diag_null) then
          send_data_3d = .FALSE.
          RETURN
@@ -3934,6 +3940,7 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
       allocate(diag_objs(get_num_unique_fields()))
       registered_variables = 0
       call fms_diag_file_init()
+      files_opened = .false. !< This will happen in the first send_data call
     endif
 #else
     if (use_modern_diag) &
