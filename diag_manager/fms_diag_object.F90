@@ -16,7 +16,7 @@ use mpp_mod, only: fatal, note, warning, mpp_error
 #ifdef use_yaml
 use fms_diag_yaml_mod, only: diagYamlFiles_type, diagYamlFilesVar_type, get_diag_fields_entries
 use fms_diag_yaml_mod, only: get_diag_files_id
-use fms_diag_file_mod, only: fmsDiagFile_type, set_field_as_registered, set_domain_type
+use fms_diag_file_mod, only: fmsDiagFile_type, set_field_as_registered, set_domain_type, set_the_axis
 #endif
 use time_manager_mod, ONLY: time_type
 use fms_diag_axis_object_mod, only: diagAxis_t, axis_obj, get_axis_length, diagDomain_t, determine_the_domain_type
@@ -241,6 +241,7 @@ subroutine fms_register_diag_field_obj &
   dobj%file_ids = get_diag_files_id(yaml_field_indices)
   call set_field_as_registered(dobj%file_ids, varname, dobj%diag_id)
   call set_domain_type(dobj%file_ids, dobj%domain_type, dobj%var_domain)
+  if (present(axes)) call set_the_axis(dobj%file_ids, axes)
 
 !> Use the axes to get the size of the buffer and allocate it to the correct size
   allocate(dobj%vardata(size(dobj%diag_field)))

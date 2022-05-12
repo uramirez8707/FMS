@@ -25,12 +25,13 @@
 !! list of the variables and their variable IDs that are in the file.
 module fms_diag_file_mod
 !use mpp_mod
-use fms2_io_mod, only: FmsNetcdfFile_t, FmsNetcdfUnstructuredDomainFile_t, FmsNetcdfDomainFile_t
+use fms2_io_mod, only: FmsNetcdfFile_t, FmsNetcdfUnstructuredDomainFile_t, FmsNetcdfDomainFile_t, &
+                      &open_file, close_file
 #ifdef use_yaml
 use fms_diag_yaml_mod, only: diagYamlObject_type, get_diag_yaml_obj, diagYamlFiles_type, varList_type
 #endif
 use fms_string_utils_mod, only: fms_array_to_pointer, fms_sort_this, fms_find_my_string
-use fms_diag_axis_object_mod, only: diagDomain_t, diagDomain2d_t
+use fms_diag_axis_object_mod, only: diagDomain_t, diagDomain2d_t, write_axis_metadata
 use diag_data_mod, only: diag_null
 use, intrinsic :: iso_c_binding, only : c_ptr, c_null_char
 use mpp_mod, only: mpp_error, FATAL
@@ -39,7 +40,7 @@ implicit none
 private
 
 public :: fmsDiagFile_type, FMS_diag_files, fms_diag_file_init, fms_diag_file_end, set_field_as_registered
-public :: set_domain_type, open_all_files
+public :: set_domain_type, open_all_files, set_the_axis
 
 integer, parameter :: var_string_len = 25
 
@@ -61,6 +62,8 @@ type :: fmsDiagFile_type
   logical, dimension(:), private, allocatable :: var_reg   !< Array corresponding to `file_varlist`, .true. 
                                                                  !! if the variable has been registered and 
                                                                  !! `file_var_index` has been set for the variable
+  integer :: naxis !< Number of axis currently in the file
+  integer, allocatable :: axis_ids(:) !< Ids of the axis in the file
 
  contains
   procedure :: open_the_file
@@ -99,6 +102,8 @@ subroutine fms_diag_file_init()
     allocate(FMS_diag_files(i)%var_list%var_ids(nvar))
     allocate(FMS_diag_files(i)%var_index(nvar))
     allocate(FMS_diag_files(i)%var_reg(nvar))
+    allocate(FMS_diag_files(i)%axis_ids(10))
+    FMS_diag_files(i)%naxis = 0
 
     do j = 1, nvar
       FMS_diag_files(i)%var_list%var_ids(j) = j
@@ -143,6 +148,24 @@ subroutine set_field_as_registered(file_ids, varname, diag_obj_id)
 
 end subroutine
 
+subroutine set_the_axis(file_ids, axes)
+integer :: file_ids(:)
+integer :: axes(:)
+
+integer :: i, j, k, naxis
+
+do i = 1, size(file_ids)
+  do j = 1, size(axes)
+    if (FMS_diag_files(file_ids(i))%naxis .gt. 0) then
+      if (any(FMS_diag_files(file_ids(i))%axis_ids .eq. axes(j))) return
+    endif
+    FMS_diag_files(file_ids(i))%naxis = FMS_diag_files(file_ids(i))%naxis +1
+    naxis = FMS_diag_files(file_ids(i))%naxis
+    FMS_diag_files(file_ids(i))%axis_ids(naxis) = axes(j)
+  enddo
+end do
+
+end subroutine set_the_axis
 subroutine set_domain_type(file_ids, domain_type, domain)
   integer :: file_ids(:)
   character(len=2) :: domain_type
@@ -152,7 +175,7 @@ subroutine set_domain_type(file_ids, domain_type, domain)
   
   do i = 1, size(file_ids)
     if (FMS_diag_files(i)%file_domain_type .ne. domain_type) then
-      if (FMS_diag_files(i)%file_domain_type .eq. "ND") then
+      if (FMS_diag_files(i)%file_domain_type .eq. "ND" .or. domain_type .eq. "ND") then
         FMS_diag_files(i)%file_domain_type = domain_type
         FMS_diag_files(i)%domain => domain
       else
@@ -166,18 +189,46 @@ subroutine open_all_files()
   integer :: i
 
   do i = 1, size(FMS_diag_files)
-    call FMS_diag_files(i)%open_the_file(FMS_diag_files(i)%domain)
+    call FMS_diag_files(i)%open_the_file(FMS_diag_files(i)%fileobj)
   enddo
 end subroutine
 
-subroutine open_the_file(obj, domain)
-  class(fmsDiagFile_type), intent(in) :: obj !< The file object
-  CLASS(diagDomain_t) :: domain
-
+subroutine open_the_file(obj, fileobj)
+  class(fmsDiagFile_type), intent(inout) :: obj !< The file object
+  class(FmsNetcdfFile_t), ALLOCATABLE :: fileobj
+  CLASS(diagDomain_t), POINTER :: domain
+  logical :: success
+  
+  if (.not. associated(obj%domain)) then
+    allocate(FmsNetcdfFile_t :: fileobj)
+    print *, "Creating a non domain"
+    if (.not. open_file(fileobj, obj%diag_yam_file%get_file_fname(), "overwrite")) then
+    endif
+  else
+    print *, "It is associated!"
+  domain => obj%domain
   select type (domain)
   type is (diagDomain2d_t)
-      print *, "2D domain"
+      print *, "domain2d stuff"
+      allocate(FmsNetcdfDomainFile_t :: fileobj)
+      select type (fileobj)
+        type is (FmsNetcdfDomainFile_t)
+          if (.not. open_file(fileobj, obj%diag_yam_file%get_file_fname(), "overwrite", domain%Domain2)) then
+          endif
+      end select
   end select
+  endif
+
+  call write_axis_metadata(fileobj, obj%axis_ids(1:obj%naxis))
+
+  call close_file(obj%fileobj)
+
+              !< Write any file metadata
+        !< Write the axis metadata
+        !call write_axes_metada(fileobj, obj%axis_ids)
+        !< Write the field metadata
+        !< Write the axis data
+
 end subroutine open_the_file
 
 !> \brief Logical function to determine if the variable file_metadata_from_model has been allocated or associated

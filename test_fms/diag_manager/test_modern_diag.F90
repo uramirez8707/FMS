@@ -48,7 +48,9 @@ integer                           :: id_x             !< axis id for the x dimen
 integer                           :: id_y             !< axis id for the y dimension
 integer                           :: id_z             !< axis id for the z dimention
 integer                           :: id_var           !< field id for var
+integer                           :: id_var2          !< field id for var
 real, dimension(:,:), allocatable :: var
+real, dimension(:), allocatable :: var2
 logical :: used
 
 call fms_init
@@ -64,7 +66,7 @@ call mpp_define_domains( (/1,nx,1,ny/), layout, Domain, name='test_diag_manager'
 call mpp_define_io_domain(Domain, (/1,1/))
 
 ! Set up the data
-allocate(x(nx), y(ny), z(nz), var(nx, ny))
+allocate(x(nx), y(ny), z(nz), var(nx, ny), var2(nz))
 do i=1,nx
   x(i) = i
 enddo
@@ -88,11 +90,13 @@ if (id_y .ne. 2) call mpp_error(FATAL, "The y axis does not have the expected id
 if (id_z .ne. 3) call mpp_error(FATAL, "The z axis does not have the expected id")
 
 id_var = register_diag_field('test_diag_manager_mod', 'var', (/id_x,id_y/), Time, 'var', 'm')
-print *, "The id is", id_var
+id_var2 = register_diag_field('test_diag_manager_mod', 'var2', (/id_z/), Time, 'var', 'm')
 
 Time = set_date(2,1,1,1,0,0)
 var = 0.
+var2 = 0.
 if(id_var > 0) used = send_data(id_var, var, Time)
+if(id_var2 > 0) used = send_data(id_var2, var2, Time)
 
 call diag_manager_end(Time)
 call fms_end

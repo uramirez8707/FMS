@@ -34,12 +34,14 @@ module fms_diag_axis_object_mod
   use diag_data_mod,   only:  diag_atttype
   use mpp_mod,         only:  FATAL, mpp_error
   use fms_mod,         only: lowercase
+  use fms2_io_mod,     only: FmsNetcdfFile_t, FmsNetcdfDomainFile_t, FmsNetcdfUnstructuredDomainFile_t, &
+                            &register_axis
   implicit none
 
   PRIVATE
 
   public :: diagAxis_t, set_subaxis, modern_diag_axis_init, fms_diag_axis_object_init, fms_diag_axis_object_end
-  public :: diagDomain_t, determine_the_domain_type, diagDomain2d_t, diagDomainUG_t
+  public :: diagDomain_t, determine_the_domain_type, diagDomain2d_t, diagDomainUG_t, write_axis_metadata
   public :: axis_obj, get_axis_length
   !> @}
 
@@ -92,6 +94,7 @@ module fms_diag_axis_object_mod
      type(subaxis_t)                , private :: subaxis(3)      !< Array of subaxis
      integer                        , private :: nsubaxis        !< Number of subaxis
      class(diagDomain_t),ALLOCATABLE, private :: axis_domain     !< Domain
+     character(len=2)               , private :: domain_type
      INTEGER                        , private :: length          !< Global axis length
      INTEGER                        , private :: direction       !< Direction of the axis 0, 1, -1
      INTEGER                        , private :: edges           !< Axis ID for the previously defined "edges axis"
@@ -110,7 +113,7 @@ module fms_diag_axis_object_mod
      PROCEDURE :: set_subaxis
 
      ! TO DO:
-     ! PROCEDURE :: write_axis_metadata
+     PROCEDURE :: write_the_axis_metadata
      ! PROCEDURE :: write_axis_data
      ! PROCEDURE :: get_fileobj_type_needed (use the domain to figure out what fms2 fileobj to use)
      ! Get/has/is subroutines as needed
@@ -164,15 +167,18 @@ module fms_diag_axis_object_mod
     end select
 
     !< TO DO check the presence of multiple Domains
+    obj%domain_type = "ND"
     if (present(Domain)) then
       allocate(diagDomain1d_t :: obj%axis_domain)
       call obj%axis_domain%set(Domain=Domain)
     else if (present(Domain2)) then
       allocate(diagDomain2d_t :: obj%axis_domain)
       call obj%axis_domain%set(Domain2=Domain2)
+      obj%domain_type = "2D"
     else if (present(DomainU)) then
       allocate(diagDomainUg_t :: obj%axis_domain)
       call obj%axis_domain%set(DomainU=DomainU)
+      obj%domain_type = "UG"
     endif
 
     obj%tile_count = 1
@@ -288,6 +294,7 @@ module fms_diag_axis_object_mod
     class(diagDomain_t) :: obj !< fms_domain obj
     character(len=2) :: domain_type
 
+    domain_type = "ND"
     select type(obj)
     type is (diagDomain2d_t)
       domain_type = "2D"
@@ -356,6 +363,7 @@ module fms_diag_axis_object_mod
     integer :: i
     domain_type = "ND"
     do i = 1, size(axes)
+      if (.not. allocated(axis_obj(axes(i))%axis_domain)) cycle
       if (domain_type .ne. axis_obj(axes(i))%axis_domain%get_domain_type()) then
         if (domain_type .eq. "ND") then
           var_domain = axis_obj(axes(i))%axis_domain
@@ -367,6 +375,44 @@ module fms_diag_axis_object_mod
     end do
 
   end subroutine determine_the_domain_type
+
+  subroutine write_axis_metadata(fileobj, axes_id)
+    class(FmsNetcdfFile_t) :: fileobj
+    integer :: axes_id(:)
+
+    integer :: i
+
+    print *, "Working on these axis:", axes_id
+    do i = 1, size(axes_id)
+      call axis_obj(axes_id(i))%write_the_axis_metadata(fileobj)
+    end do
+  end subroutine
+
+  subroutine write_the_axis_metadata(obj, fileobj)
+    class(diagAxis_t), INTENT(INOUT) :: obj       !< diag_axis obj
+    class(FmsNetcdfFile_t) :: fileobj
+
+    print *, "the domain type is:", obj%domain_type
+    select type (fileobj)
+      type is (FmsNetcdfFile_t)
+        call register_axis(fileobj, obj%axis_name, obj%length)
+      type is (FmsNetcdfDomainFile_t)
+        print *, "I am here"
+        select case (obj%domain_type)
+        case ("ND")
+          call register_axis(fileobj, obj%axis_name, obj%length)
+        case ("2D")
+          call register_axis(fileobj, obj%axis_name, obj%cart_name, domain_position=obj%domain_position)
+        end select
+      type is (FmsNetcdfUnstructuredDomainFile_t)
+        select case (obj%domain_type)
+        case ("ND")
+          call register_axis(fileobj, obj%axis_name, obj%length)
+        case ("UG")
+          call register_axis(fileobj, obj%axis_name)
+        end select
+    end select
+  end subroutine
 end module fms_diag_axis_object_mod
 !> @}
 ! close documentation grouping
