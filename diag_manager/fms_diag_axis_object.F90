@@ -251,7 +251,7 @@ module fms_diag_axis_object_mod
     select case (obj%direction)
     case (-1)
       call register_variable_attribute(fileobj, obj%axis_name, "positive", "up", str_len=2)
-    case (0)
+    case (1)
       call register_variable_attribute(fileobj, obj%axis_name, "positive", "down", str_len=4)
     end select
 
@@ -454,10 +454,10 @@ module fms_diag_axis_object_mod
   !> @brief Loop through a variable's axis_id to determine and set the fms2_io filobj type to use
   !!        and return the domain
   subroutine determine_the_fileobj_type(axis_id, fileobj_type, domain, var_name)
-    integer,                      INTENT(IN)  :: axis_id(:)
-    integer,                      INTENT(OUT) :: fileobj_type
-    CLASS(diagDomain_t), POINTER, INTENT(OUT) :: domain
-    character(len=*),             INTENT(IN)  :: var_name
+    integer,                      INTENT(IN)  :: axis_id(:)    !< Array of axis ids
+    integer,                      INTENT(OUT) :: fileobj_type  !< fileobj_type to use
+    CLASS(diagDomain_t), POINTER, INTENT(OUT) :: domain        !< Domain
+    character(len=*),             INTENT(IN)  :: var_name      !< Name of the variable (for error messages)
 
     integer :: i !< For do loops
     integer :: j !< axis_id(i) (for less typing)
