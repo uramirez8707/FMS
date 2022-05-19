@@ -242,7 +242,7 @@ module fms_diag_axis_object_mod
     call register_variable_attribute(fileobj, obj%axis_name, "longname", obj%long_name, &
       str_len=len_trim(obj%long_name))
 
-    if (obj%axis_name .NE. "N") &
+    if (obj%cart_name .NE. "N") &
       call register_variable_attribute(fileobj, obj%axis_name, "axis", obj%cart_name, str_len=1)
 
     if (trim(obj%units) .NE. "none") &
