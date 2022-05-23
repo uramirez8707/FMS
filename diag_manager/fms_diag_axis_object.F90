@@ -28,11 +28,14 @@
 !> @addtogroup fms_diag_axis_object_mod
 !> @{
 module fms_diag_axis_object_mod
+  use fms_string_utils_mod, only: string
+  use fms_diag_yaml_mod, only: subRegion_type
   use mpp_domains_mod, only:  domain1d, domain2d, domainUG, mpp_get_compute_domain, CENTER, &
-                            & mpp_get_compute_domain, NORTH, EAST
-  use platform_mod,    only:  r8_kind, r4_kind
-  use diag_data_mod,   only:  diag_atttype, max_axes, NO_DOMAIN, TWO_D_DOMAIN, UG_DOMAIN
-  use mpp_mod,         only:  FATAL, mpp_error, uppercase
+                            & NORTH, EAST, mpp_get_tile_id
+  use platform_mod,    only:  r8_kind, r4_kind, i4_kind
+  use diag_data_mod,   only:  diag_atttype, max_axes, NO_DOMAIN, TWO_D_DOMAIN, UG_DOMAIN, &
+                            & index_gridtype, diag_null
+  use mpp_mod,         only:  FATAL, mpp_error, uppercase, lowercase
   use fms2_io_mod,     only:  FmsNetcdfFile_t, FmsNetcdfDomainFile_t, FmsNetcdfUnstructuredDomainFile_t, &
                             & register_axis, register_field, register_variable_attribute, write_data
   implicit none
@@ -74,9 +77,11 @@ module fms_diag_axis_object_mod
     CHARACTER(len=:), ALLOCATABLE :: subaxis_name   !< Name of the subaxis
     INTEGER                       :: starting_index !< Starting index of the subaxis relative to the parent axis
     INTEGER                       :: ending_index   !< Ending index of the subaxis relative to the parent axis
-    class(*)        , ALLOCATABLE :: bounds         !< Bounds of the subaxis (lat/lon or indices)
+    type(subRegion_type), pointer :: sub_region     !< sub_region of the variable the axis belongs
     contains
-      procedure :: exists => check_if_subaxis_exists
+      procedure, PRIVATE :: exists => check_if_subaxis_exists
+      procedure, PRIVATE :: set_axis_bounds
+      procedure, PRIVATE :: set_axis_domain_bounds
   END TYPE subaxis_t
 
   !> @brief Type to hold the diagnostic axis description.
@@ -211,64 +216,89 @@ module fms_diag_axis_object_mod
   end subroutine register_diag_axis_obj
 
   !> @brief Write the axis meta data to an open fileobj
-  subroutine write_axis_metadata(obj, fileobj)
+  subroutine write_axis_metadata(obj, fileobj, sub_axis_id)
     class(diagAxis_t),      INTENT(IN)    :: obj       !< diag_axis obj
     class(FmsNetcdfFile_t), INTENT(INOUT) :: fileobj   !< Fms2_io fileobj to write the data to
+    integer, OPTIONAL,      INTENT(IN)    :: sub_axis_id !< ID of the sub_axis, if it exists
 
     character(len=:), ALLOCATABLE :: axis_edges_name !< Name of the edges, if it exist
+    character(len=:), ALLOCATABLE :: axis_name       !< Name of the axis
+    integer                       :: axis_length      !< Size of the axis
+
+    if (present(sub_axis_id)) then
+      axis_name  = obj%subaxis(sub_axis_id)%subaxis_name
+      axis_length = obj%subaxis(sub_axis_id)%ending_index - obj%subaxis(sub_axis_id)%starting_index + 1
+    else
+      axis_name = obj%axis_name
+      axis_length = obj%length
+    endif
 
     select type (fileobj)
       type is (FmsNetcdfFile_t)
-        call register_axis(fileobj, obj%axis_name, obj%length)
+        call register_axis(fileobj, axis_name, axis_length)
       type is (FmsNetcdfDomainFile_t)
         !< Add the axis as a dimension
         select case (obj%fileobj_type)
         case (NO_DOMAIN) !< Domain decomposed fileobjs can have axis that are not domain decomposed (i.e "Z" axis)
-          call register_axis(fileobj, obj%axis_name, obj%length)
+          call register_axis(fileobj, axis_name, axis_length)
         case (TWO_D_DOMAIN)
-          call register_axis(fileobj, obj%axis_name, obj%cart_name, domain_position=obj%domain_position)
+          call register_axis(fileobj, axis_name, obj%cart_name, domain_position=obj%domain_position)
         end select
       type is (FmsNetcdfUnstructuredDomainFile_t)
         select case (obj%fileobj_type)
         case (NO_DOMAIN) !< Domain decomposed fileobjs can have axis that are not domain decomposed (i.e "Z" axis)
-          call register_axis(fileobj, obj%axis_name, obj%length)
+          call register_axis(fileobj, axis_name, axis_length)
         case (UG_DOMAIN)
-          call register_axis(fileobj, obj%axis_name)
+          call register_axis(fileobj, axis_name)
         end select
     end select
 
     !< Add the axis as a variable and write its metada
-    call register_field(fileobj, obj%axis_name, obj%data_type, (/obj%axis_name/))
-    call register_variable_attribute(fileobj, obj%axis_name, "longname", obj%long_name, &
+    call register_field(fileobj, axis_name, obj%data_type, (/axis_name/))
+    call register_variable_attribute(fileobj, axis_name, "longname", obj%long_name, &
       str_len=len_trim(obj%long_name))
 
     if (obj%cart_name .NE. "N") &
-      call register_variable_attribute(fileobj, obj%axis_name, "axis", obj%cart_name, str_len=1)
+      call register_variable_attribute(fileobj, axis_name, "axis", obj%cart_name, str_len=1)
 
     if (trim(obj%units) .NE. "none") &
-      call register_variable_attribute(fileobj, obj%axis_name, "units", obj%units, str_len=len_trim(obj%units))
+      call register_variable_attribute(fileobj, axis_name, "units", obj%units, str_len=len_trim(obj%units))
 
     select case (obj%direction)
     case (-1)
-      call register_variable_attribute(fileobj, obj%axis_name, "positive", "up", str_len=2)
+      call register_variable_attribute(fileobj, axis_name, "positive", "up", str_len=2)
     case (1)
-      call register_variable_attribute(fileobj, obj%axis_name, "positive", "down", str_len=4)
+      call register_variable_attribute(fileobj, axis_name, "positive", "down", str_len=4)
     end select
 
     if (obj%edges > 0) then
       axis_edges_name = axis_obj(obj%edges)%axis_name
-      call register_variable_attribute(fileobj, obj%axis_name, "edges", axis_edges_name, &
+      call register_variable_attribute(fileobj, axis_name, "edges", axis_edges_name, &
         str_len=len_trim(axis_edges_name))
     endif
 
   end subroutine write_axis_metadata
 
   !> @brief Write the axis data to an open fileobj
-  subroutine write_axis_data(obj, fileobj)
+  subroutine write_axis_data(obj, fileobj, sub_axis_id)
     class(diagAxis_t),      INTENT(IN)    :: obj       !< diag_axis obj
     class(FmsNetcdfFile_t), INTENT(INOUT) :: fileobj   !< Fms2_io fileobj to write the data to
+    integer, OPTIONAL,      INTENT(IN)    :: sub_axis_id !< ID of the sub_axis, if it exists
 
-    call write_data(fileobj, obj%axis_name, obj%axis_data)
+    character(len=:), ALLOCATABLE :: axis_name !< Name of the axis
+    integer                       :: i         !< Starting index of a sub_axis
+    integer                       :: j         !< Ending index of a sub_axis
+
+    if (present(sub_axis_id)) then
+      axis_name  = obj%subaxis(sub_axis_id)%subaxis_name
+      i = obj%subaxis(sub_axis_id)%starting_index
+      j = obj%subaxis(sub_axis_id)%ending_index
+
+      call write_data(fileobj, axis_name, obj%axis_data(i:j))
+    else
+      call write_data(fileobj, obj%axis_name, obj%axis_data)
+    endif
+
   end subroutine write_axis_data
 
   !> @brief Get the length of the axis
@@ -288,33 +318,137 @@ module fms_diag_axis_object_mod
   end function
 
   !> @brief Set the subaxis of the axis obj
-  subroutine set_subaxis(obj, bounds)
-    class(diagAxis_t), INTENT(INOUT) :: obj       !< diag_axis obj
-    class(*),           INTENT(INOUT) :: bounds(:) !< bound of the subaxis
+  subroutine set_subaxis(obj, sub_region, id)
+    class(diagAxis_t),            INTENT(INOUT) :: obj           !< diag_axis obj
+    type(subRegion_type), target, INTENT(IN)    :: sub_region    !< variable's sub_region
+    integer                     , INTENT(OUT)   :: id            !< Id of the subaxis
 
     integer :: i !< For do loops
+    integer :: j !< obj%nsubaxis (for less typing)
 
     !< Check if the subaxis for this bouds already exists
     do i = 1, obj%nsubaxis
-      if (obj%subaxis(i)%exists(bounds)) return
+      if (obj%subaxis(i)%exists(sub_region)) return
     enddo
 
-    !< TO DO: everything
     obj%nsubaxis = obj%nsubaxis + 1
+    j = obj%nsubaxis
+
+    if (j < 10) then
+      obj%subaxis(j)%subaxis_name = lowercase(obj%cart_name)//"_sub0"//string(j)
+    else if (j < 100) then
+      obj%subaxis(j)%subaxis_name = lowercase(obj%cart_name)//"_sub"//string(j)
+    endif
+
+    id = j
+    obj%subaxis(j)%sub_region => sub_region
+    call obj%subaxis(j)%set_axis_bounds(obj%axis_domain, obj%cart_name, obj%domain_position)
   end subroutine
 
   !!!!!!!!!!!!!!!!!! SUB AXIS PROCEDURES !!!!!!!!!!!!!!!!!
   !> @brief Check if a subaxis was already defined
   !> @return Flag indicating if a subaxis is already defined
-  function check_if_subaxis_exists(obj,bounds) &
+  function check_if_subaxis_exists(obj, sub_region) &
   result(exists)
-    class(subaxis_t), INTENT(INOUT) :: obj       !< diag_axis obj
-    class(*),         INTENT(IN)    :: bounds(:) !< bounds of the subaxis
-    logical                         :: exists
+    class(subaxis_t),             INTENT(INOUT) :: obj           !< diag_axis obj
+    type(subRegion_type),         INTENT(IN)    :: sub_region    !< variable's sub_region
+    logical                                     :: exists
 
-    !< TO DO: compare bounds
+    integer :: i, j !< For do loops
+
     exists = .false.
+
+    do i = 1, 4
+      do j = 1, 2
+        if (.not. same_point(sub_region%corners(i, j), obj%sub_region%corners(i,j))) return
+      end do
+    end do
+
+    exists = .true.
+
   end function
+
+  subroutine set_axis_bounds(obj, domain, cart_name, domain_position)
+    class(subaxis_t),             INTENT(INOUT) :: obj           !< diag_axis obj
+    CLASS(diagDomain_t),          INTENT(in)    :: domain        !< Domain
+    character(len=1),             INTENT(in)    :: cart_name     !< Cartesian axis name for this obj
+    integer :: domain_position
+
+    integer :: compute_idx(2)
+
+    obj%starting_index = diag_null
+    obj%ending_index   = diag_null
+
+    select case (cart_name)
+      case ("Z")
+        obj%starting_index = obj%sub_region%zbounds(1)
+        obj%ending_index   = obj%sub_region%zbounds(2)
+      case ("X", "Y")
+        select type (domain)
+          type is (diagDomain2d_t)
+            !< Go away if you are not on the region's tile
+            if (any(mpp_get_tile_id(domain%Domain2) .ne. obj%sub_region%tile)) return
+
+            !< Get the current's PE compute domain
+            if (cart_name .eq. "X") then
+                call mpp_get_compute_domain(domain%Domain2, xbegin=compute_idx(1), xend=compute_idx(2), &
+                     & position=domain_position)
+            else
+                call mpp_get_compute_domain(domain%Domain2, ybegin=compute_idx(1), yend=compute_idx(2), &
+                    & position=domain_position)
+            endif
+        end select
+
+        call obj%set_axis_domain_bounds(cart_name, compute_idx)
+
+    end select
+    !obj%starting_index
+  end subroutine set_axis_bounds
+
+  subroutine set_axis_domain_bounds(obj, cart_name, compute_idx)
+    class(subaxis_t), target,     INTENT(INOUT) :: obj           !< diag_axis obj
+    character(len=1),             INTENT(in)    :: cart_name     !< Cartesian axis name for this obj
+    integer,                      INTENT(IN)    :: compute_idx(2)!< compute domain indices (starting, ending)
+
+    class(*), pointer :: corners(:,:)
+    integer :: start_point
+    integer :: end_point
+
+    integer :: i
+
+    corners => obj%sub_region%corners
+    select type (corners)
+      type is (integer(kind=i4_kind))
+        start_point = min(corners(1,1), corners(2,1), corners(3,1), corners(4,1))
+        end_point = max(corners(1,1), corners(2,1), corners(3,1), corners(4,1))
+      type is (real(kind=r4_kind))
+
+      !< TO DO: the cube sphere is scary ...
+    end select
+
+    !< If the compute domain of the current PE is outisde of the range of sub_axis, return
+    if (compute_idx(1) < start_point .and. compute_idx(2) < start_point) return
+    if (compute_idx(1) > end_point   .and. compute_idx(2) > end_point) return
+
+    if (compute_idx(1) >= start_point .and. compute_idx(2) <= end_point) then
+      !< In this case all the point of the current PE are inside the range of the sub_axis
+      obj%starting_index = compute_idx(1)
+      obj%ending_index   = compute_idx(2)
+    else if (compute_idx(1) >= start_point .and. compute_idx(2) >= end_point) then
+      !< In this case all the points of the current PE are valid up to the end point
+      obj%starting_index = compute_idx(1)
+      obj%ending_index   = end_point
+    else if (compute_idx(1) <= start_point .and. compute_idx(2) <= end_point) then
+      !< In this case all the points of the current PE are valid starting with the start_point
+      obj%starting_index = start_point
+      obj%ending_index   = compute_idx(2)
+    else if (compute_idx(1) <= start_point .and. compute_idx(2) >= end_point) then
+      !< In this case only the points in the current PE ar valid
+      obj%starting_index = start_point
+      obj%ending_index   = end_point
+    endif
+
+  end subroutine set_axis_domain_bounds
 
   !> @brief Get the length of a 2D domain
   !> @return Length of the 2D domain
@@ -483,6 +617,31 @@ module fms_diag_axis_object_mod
       endif
     enddo
   end subroutine determine_the_fileobj_type
+
+  function same_point(corner_in, corner_out)&
+  result(same)
+
+    class(*) :: corner_in
+    class(*) :: corner_out
+
+    logical :: same
+
+    same = .false.
+
+    select type (corner_in)
+      type is (real(kind=r4_kind))
+        select type (corner_out)
+          type is (real(kind=r4_kind))
+            if (corner_in .eq. corner_out) same = .true.
+        end select !< corner_out
+      type is (integer(kind=i4_kind))
+          select type (corner_out)
+            type is (integer(kind=i4_kind))
+              if (corner_in .eq. corner_out) same = .true.
+          end select !< corner_out
+    end select !< Corner_in
+  end function
+
 end module fms_diag_axis_object_mod
 !> @}
 ! close documentation grouping
