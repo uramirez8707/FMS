@@ -116,8 +116,8 @@ module fms_diag_axis_object_mod
      ! Get/has/is subroutines as needed
   END TYPE diagAxis_t
 
-  integer                                :: number_of_axis        !< Number of axis that has been registered
-  type(diagAxis_t), ALLOCATABLE, TARGET  :: axis_obj(:)           !< Diag_axis objects
+  integer                                :: number_of_axis !< Number of axis that has been registered
+  type(diagAxis_t), ALLOCATABLE, TARGET  :: axis_obj(:)    !< Diag_axis objects
   logical                                :: module_is_initialized !< Flag indicating if the module is initialized
 
   !> @addtogroup fms_diag_yaml_mod
@@ -169,7 +169,7 @@ module fms_diag_axis_object_mod
 
     obj%fileobj_type = NO_DOMAIN
     if (present(Domain)) then
-      if (present(Domain2) .and. present(DomainU)) call mpp_error(FATAL, &
+      if (present(Domain2) .or. present(DomainU)) call mpp_error(FATAL, &
         "The presence of Domain with any other domain type is prohibited. "//&
         "Check you diag_axis_init call for axis_name:"//trim(axis_name))
       allocate(diagDomain1d_t :: obj%axis_domain)
@@ -398,6 +398,9 @@ module fms_diag_axis_object_mod
     integer :: id
 
     number_of_axis = number_of_axis + 1
+
+    if (number_of_axis > max_axes) call mpp_error(FATAL, &
+      &"diag_axis_init: max_axes exceeded, increase via diag_manager_nml")
 
     call axis_obj(number_of_axis)%register(axis_name, axis_data, units, cart_name, long_name=long_name, &
     & direction=direction, set_name=set_name, edges=edges, Domain=Domain, Domain2=Domain2, DomainU=DomainU, aux=aux, &
