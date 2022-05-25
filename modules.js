@@ -16,6 +16,7 @@ var modules =
     [ "FMS", "group__fms.html", "group__fms" ],
     [ "FMS Global Module", "group__libfms.html", "group__libfms" ],
     [ "FMS2 IO", "group__fms2__io.html", "group__fms2__io" ],
+    [ "FMSconstants_mod", "group__FMSconstants__mod.html", "group__FMSconstants__mod" ],
     [ "Field Manager", "group__field__manager.html", "group__field__manager" ],
     [ "Get_grid_version_mod", "group__get__grid__version__mod.html", "group__get__grid__version__mod" ],
     [ "Horizontal Interpolator", "group__horiz__interp.html", "group__horiz__interp" ],

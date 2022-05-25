@@ -33,7 +33,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">FMS
-   &#160;<span id="projectnumber">2022.01.0-dev</span>
+   &#160;<span id="projectnumber">2022.03.0-dev</span>
    </div>
    <div id="projectbrief">Flexible Modeling System</div>
   </td>
@@ -111,6 +111,24 @@ Data Types</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">interface &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interfacefms__string__utils__mod_1_1fms__find__my__string__binding.html">fms_find_my_string_binding</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Private c function that finds a string in a SORTED array of c pointers.  <a href="interfacefms__string__utils__mod_1_1fms__find__my__string__binding.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">interface &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interfacefms__string__utils__mod_1_1fms__find__unique.html">fms_find_unique</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">c function that finds the number of unique strings in an array of c pointers  <a href="interfacefms__string__utils__mod_1_1fms__find__unique.html#details">More...</a><br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">interface &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interfacefms__string__utils__mod_1_1fms__cstring2cpointer.html">fms_cstring2cpointer</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">converts a kind=c_char to type c_ptr  <a href="interfacefms__string__utils__mod_1_1fms__cstring2cpointer.html#details">More...</a><br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">interface &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interfacefms__string__utils__mod_1_1c__strlen.html">c_strlen</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Finds the length of a C-string.  <a href="interfacefms__string__utils__mod_1_1c__strlen.html#details">More...</a><br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">interface &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interfacefms__string__utils__mod_1_1c__free.html">c_free</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Frees a C pointer.  <a href="interfacefms__string__utils__mod_1_1c__free.html#details">More...</a><br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">interface &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interfacefms__string__utils__mod_1_1fms__c2f__string.html">fms_c2f_string</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Converts a C string to a Fortran string.  <a href="interfacefms__string__utils__mod_1_1fms__c2f__string.html#details">More...</a><br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">interface &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interfacefms__string__utils__mod_1_1string.html">string</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Converts a number to a string.  <a href="interfacefms__string__utils__mod_1_1string.html#details">More...</a><br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions/Subroutines</h2></td></tr>
@@ -123,6 +141,21 @@ Functions/Subroutines</h2></td></tr>
 <tr class="memitem:ga765e6281315482acb86e7e00d9744311"><td class="memItemLeft" align="right" valign="top">integer function, dimension(:), allocatable, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__fms__string__utils__mod.html#ga765e6281315482acb86e7e00d9744311">fms_find_my_string</a> (my_pointer, narray, string_to_find)</td></tr>
 <tr class="memdesc:ga765e6281315482acb86e7e00d9744311"><td class="mdescLeft">&#160;</td><td class="mdescRight">Searches through a SORTED array of pointers for a string.  <a href="group__fms__string__utils__mod.html#ga765e6281315482acb86e7e00d9744311">More...</a><br /></td></tr>
 <tr class="separator:ga765e6281315482acb86e7e00d9744311"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga01f052374df3852d135909e2298d795c"><td class="memItemLeft" align="right" valign="top">character(len=:) function, allocatable&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__fms__string__utils__mod.html#ga01f052374df3852d135909e2298d795c">cstring_fortran_conversion</a> (cstring)</td></tr>
+<tr class="memdesc:ga01f052374df3852d135909e2298d795c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Converts a C-string to a pointer and then to a Fortran string.  <a href="group__fms__string__utils__mod.html#ga01f052374df3852d135909e2298d795c">More...</a><br /></td></tr>
+<tr class="separator:ga01f052374df3852d135909e2298d795c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga8672b5fd67e3eaf6da18f8c2b02df38b"><td class="memItemLeft" align="right" valign="top">character(len=:) function, allocatable&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__fms__string__utils__mod.html#ga8672b5fd67e3eaf6da18f8c2b02df38b">cpointer_fortran_conversion</a> (cstring)</td></tr>
+<tr class="memdesc:ga8672b5fd67e3eaf6da18f8c2b02df38b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Converts a C-string returned from a TYPE(C_PTR) function to a fortran string with type character.  <a href="group__fms__string__utils__mod.html#ga8672b5fd67e3eaf6da18f8c2b02df38b">More...</a><br /></td></tr>
+<tr class="separator:ga8672b5fd67e3eaf6da18f8c2b02df38b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gaae470661fb596655e6eb1dd8179dfcc7"><td class="memItemLeft" align="right" valign="top">character(:) function, allocatable&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__fms__string__utils__mod.html#gaae470661fb596655e6eb1dd8179dfcc7">string_from_integer</a> (i)</td></tr>
+<tr class="memdesc:gaae470661fb596655e6eb1dd8179dfcc7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Converts an integer to a string.  <a href="group__fms__string__utils__mod.html#gaae470661fb596655e6eb1dd8179dfcc7">More...</a><br /></td></tr>
+<tr class="separator:gaae470661fb596655e6eb1dd8179dfcc7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga282a684d6bb7b52f483e165beac1480e"><td class="memItemLeft" align="right" valign="top">character(len=32) function&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__fms__string__utils__mod.html#ga282a684d6bb7b52f483e165beac1480e">string_from_real</a> (r)</td></tr>
+<tr class="memdesc:ga282a684d6bb7b52f483e165beac1480e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Converts a real to a string.  <a href="group__fms__string__utils__mod.html#ga282a684d6bb7b52f483e165beac1480e">More...</a><br /></td></tr>
+<tr class="separator:ga282a684d6bb7b52f483e165beac1480e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga275cfaba1034f5745919fc561949d295"><td class="memItemLeft" align="right" valign="top">subroutine, public&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__fms__string__utils__mod.html#ga275cfaba1034f5745919fc561949d295">string_copy</a> (dest, source, check_for_null)</td></tr>
+<tr class="memdesc:ga275cfaba1034f5745919fc561949d295"><td class="mdescLeft">&#160;</td><td class="mdescRight">Safely copy a string from one buffer to another.  <a href="group__fms__string__utils__mod.html#ga275cfaba1034f5745919fc561949d295">More...</a><br /></td></tr>
+<tr class="separator:ga275cfaba1034f5745919fc561949d295"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>File for <a class="el" href="group__fms__string__utils__mod.html">fms_string_utils_mod</a>. </p>

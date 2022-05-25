@@ -7,7 +7,6 @@ var files_dup =
     [ "block_control", "dir_648f2155bf2b67b9e241e3eaa8c1be5b.html", "dir_648f2155bf2b67b9e241e3eaa8c1be5b" ],
     [ "column_diagnostics", "dir_3a836fbeb2ec5b641cff9208d915fa7a.html", "dir_3a836fbeb2ec5b641cff9208d915fa7a" ],
     [ "constants", "dir_e95c24fe4bd40dbdeb4c5c246a413bb5.html", "dir_e95c24fe4bd40dbdeb4c5c246a413bb5" ],
-    [ "constants4", "dir_8f96ada999a802a99dfd2dfb6363098d.html", "dir_8f96ada999a802a99dfd2dfb6363098d" ],
     [ "coupler", "dir_20b0608602243d131fd015750b2c98b2.html", "dir_20b0608602243d131fd015750b2c98b2" ],
     [ "data_override", "dir_4f40a9a9eeca16d46796605b549e958f.html", "dir_4f40a9a9eeca16d46796605b549e958f" ],
     [ "diag_integral", "dir_e8ff4ce3ab994069f2529075a059570e.html", "dir_e8ff4ce3ab994069f2529075a059570e" ],
