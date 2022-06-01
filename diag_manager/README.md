@@ -69,11 +69,13 @@ diag_files:
 
 In the legacy ascii format:
 ```
-"atmos_6hours",      6,  "hours", 6, "hours", "time"
+"atmos_6hours",      6,  "hours", 1, "hours", "time"
 ```
 
+**NOTE:** The fourth column (file_format) has be deprecated. Netcdf files will always be written.
+
 Below are some *optional* keys that may be added. 
-- **write_file** is a logical that indicates if you want the file to be created (default is true).
+- **write_file** is a logical that indicates if you want the file to be created (default is true). This is a new feature that is not supported by the legacy ascii data_table.
 - **new_file_freq** is a integer that defines the frequency for closing the existing file
 - **new_file_freq_units** is a string that defines the time units for creating a new file. Required if “new_file_freq” used. The acceptable values are seconds, minuts, hours, days, months, years. 
 - **start_time** is an array of 6 integer indicating when to start the file for the first time. It is in the format [year month day hour minute second]. Requires “new_file_freq”
@@ -100,9 +102,74 @@ In the legacy ascii format:
 **NOTE** If using the new_file_freq, there must be a way to distinguish each file, as it was done in the example above. 
 
 - **file_duration** is an integer that defines how long the file should receive data after start time in “file_duration_units”.  This optional field can only  be used if the start_time field is present.  If this field is absent, then the file duration will be equal to the frequency for creating new files.  NOTE: The file_duration_units field must also be present if this field is present.
-- **file_duration_units**is a string that defines the file duration units. The acceptable values are seconds, minuts, hours, days, months, years. 
+- **file_duration_units** is a string that defines the file duration units. The acceptable values are seconds, minuts, hours, days, months, years. 
+- **global_meta** is a subsection that lists any additional global metadata to add to the file. This is a new feature that is not supported by the legacy ascii data_table.
 
 ### 2.1 Variable Section
+The variables in each file are listed under the varlist section as a dashed array.
+
+- **var_name:**  is a string that defines the variable name as it is defined in the register_diag_field call in the model
+- **reduction:** is a string that describes the data reduction method to perform prior to writing data to disk. Acceptable values are average, diurnalXX, powXX, min, max, none, rms.  
+- **module:**  is a string that defines the module where the variable is registered in the model code
+- **kind:** is a string that defines the type of variable  as it will be written out in the file. Acceptable values are r4 r8 i4 i8.
+
+**Example:**
+
+In the YAML format:
+```yaml
+  varlist:
+  - module: moist
+    var_name: precip
+    reduction: average
+    kind: r4
+```
+
+In the legacy ascii format:
+```
+"moist",     "precip",                         "precip",           "atmos_8xdaily",   "all", .true.,  "none", 2
+```
+**NOTE:** The fifth column (time_sampling) has be deprecated. The reduction_method (`.true.`) has been replaced with `average`.
+
+which corresponds to the following model code
+```F90
+id_precip = register_diag_field ( 'moist', 'precip', axes, Time)
+```
+where:
+- `moist` corresonds to the module key in the diag_table.yaml
+- `precip` corresponds to the var_name key in the diag_table.yaml
+- `axes` are the ids of the axes the variable is a function of
+- `Time` is the model time
+
+Below are some *optional* keys that may be added. 
+- **write_var:** is a logical that is set to false if the user doesn’t want the variable to be written to the file (default: true).
+- **out_name:** is a string that defines the name of the variable that will be written to the file (default same as var_name)
+- **long_name:** is a string defining the long_name attribute of the variable. It overwrites the long_name in the variable's register_diag_field call
+- **attributes:** is a subsection with any additional metadata to add to variable. This is a new feature that is not supported by the legacy ascii data_table.
+
 ### 2.1.1 Variable Metadata Section
+Any aditional variable attributes can be added for each varible can be listed under the attributes section as a dashed array. The key is attribute name and the value is the attribute value.
+
+**Example:**
+
+```yaml
+    attributes:
+    - attribute_name: attribute_value
+      attribute_name: attribute_value
+```
+
+Although this was not supported by the legacy ascii data_table, 
+
+```F90
+```
+
 ### 2.2 Global Meta Data Section
+Any aditional global attributes can be added for each file can be listed under the global_meta section as a dashed array.  The key is attribute name and the value is the attribute value.
+
+```yaml
+  global_meta:
+  - attribute_name: attribute_value
+    attribute_name: attribute_value
+```
+
 ### 2.3 Sub_region Section
+The sub_region i
