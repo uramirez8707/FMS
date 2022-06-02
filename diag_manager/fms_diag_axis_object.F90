@@ -28,6 +28,7 @@
 !> @addtogroup fms_diag_axis_object_mod
 !> @{
 module fms_diag_axis_object_mod
+#ifdef use_yaml
   use mpp_domains_mod, only:  domain1d, domain2d, domainUG, mpp_get_compute_domain, CENTER, &
                             & mpp_get_compute_domain, NORTH, EAST
   use platform_mod,    only:  r8_kind, r4_kind
@@ -117,7 +118,7 @@ module fms_diag_axis_object_mod
   type(diagAxis_t), ALLOCATABLE, TARGET  :: axis_obj(:)    !< Diag_axis objects
   logical                                :: module_is_initialized !< Flag indicating if the module is initialized
 
-  !> @addtogroup fms_diag_yaml_mod
+  !> @addtogroup fms_diag_axis_object_mod
   !> @{
   contains
 
@@ -384,6 +385,7 @@ module fms_diag_axis_object_mod
        call mpp_error(FATAL, "diag_axit_init: The edge axis has not been defined. "&
                              "Call diag_axis_init for the edge axis first")
   end subroutine check_if_valid_edges
+#endif
 end module fms_diag_axis_object_mod
 !> @}
 ! close documentation grouping

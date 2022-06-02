@@ -43,7 +43,9 @@ use platform_mod
   USE diag_data_mod, ONLY: diag_axis_type, max_subaxes, max_axes,&
        & max_num_axis_sets, max_axis_attributes, debug_diag_manager,&
        & first_send_data_call, diag_atttype, use_modern_diag
+#ifdef use_yaml
   USE fms_diag_axis_object_mod, ONLY: fms_diag_axis_init
+#endif
 #ifdef use_netCDF
   USE netcdf, ONLY: NF90_INT, NF90_FLOAT, NF90_CHAR
 #endif
@@ -140,12 +142,14 @@ CONTAINS
        CALL write_version_number("DIAG_AXIS_MOD", version)
     ENDIF
 
+#ifdef use_yaml
     if (use_modern_diag) then
       diag_axis_init = fms_diag_axis_init(name, DATA, units, cart_name, long_name=long_name, direction=direction,&
        & set_name=set_name, edges=edges, Domain=Domain, Domain2=Domain2, DomainU=DomainU, aux=aux, req=req, &
        & tile_count=tile_count, domain_position=domain_position )
       return
     endif
+#endif
     IF ( PRESENT(tile_count)) THEN
        tile = tile_count
     ELSE

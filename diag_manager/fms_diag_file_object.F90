@@ -24,12 +24,11 @@
 !! a pointer to the information from the diag yaml, additional metadata that comes from the model, and a
 !! list of the variables and their variable IDs that are in the file.
 module fms_diag_file_object_mod
+#ifdef use_yaml
 !use mpp_mod, only: mpp_error, FATAL
 use fms2_io_mod, only: FmsNetcdfFile_t, FmsNetcdfUnstructuredDomainFile_t, FmsNetcdfDomainFile_t
 use diag_data_mod, only: DIAG_NULL
-#ifdef use_yaml
 use fms_diag_yaml_mod, only: diag_yaml, diagYamlObject_type, diagYamlFiles_type
-#endif
 
 implicit none
 private
@@ -45,9 +44,7 @@ type :: fmsDiagFile_type
   integer :: id !< The number associated with this file in the larger array of files
   class(FmsNetcdfFile_t), allocatable :: fileobj !< fms2_io file object for this history file
   character(len=1) :: file_domain_type !< (I don't think we will need this)
-#ifdef use_yaml
   type(diagYamlFiles_type), pointer :: diag_yaml_file => null() !< Pointer to the diag_yaml_file data
-#endif
   character(len=:) , dimension(:), allocatable :: file_metadata_from_model !< File metadata that comes from
                                                                            !! the model.
   integer, dimension(:), allocatable :: var_ids !< Variable IDs corresponding to file_varlist
@@ -62,9 +59,7 @@ type :: fmsDiagFile_type
 
   procedure, public :: has_file_metadata_from_model
   procedure, public :: has_fileobj
-#ifdef use_yaml
   procedure, public :: has_diag_yaml_file
-#endif
   procedure, public :: has_var_ids
   procedure, public :: get_id
 ! TODO  procedure, public :: get_fileobj ! TODO
@@ -73,7 +68,6 @@ type :: fmsDiagFile_type
   procedure, public :: get_file_metadata_from_model
   procedure, public :: get_var_ids
 ! The following fuctions come will use the yaml inquiry functions
-#ifdef use_yaml
  procedure, public :: get_file_fname
  procedure, public :: get_file_frequnit
  procedure, public :: get_file_freq
@@ -101,7 +95,6 @@ type :: fmsDiagFile_type
  procedure, public :: has_file_duration_units
  procedure, public :: has_file_varlist
  procedure, public :: has_file_global_meta
-#endif
 
 end type fmsDiagFile_type
 
@@ -112,7 +105,6 @@ contains
 !< @brief Allocates the number of files and sets an ID based for each file
 !! @return true if there are files allocated in the YAML object
 logical function fms_diag_files_object_init ()
-#ifdef use_yaml
   integer :: nFiles !< Number of files in the diag yaml
   integer :: i !< Looping iterator
   if (diag_yaml%has_diag_files()) then
@@ -135,9 +127,6 @@ logical function fms_diag_files_object_init ()
 !  mpp_error("fms_diag_files_object_init: The diag_table.yaml file has not been correctly parsed.",&
 !    FATAL)
   endif
-#else
-  fms_diag_files_object_init = .false.
-#endif
 end function fms_diag_files_object_init
 !> \brief Logical function to determine if the variable file_metadata_from_model has been allocated or associated
 !! \return .True. if file_metadata_from_model exists .False. if file_metadata_from_model has not been set
@@ -151,14 +140,12 @@ pure logical function has_fileobj (obj)
   class(fmsDiagFile_type), intent(in) :: obj !< The file object
   has_fileobj = allocated(obj%fileobj)
 end function has_fileobj
-#ifdef use_yaml
 !> \brief Logical function to determine if the variable diag_yaml_file has been allocated or associated
 !! \return .True. if diag_yaml_file exists .False. if diag_yaml has not been set
 pure logical function has_diag_yaml_file (obj)
   class(fmsDiagFile_type), intent(in) :: obj !< The file object
   has_diag_yaml_file = associated(obj%diag_yaml_file)
 end function has_diag_yaml_file
-#endif
 !> \brief Logical function to determine if the variable var_ids has been allocated or associated
 !! \return .True. if var_ids exists .False. if var_ids has not been set
 pure logical function has_var_ids (obj)
@@ -215,7 +202,6 @@ pure function get_var_ids (obj) result (res)
   res = obj%var_ids
 end function get_var_ids
 !!!!!!!!! Functions from diag_yaml_file
-#ifdef use_yaml
 !> \brief Returns a copy of file_fname from the yaml object
 !! \return Copy of file_fname
 pure function get_file_fname (obj) result(res)

@@ -33,6 +33,7 @@
 !! class in the book ``Data Structures And Algorithm Analysis in C++",
 !! 3rd Edition, by Mark Allen Weiss.
 program test_diag_dlinked_list
+#ifdef use_yaml
    use mpp_mod, only: mpp_init, mpp_set_stack_size, mpp_init_test_requests_allocated
    use mpp_io_mod, only: mpp_io_init
    use fms_mod, ONLY: error_mesg, FATAL,NOTE
@@ -223,5 +224,5 @@ CONTAINS
        ic_status = iter%next()
     end do
  end function find_back_of_list
-
+#endif
 end program test_diag_dlinked_list

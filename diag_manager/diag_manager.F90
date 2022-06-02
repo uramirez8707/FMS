@@ -236,9 +236,9 @@ use platform_mod
   USE diag_table_mod, ONLY: parse_diag_table
   USE diag_output_mod, ONLY: get_diag_global_att, set_diag_global_att
   USE diag_grid_mod, ONLY: diag_grid_init, diag_grid_end
+#ifdef use_yaml
   USE fms_diag_object_mod, ONLY: fmsDiagObject_type
   USE fms_diag_file_object_mod, only: fms_diag_files_object_initialized
-#ifdef use_yaml
   use fms_diag_yaml_mod, only: diag_yaml_object_init, diag_yaml_object_end, get_num_unique_fields, find_diag_field
   use fms_diag_axis_object_mod, only: fms_diag_axis_object_end, fms_diag_axis_object_init
   use fms_diag_file_object_mod, only: fms_diag_files_object_init
@@ -279,9 +279,10 @@ use platform_mod
 
   type(time_type) :: Time_end
 
+#ifdef use_yaml
   TYPE(fmsDiagObject_type), ALLOCATABLE :: diag_objs(:) !< Array of diag objects, one for each registered variable
   integer :: registered_variables !< Number of registered variables
-
+#endif
   !> @brief Send data over to output fields.
   !!
   !> <TT>send_data</TT> is overloaded for fields having zero dimension

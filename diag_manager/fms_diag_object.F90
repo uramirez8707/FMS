@@ -1,4 +1,5 @@
 module fms_diag_object_mod
+#ifdef use_yaml
 !> \author Tom Robinson
 !> \email thomas.robinson@noaa.gov
 !! \brief Contains routines for the diag_objects
@@ -936,5 +937,5 @@ pure logical function has_axis (obj)
   class (fmsDiagObject_type), intent(in) :: obj !< diag object
   has_axis = allocated(obj%axis)
 end function has_axis
-
+#endif
 end module fms_diag_object_mod
