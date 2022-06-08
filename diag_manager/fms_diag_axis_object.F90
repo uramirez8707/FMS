@@ -111,6 +111,7 @@ module fms_diag_axis_object_mod
 
      PROCEDURE :: register => register_diag_axis_obj
      PROCEDURE :: axis_length => get_axis_length
+     PROCEDURE :: get_axis_name
      PROCEDURE :: set_subaxis
      PROCEDURE :: write_axis_metadata
      PROCEDURE :: write_axis_data
@@ -307,16 +308,38 @@ module fms_diag_axis_object_mod
 
   !> @brief Get the length of the axis
   !> @return axis length
-  function get_axis_length(obj) &
+  function get_axis_length(obj, sub_axis_id) &
   result (axis_length)
-    class(diagAxis_t), intent(inout) :: obj !< diag_axis obj
-    integer                           :: axis_length
+    class(diagAxis_t), intent(inout)           :: obj         !< diag_axis obj
+    integer          , intent(in)   , optional :: sub_axis_id !< Id of the sub_axis, if it is sub_regional
+  
+    integer                                    :: axis_length
 
-    !< If the axis is domain decomposed axis_length will be set to the length for the current PE:
-    if (allocated(obj%axis_domain)) then
+    if (present(sub_axis_id)) then
+      !< If this axis is sub_regional use the sub_axis id to get its length
+      axis_length = sub_axis_objs(sub_axis_id)%ending_index - sub_axis_objs(sub_axis_id)%starting_index + 1
+    else if (allocated(obj%axis_domain)) then
+      !< If the axis is domain decomposed axis_length will be set to the length for the current PE:
       axis_length = obj%axis_domain%length(obj%cart_name, obj%domain_position, obj%length)
     else
       axis_length = obj%length
+    endif
+
+  end function
+
+  !> @brief Get the name of the axis
+  !> @return the name of the axis
+  function get_axis_name(obj, sub_axis_id) &
+  result(axis_name)
+    class(diagAxis_t), intent(inout)          :: obj         !< diag_axis obj
+    integer          , intent(in)   ,OPTIONAL :: sub_axis_id !< Id of the sub_axis, if it is sub_regional
+  
+    character(len=:), ALLOCATABLE    :: axis_name
+
+    if (present(sub_axis_id)) then
+      axis_name = sub_axis_objs(sub_axis_id)%subaxis_name
+    else
+      axis_name = obj%axis_name
     endif
 
   end function

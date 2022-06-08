@@ -17,7 +17,7 @@ use mpp_mod, only: fatal, note, warning, mpp_error
 use fms_diag_yaml_mod, only:  diagYamlFilesVar_type, get_diag_fields_entries, get_diag_files_id
 use fms_diag_file_object_mod, only: fmsDiagFile_type, FMS_diag_files
 #endif
-use fms_diag_axis_object_mod, only: diagDomain_t, get_domain_and_domain_type
+use fms_diag_axis_object_mod, only: diagDomain_t, get_domain_and_domain_type, axis_obj
 use time_manager_mod, ONLY: time_type
 !!!set_time, set_date, get_time, time_type, OPERATOR(>=), OPERATOR(>),&
 !!!       & OPERATOR(<), OPERATOR(==), OPERATOR(/=), OPERATOR(/), OPERATOR(+), ASSIGNMENT(=), get_date, &
@@ -27,6 +27,16 @@ use platform_mod
 use iso_c_binding
 
 implicit none
+
+!> @brief Type to hold the variable data
+type varData_type
+  class(*),          ALLOCATABLE, DIMENSION(:) :: var_data     !< Data buffer to store the data
+  integer,           ALLOCATABLE, DIMENSION(:) :: var_size     !< Size of the variable for each dimenison
+  character(len=30), ALLOCATABLE, DIMENSION(:) :: var_dimnames !< Array of dimension names
+
+  contains
+  procedure :: init_varData
+end type varData_type
 
 !> \brief Object that holds all variable information
 type fmsDiagObject_type
@@ -66,12 +76,8 @@ type fmsDiagObject_type
      integer, allocatable, private                    :: area, volume      !< The Area and Volume
      class(*), allocatable, private                   :: missing_value     !< The missing fill value
      class(*), allocatable, private                   :: data_RANGE        !< The range of the variable data
-     class(*), allocatable :: vardata0                                     !< Scalar data buffer 
-     class(*), allocatable, dimension(:) :: vardata1                       !< 1D data buffer
-     class(*), allocatable, dimension(:,:) :: vardata2                     !< 2D data buffer
-     class(*), allocatable, dimension(:,:,:) :: vardata3                   !< 3D data buffer
-     class(*), allocatable, dimension(:,:,:,:) :: vardata4                 !< 4D data buffer
-     class(*), allocatable, dimension(:,:,:,:,:) :: vardata5               !< 5D data buffer
+     type(varData_type),    allocatable, PRIVATE      :: buffer(:)         !< Buffer to store the data
+                                                                           !! 1 for each time the field is in the yaml
     contains
 !     procedure :: send_data => fms_send_data  !!TODO
      procedure :: init_ob => diag_obj_init
@@ -222,6 +228,7 @@ subroutine fms_register_diag_field_obj &
 !> Fill in diag_field and find the ids of the files that this variable is in
   dobj%diag_field = get_diag_fields_entries(diag_field_indices)
   dobj%file_ids   = get_diag_files_id(diag_field_indices)
+  allocate(dobj%buffer(size(dobj%file_ids)))
 
   if (present(axes)) then
     dobj%axis_ids => axes
@@ -238,6 +245,11 @@ subroutine fms_register_diag_field_obj &
     dobj%type_of_domain = NO_DOMAIN
     dobj%domain => null()
   endif
+
+!> Set up the stuff for the dobj buffer
+do i = 1, size(dobj%file_ids)
+  call dobj%buffer(i)%init_varData(dobj%diag_field(j), dobj%file_ids(j), axes)
+enddo
 
 !> get the optional arguments if included and the diagnostic is in the diag table
   if (present(longname)) then
@@ -907,4 +919,55 @@ pure logical function has_data_RANGE (obj)
   class (fmsDiagObject_type), intent(in) :: obj !< diag object
   has_data_RANGE = allocated(obj%data_RANGE)
 end function has_data_RANGE
+
+!> @brief Initializes the vardata_type of a diag_obj
+!> @details Sets up the var_size and the var_dimnames for the diag_obj
+subroutine init_varData(obj, field_yaml, file_id, axes)
+  class (varData_type),        INTENT(INOUT) :: obj        !< The vardata obj to allocate
+  type(diagYamlFilesVar_type), intent(in)    :: field_yaml !< The diag_field yaml corresponding to the field
+  integer,                     intent(in)    :: file_id    !< The id of the file
+  integer, optional,           intent(in)    :: axes(:)    !< Ids of the axes of the field
+
+  logical :: is_diurnal      !< Flag indicating, if the field has diurnal samples
+  logical :: is_sub_regional !< Flag indicating if the field belongs to a file with a sub_region
+  integer :: sub_axis_id     !< Subaxis id, if the variable is in a subregion
+  integer :: i               !< For do loops
+
+  is_diurnal = field_yaml%has_n_diurnal()
+
+  if_not_scalar: if (present(axes)) then
+  !< If the axes is present the variable is not a scalar "Od"
+    if (is_diurnal) then
+      allocate(obj%var_size(size(axes)+1))
+      allocate(obj%var_dimnames(size(axes)+2))
+    else
+      allocate(obj%var_size(size(axes)))
+      allocate(obj%var_dimnames(size(axes)+1))
+    endif
+
+    is_sub_regional = FMS_diag_files(file_id)%has_file_sub_region()
+
+    do i = 1, size(obj%var_size)
+      if (is_diurnal .and. (i .eq. size(obj%var_size))) then
+        obj%var_size(i) = field_yaml%get_n_diurnal()
+      else
+        if (is_sub_regional) then
+          sub_axis_id = FMS_diag_files(file_id)%get_sub_axis_id(axes(i))
+          obj%var_size(i) = axis_obj(axes(i))%axis_length(sub_axis_id=sub_axis_id)
+          obj%var_dimnames(i) = axis_obj(axes(i))%get_axis_name(sub_axis_id=sub_axis_id)
+        else
+          obj%var_size(i) = axis_obj(axes(i))%axis_length()
+          obj%var_dimnames(i) = axis_obj(axes(i))%get_axis_name()
+        endif
+      endif
+    enddo
+  else
+    allocate(obj%var_size(1))
+    allocate(obj%var_dimnames(1))
+    obj%var_size(1) = 1
+  endif if_not_scalar
+
+  obj%var_dimnames(size(obj%var_dimnames)) = FMS_diag_files(file_id)%get_file_unlimdim()
+end subroutine init_varData
+
 end module fms_diag_object_mod
