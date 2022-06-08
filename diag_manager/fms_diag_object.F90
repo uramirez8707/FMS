@@ -920,6 +920,7 @@ pure logical function has_data_RANGE (obj)
   has_data_RANGE = allocated(obj%data_RANGE)
 end function has_data_RANGE
 
+#ifdef use_yaml
 !> @brief Initializes the vardata_type of a diag_obj
 !> @details Sets up the var_size and the var_dimnames for the diag_obj
 subroutine init_varData(obj, field_yaml, file_id, axes)
@@ -969,5 +970,5 @@ subroutine init_varData(obj, field_yaml, file_id, axes)
 
   obj%var_dimnames(size(obj%var_dimnames)) = FMS_diag_files(file_id)%get_file_unlimdim()
 end subroutine init_varData
-
+#endif
 end module fms_diag_object_mod
