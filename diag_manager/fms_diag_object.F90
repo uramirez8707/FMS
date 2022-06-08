@@ -35,7 +35,9 @@ type varData_type
   character(len=30), ALLOCATABLE, DIMENSION(:) :: var_dimnames !< Array of dimension names
 
   contains
+#ifdef use_yaml
   procedure :: init_varData
+#endif
 end type varData_type
 
 !> \brief Object that holds all variable information
