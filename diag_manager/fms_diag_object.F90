@@ -250,7 +250,7 @@ subroutine fms_register_diag_field_obj &
 
 !> Set up the stuff for the dobj buffer
 do i = 1, size(dobj%file_ids)
-  call dobj%buffer(i)%init_varData(dobj%diag_field(j), dobj%file_ids(j), axes)
+  call dobj%buffer(i)%init_varData(dobj%diag_field(i), dobj%file_ids(i), axes)
 enddo
 
 !> get the optional arguments if included and the diagnostic is in the diag table
