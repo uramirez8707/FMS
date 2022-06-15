@@ -351,12 +351,6 @@ use platform_mod
      MODULE PROCEDURE send_data_1d
      MODULE PROCEDURE send_data_2d
      MODULE PROCEDURE send_data_3d
-#ifdef OVERLOAD_R8
-     MODULE PROCEDURE send_data_0d_r8
-     MODULE PROCEDURE send_data_1d_r8
-     MODULE PROCEDURE send_data_2d_r8
-     MODULE PROCEDURE send_data_3d_r8
-#endif
   END INTERFACE
 
   !> @brief Register a diagnostic field for a given module
@@ -398,13 +392,21 @@ CONTAINS
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: long_name     !< Long_name to add as a variable attribute
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: units         !< Units to add as a variable_attribute
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: standard_name !< Standard_name to name the variable in the file
-    REAL,             OPTIONAL, INTENT(in) :: missing_value !< Missing value to add as a variable attribute
-    REAL,             OPTIONAL, INTENT(in) :: range(2)      !< Range to add a variable attribute
+    CLASS(*),         OPTIONAL, INTENT(in) :: missing_value !< Missing value to add as a variable attribute
+    CLASS(*),         OPTIONAL, INTENT(in) :: range(:)      !< Range to add a variable attribute
     LOGICAL,          OPTIONAL, INTENT(in) :: do_not_log    !< If TRUE, field information is not logged
     CHARACTER(len=*), OPTIONAL, INTENT(out):: err_msg       !< Error_msg from call
     INTEGER,          OPTIONAL, INTENT(in) :: area          !< Id of the area field
     INTEGER,          OPTIONAL, INTENT(in) :: volume        !< Id of the volume field
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: realm         !< String to set as the modeling_realm attribute
+
+    ! Fatal error if range is present and its extent is not 2.
+    IF ( PRESENT(range) ) THEN
+       IF ( SIZE(range) .NE. 2 ) THEN
+          ! <ERROR STATUS="FATAL">extent of range should be 2</ERROR>
+          CALL error_mesg ('diag_manager_mod::register_diag_field', 'extent of range should be 2', FATAL)
+       END IF
+    END IF
 
     if (use_modern_diag) then
       register_diag_field_scalar = register_diag_field_scalar_modern(module_name, field_name, init_time, &
@@ -428,8 +430,8 @@ CONTAINS
     TYPE(time_type),  OPTIONAL, INTENT(in) :: init_time     !< Time to start writing data from
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: long_name     !< Long_name to add as a variable attribute
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: units         !< Units to add as a variable_attribute
-    REAL,             OPTIONAL, INTENT(in) :: missing_value !< Missing value to add as a variable attribute
-    REAL,             OPTIONAL, INTENT(in) :: range(2)      !< Range to add a variable attribute
+    CLASS(*),         OPTIONAL, INTENT(in) :: missing_value !< Missing value to add as a variable attribute
+    CLASS(*),         OPTIONAL, INTENT(in) :: range(:)      !< Range to add a variable attribute
     LOGICAL,          OPTIONAL, INTENT(in) :: mask_variant  !< Mask variant
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: standard_name !< Standard_name to name the variable in the file
     LOGICAL,          OPTIONAL, INTENT(in) :: verbose       !< Print more information
@@ -443,6 +445,14 @@ CONTAINS
     INTEGER,          OPTIONAL, INTENT(in) :: area          !< Id of the area field
     INTEGER,          OPTIONAL, INTENT(in) :: volume        !< Id of the volume field
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: realm         !< String to set as the modeling_realm attribute
+
+    ! Fatal error if range is present and its extent is not 2.
+    IF ( PRESENT(range) ) THEN
+       IF ( SIZE(range) .NE. 2 ) THEN
+          ! <ERROR STATUS="FATAL">extent of range should be 2</ERROR>
+          CALL error_mesg ('diag_manager_mod::register_diag_field', 'extent of range should be 2', FATAL)
+       END IF
+    END IF
 
     if (use_modern_diag) then
       register_diag_field_array = register_diag_field_array_modern(module_name, field_name, axes, init_time, &
@@ -468,8 +478,8 @@ end function register_diag_field_array
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: long_name     !< Long_name to add as a variable attribute
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: units         !< Units to add as a variable_attribute
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: standard_name !< Standard_name to name the variable in the file
-    REAL,             OPTIONAL, INTENT(in) :: missing_value !< Missing value to add as a variable attribute
-    REAL,             OPTIONAL, INTENT(in) :: var_range(2)  !< Range to add a variable attribute
+    CLASS(*),         OPTIONAL, INTENT(in) :: missing_value !< Missing value to add as a variable attribute
+    CLASS(*),         OPTIONAL, INTENT(in) :: var_range(:)  !< Range to add a variable attribute
     LOGICAL,          OPTIONAL, INTENT(in) :: do_not_log    !< If TRUE, field information is not logged
     CHARACTER(len=*), OPTIONAL, INTENT(out):: err_msg       !< Error_msg from call
     INTEGER,          OPTIONAL, INTENT(in) :: area          !< Id of the area field
@@ -511,8 +521,8 @@ end function register_diag_field_array
     TYPE(time_type),  OPTIONAL, INTENT(in) :: init_time     !< Time to start writing data from
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: long_name     !< Long_name to add as a variable attribute
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: units         !< Units to add as a variable_attribute
-    REAL,             OPTIONAL, INTENT(in) :: missing_value !< Missing value to add as a variable attribute
-    REAL,             OPTIONAL, INTENT(in) :: var_range(2)  !< Range to add a variable attribute
+    CLASS(*),         OPTIONAL, INTENT(in) :: missing_value !< Missing value to add as a variable attribute
+    CLASS(*),         OPTIONAL, INTENT(in) :: var_range(:)  !< Range to add a variable attribute
     LOGICAL,          OPTIONAL, INTENT(in) :: mask_variant  !< Mask variant
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: standard_name !< Standard_name to name the variable in the file
     LOGICAL,          OPTIONAL, INTENT(in) :: verbose       !< Print more information
@@ -562,8 +572,8 @@ end function register_diag_field_array
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: long_name     !< Long_name to add as a variable attribute
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: units         !< Units to add as a variable_attribute
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: standard_name !< Standard_name to name the variable in the file
-    REAL,             OPTIONAL, INTENT(in) :: missing_value !< Missing value to add as a variable attribute
-    REAL,             OPTIONAL, INTENT(in) :: range(2)      !< Range to add a variable attribute
+    CLASS(*),         OPTIONAL, INTENT(in) :: missing_value !< Missing value to add as a variable attribute
+    CLASS(*),         OPTIONAL, INTENT(in) :: range(:)      !< Range to add a variable attribute
     LOGICAL,          OPTIONAL, INTENT(in) :: do_not_log    !< If TRUE, field information is not logged
     CHARACTER(len=*), OPTIONAL, INTENT(out):: err_msg       !< Error_msg from call
     INTEGER,          OPTIONAL, INTENT(in) :: area          !< Id of the area field
@@ -593,8 +603,8 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
     TYPE(time_type),  OPTIONAL, INTENT(in) :: init_time     !< Time to start writing data from
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: long_name     !< Long_name to add as a variable attribute
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: units         !< Units to add as a variable_attribute
-    REAL,             OPTIONAL, INTENT(in) :: missing_value !< Missing value to add as a variable attribute
-    REAL,             OPTIONAL, INTENT(in) :: range(2)      !< Range to add a variable attribute
+    CLASS(*),         OPTIONAL, INTENT(in) :: missing_value !< Missing value to add as a variable attribute
+    CLASS(*),         OPTIONAL, INTENT(in) :: range(:)      !< Range to add a variable attribute
     LOGICAL,          OPTIONAL, INTENT(in) :: mask_variant  !< Mask variant
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: standard_name !< Standard_name to name the variable in the file
     LOGICAL,          OPTIONAL, INTENT(in) :: verbose       !< Print more information
@@ -781,8 +791,8 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
     CHARACTER(len=*), INTENT(in) :: module_name, field_name
     INTEGER, DIMENSION(:), INTENT(in) :: axes
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: long_name, units, standard_name
-    REAL, OPTIONAL, INTENT(in) :: missing_value
-    REAL, DIMENSION(2), OPTIONAL, INTENT(in) :: range
+    CLASS(*), OPTIONAL, INTENT(in) :: missing_value
+    CLASS(*), DIMENSION(:), OPTIONAL, INTENT(in) :: range
     LOGICAL, OPTIONAL, INTENT(in) :: mask_variant
     LOGICAL, OPTIONAL, INTENT(in) :: DYNAMIC
     LOGICAL, OPTIONAL, INTENT(in) :: do_not_log !< if TRUE, field information is not logged
@@ -795,7 +805,8 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
     INTEGER,          OPTIONAL, INTENT(in) :: volume !< Field ID for the volume field associated with this field
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: realm !< String to set as the value to the modeling_realm attribute
 
-    REAL :: missing_value_use
+    REAL :: missing_value_use !< Local copy of missing_value
+    REAL, DIMENSION(2) :: range_use !< Local copy of range
     INTEGER :: field, num_axes, j, out_num, k
     INTEGER, DIMENSION(3) :: siz, local_siz, local_start, local_end ! indices of local domain of global axes
     INTEGER :: tile, file_num
@@ -814,7 +825,15 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
        IF ( use_cmor ) THEN
           missing_value_use = CMOR_MISSING_VALUE
        ELSE
-          missing_value_use = missing_value
+          SELECT TYPE (missing_value)
+          TYPE IS (real(kind=r4_kind))
+             missing_value_use = missing_value
+          TYPE IS (real(kind=r8_kind))
+             missing_value_use = real(missing_value)
+          CLASS DEFAULT
+             CALL error_mesg ('diag_manager_mod::register_static_field',&
+                  & 'The missing_value is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
+          END SELECT
        END IF
     END IF
 
@@ -840,6 +859,14 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
        allow_log = .NOT.do_not_log
     ELSE
        allow_log = .TRUE.
+    END IF
+
+    ! Fatal error if range is present and its extent is not 2.
+    IF ( PRESENT(range) ) THEN
+       IF ( SIZE(range) .NE. 2 ) THEN
+          ! <ERROR STATUS="FATAL">extent of range should be 2</ERROR>
+          CALL error_mesg ('diag_manager_mod::register_static_field', 'extent of range should be 2', FATAL)
+       END IF
     END IF
 
     ! Namelist do_diag_field_log is by default false.  Thus to log the
@@ -961,9 +988,18 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
     END IF
 
     IF ( PRESENT(range) ) THEN
-       input_fields(field)%range = range
+       SELECT TYPE (range)
+       TYPE IS (real(kind=r4_kind))
+          range_use = range
+       TYPE IS (real(kind=r8_kind))
+          range_use = real(range)
+       CLASS DEFAULT
+          CALL error_mesg ('diag_manager_mod::register_static_field',&
+               & 'The range is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
+       END SELECT
+       input_fields(field)%range = range_use
        ! don't use the range if it is not a valid range
-       input_fields(field)%range_present = range(2) .gt. range(1)
+       input_fields(field)%range_present = range_use(2) .gt. range_use(1)
     ELSE
        input_fields(field)%range = (/ 1., 0. /)
        input_fields(field)%range_present = .FALSE.
@@ -1429,35 +1465,45 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
   !> @return true if send is successful
   LOGICAL FUNCTION send_data_0d(diag_field_id, field, time, err_msg)
     INTEGER, INTENT(in) :: diag_field_id
-    REAL, INTENT(in) :: field
+    CLASS(*), INTENT(in) :: field
     TYPE(time_type), INTENT(in), OPTIONAL :: time
     CHARACTER(len=*), INTENT(out), OPTIONAL :: err_msg
 
-    REAL :: field_out(1, 1, 1)
+    REAL :: field_out(1, 1, 1) !< Local copy of field
 
     ! If diag_field_id is < 0 it means that this field is not registered, simply return
     IF ( diag_field_id <= 0 ) THEN
        send_data_0d = .FALSE.
        RETURN
     END IF
+
     ! First copy the data to a three d array with last element 1
-    field_out(1, 1, 1) = field
+    SELECT TYPE (field)
+    TYPE IS (real(kind=r4_kind))
+       field_out(1, 1, 1) = field
+    TYPE IS (real(kind=r8_kind))
+       field_out(1, 1, 1) = real(field)
+    CLASS DEFAULT
+       CALL error_mesg ('diag_manager_mod::send_data_0d',&
+            & 'The field is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
+    END SELECT
+
     send_data_0d = send_data_3d(diag_field_id, field_out, time, err_msg=err_msg)
   END FUNCTION send_data_0d
 
   !> @return true if send is successful
   LOGICAL FUNCTION send_data_1d(diag_field_id, field, time, is_in, mask, rmask, ie_in, weight, err_msg)
     INTEGER, INTENT(in) :: diag_field_id
-    REAL, DIMENSION(:), INTENT(in) :: field
-    REAL, INTENT(in), OPTIONAL :: weight
-    REAL, INTENT(in), DIMENSION(:), OPTIONAL :: rmask
+    CLASS(*), DIMENSION(:), INTENT(in) :: field
+    CLASS(*), INTENT(in), OPTIONAL :: weight
+    CLASS(*), INTENT(in), DIMENSION(:), OPTIONAL :: rmask
     TYPE (time_type), INTENT(in), OPTIONAL :: time
     INTEGER, INTENT(in), OPTIONAL :: is_in, ie_in
     LOGICAL, INTENT(in), DIMENSION(:), OPTIONAL :: mask
     CHARACTER(len=*), INTENT(out), OPTIONAL :: err_msg
 
-    REAL, DIMENSION(SIZE(field(:)), 1, 1) :: field_out
-    LOGICAL, DIMENSION(SIZE(field(:)), 1, 1) ::  mask_out
+    REAL, DIMENSION(SIZE(field(:)), 1, 1) :: field_out !< Local copy of field
+    LOGICAL, DIMENSION(SIZE(field(:)), 1, 1) ::  mask_out !< Local copy of mask
 
     ! If diag_field_id is < 0 it means that this field is not registered, simply return
     IF ( diag_field_id <= 0 ) THEN
@@ -1466,7 +1512,15 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
     END IF
 
     ! First copy the data to a three d array with last element 1
-    field_out(:, 1, 1) = field
+    SELECT TYPE (field)
+    TYPE IS (real(kind=r4_kind))
+       field_out(:, 1, 1) = field
+    TYPE IS (real(kind=r8_kind))
+       field_out(:, 1, 1) = real(field)
+    CLASS DEFAULT
+       CALL error_mesg ('diag_manager_mod::send_data_1d',&
+            & 'The field is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
+    END SELECT
 
     ! Default values for mask
     IF ( PRESENT(mask) ) THEN
@@ -1475,7 +1529,18 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
        mask_out = .TRUE.
     END IF
 
-    IF ( PRESENT(rmask) ) WHERE (rmask < 0.5) mask_out(:, 1, 1) = .FALSE.
+    IF ( PRESENT(rmask) ) THEN
+       SELECT TYPE (rmask)
+       TYPE IS (real(kind=r4_kind))
+          WHERE (rmask < 0.5_r4_kind) mask_out(:, 1, 1) = .FALSE.
+       TYPE IS (real(kind=r8_kind))
+          WHERE (rmask < 0.5_r8_kind) mask_out(:, 1, 1) = .FALSE.
+       CLASS DEFAULT
+          CALL error_mesg ('diag_manager_mod::send_data_1d',&
+               & 'The rmask is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
+       END SELECT
+    END IF
+
     IF ( PRESENT(mask) .OR. PRESENT(rmask) ) THEN
        IF ( PRESENT(is_in) .OR. PRESENT(ie_in) ) THEN
           send_data_1d = send_data_3d(diag_field_id, field_out, time, is_in=is_in, js_in=1, ks_in=1,&
@@ -1498,16 +1563,16 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
   LOGICAL FUNCTION send_data_2d(diag_field_id, field, time, is_in, js_in, &
        & mask, rmask, ie_in, je_in, weight, err_msg)
     INTEGER, INTENT(in) :: diag_field_id
-    REAL, INTENT(in), DIMENSION(:,:) :: field
-    REAL, INTENT(in), OPTIONAL :: weight
+    CLASS(*), INTENT(in), DIMENSION(:,:) :: field
+    CLASS(*), INTENT(in), OPTIONAL :: weight
     TYPE (time_type), INTENT(in), OPTIONAL :: time
     INTEGER, INTENT(in), OPTIONAL :: is_in, js_in, ie_in, je_in
     LOGICAL, INTENT(in), DIMENSION(:,:), OPTIONAL :: mask
-    REAL, INTENT(in), DIMENSION(:,:),OPTIONAL :: rmask
+    CLASS(*), INTENT(in), DIMENSION(:,:),OPTIONAL :: rmask
     CHARACTER(len=*), INTENT(out), OPTIONAL :: err_msg
 
-    REAL, DIMENSION(SIZE(field,1),SIZE(field,2),1) :: field_out
-    LOGICAL, DIMENSION(SIZE(field,1),SIZE(field,2),1) ::  mask_out
+    REAL, DIMENSION(SIZE(field,1),SIZE(field,2),1) :: field_out !< Local copy of field
+    LOGICAL, DIMENSION(SIZE(field,1),SIZE(field,2),1) ::  mask_out !< Local copy of mask
 
     ! If diag_field_id is < 0 it means that this field is not registered, simply return
     IF ( diag_field_id <= 0 ) THEN
@@ -1516,7 +1581,15 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
     END IF
 
     ! First copy the data to a three d array with last element 1
-    field_out(:, :, 1) = field
+    SELECT TYPE (field)
+    TYPE IS (real(kind=r4_kind))
+       field_out(:, :, 1) = field
+    TYPE IS (real(kind=r8_kind))
+       field_out(:, :, 1) = real(field)
+    CLASS DEFAULT
+       CALL error_mesg ('diag_manager_mod::send_data_2d',&
+            & 'The field is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
+    END SELECT
 
     ! Default values for mask
     IF ( PRESENT(mask) ) THEN
@@ -1525,7 +1598,18 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
        mask_out = .TRUE.
     END IF
 
-    IF ( PRESENT(rmask) ) WHERE ( rmask < 0.5 ) mask_out(:, :, 1) = .FALSE.
+    IF ( PRESENT(rmask) ) THEN
+       SELECT TYPE (rmask)
+       TYPE IS (real(kind=r4_kind))
+          WHERE ( rmask < 0.5_r4_kind ) mask_out(:, :, 1) = .FALSE.
+       TYPE IS (real(kind=r8_kind))
+          WHERE ( rmask < 0.5_r8_kind ) mask_out(:, :, 1) = .FALSE.
+       CLASS DEFAULT
+          CALL error_mesg ('diag_manager_mod::send_data_2d',&
+               & 'The rmask is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
+       END SELECT
+    END IF
+
     IF ( PRESENT(mask) .OR. PRESENT(rmask) ) THEN
        send_data_2d = send_data_3d(diag_field_id, field_out, time, is_in=is_in, js_in=js_in, ks_in=1, mask=mask_out,&
             & ie_in=ie_in, je_in=je_in, ke_in=1, weight=weight, err_msg=err_msg)
@@ -1535,168 +1619,16 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
     END IF
   END FUNCTION send_data_2d
 
-#ifdef OVERLOAD_R8
-
-  !> @return true if send is successful
-  LOGICAL FUNCTION send_data_0d_r8(diag_field_id, field, time, err_msg)
-    INTEGER, INTENT(in) :: diag_field_id
-    REAL(r8_kind), INTENT(in) :: field
-    TYPE(time_type), INTENT(in), OPTIONAL :: time
-    CHARACTER(len=*), INTENT(out), OPTIONAL :: err_msg
-
-    REAL(r8_kind) :: field_out(1, 1, 1)
-
-    ! If diag_field_id is < 0 it means that this field is not registered, simply return
-    IF ( diag_field_id <= 0 ) THEN
-       send_data_0d_r8 = .FALSE.
-       RETURN
-    END IF
-    ! First copy the data to a three d array with last element 1
-    field_out(1, 1, 1) = field
-    send_data_0d_r8 = send_data_3d_r8(diag_field_id, field_out, time, err_msg=err_msg)
-  END FUNCTION send_data_0d_r8
-
-  !> @return true if send is successful
-  LOGICAL FUNCTION send_data_1d_r8(diag_field_id, field, time, is_in, mask, rmask, ie_in, weight, err_msg)
-    INTEGER, INTENT(in) :: diag_field_id
-    REAL(r8_kind), DIMENSION(:), INTENT(in) :: field
-    REAL, INTENT(in), OPTIONAL :: weight
-    REAL, INTENT(in), DIMENSION(:), OPTIONAL :: rmask
-    TYPE (time_type), INTENT(in), OPTIONAL :: time
-    INTEGER, INTENT(in), OPTIONAL :: is_in, ie_in
-    LOGICAL, INTENT(in), DIMENSION(:), OPTIONAL :: mask
-    CHARACTER(len=*), INTENT(out), OPTIONAL :: err_msg
-
-    REAL(r8_kind), DIMENSION(SIZE(field(:)), 1, 1) :: field_out
-    LOGICAL, DIMENSION(SIZE(field(:)), 1, 1) ::  mask_out
-
-    ! If diag_field_id is < 0 it means that this field is not registered, simply return
-    IF ( diag_field_id <= 0 ) THEN
-       send_data_1d_r8 = .FALSE.
-       RETURN
-    END IF
-
-    ! First copy the data to a three d array with last element 1
-    field_out(:, 1, 1) = field
-
-    ! Default values for mask
-    IF ( PRESENT(mask) ) THEN
-       mask_out(:, 1, 1) = mask
-    ELSE
-       mask_out = .TRUE.
-    END IF
-
-    IF ( PRESENT(rmask) ) WHERE (rmask < 0.5) mask_out(:, 1, 1) = .FALSE.
-    IF ( PRESENT(mask) .OR. PRESENT(rmask) ) THEN
-       IF ( PRESENT(is_in) .OR. PRESENT(ie_in) ) THEN
-          send_data_1d_r8 = send_data_3d_r8(diag_field_id, field_out, time, is_in=is_in, js_in=1, ks_in=1,&
-               & mask=mask_out, ie_in=ie_in, je_in=1, ke_in=1, weight=weight, err_msg=err_msg)
-       ELSE
-          send_data_1d_r8 = send_data_3d_r8(diag_field_id, field_out, time, mask=mask_out,&
-               & weight=weight, err_msg=err_msg)
-       END IF
-    ELSE
-       IF ( PRESENT(is_in) .OR. PRESENT(ie_in) ) THEN
-          send_data_1d_r8 = send_data_3d_r8(diag_field_id, field_out, time, is_in=is_in, js_in=1, ks_in=1,&
-               & ie_in=ie_in, je_in=1, ke_in=1, weight=weight, err_msg=err_msg)
-       ELSE
-          send_data_1d_r8 = send_data_3d_r8(diag_field_id, field_out, time, weight=weight, err_msg=err_msg)
-       END IF
-    END IF
-  END FUNCTION send_data_1d_r8
-  !> @return true if send is successful
-  LOGICAL FUNCTION send_data_2d_r8(diag_field_id, field, time, is_in, js_in, &
-       & mask, rmask, ie_in, je_in, weight, err_msg)
-    INTEGER, INTENT(in) :: diag_field_id
-    REAL(r8_kind), INTENT(in), DIMENSION(:,:) :: field
-    REAL, INTENT(in), OPTIONAL :: weight
-    TYPE (time_type), INTENT(in), OPTIONAL :: time
-    INTEGER, INTENT(in), OPTIONAL :: is_in, js_in, ie_in, je_in
-    LOGICAL, INTENT(in), DIMENSION(:,:), OPTIONAL :: mask
-    REAL, INTENT(in), DIMENSION(:,:),OPTIONAL :: rmask
-    CHARACTER(len=*), INTENT(out), OPTIONAL :: err_msg
-
-    REAL, DIMENSION(SIZE(field,1),SIZE(field,2),1) :: field_out
-    LOGICAL, DIMENSION(SIZE(field,1),SIZE(field,2),1) ::  mask_out
-
-    ! If diag_field_id is < 0 it means that this field is not registered, simply return
-    IF ( diag_field_id <= 0 ) THEN
-       send_data_2d_r8 = .FALSE.
-       RETURN
-    END IF
-
-    ! First copy the data to a three d array with last element 1
-    field_out(:, :, 1) = field
-
-    ! Default values for mask
-    IF ( PRESENT(mask) ) THEN
-       mask_out(:, :, 1) = mask
-    ELSE
-       mask_out = .TRUE.
-    END IF
-
-    IF ( PRESENT(rmask) ) WHERE ( rmask < 0.5 ) mask_out(:, :, 1) = .FALSE.
-    IF ( PRESENT(mask) .OR. PRESENT(rmask) ) THEN
-       send_data_2d_r8 =send_data_3d(diag_field_id, field_out, time, is_in=is_in, js_in=js_in, ks_in=1, mask=mask_out,&
-            & ie_in=ie_in, je_in=je_in, ke_in=1, weight=weight, err_msg=err_msg)
-    ELSE
-       send_data_2d_r8 = send_data_3d(diag_field_id, field_out, time, is_in=is_in, js_in=js_in, ks_in=1,&
-            & ie_in=ie_in, je_in=je_in, ke_in=1, weight=weight, err_msg=err_msg)
-    END IF
-  END FUNCTION send_data_2d_r8
-
-  !> @return true if send is successful
-  LOGICAL FUNCTION send_data_3d_r8(diag_field_id, field, time, is_in, js_in, ks_in, &
-             & mask, rmask, ie_in, je_in, ke_in, weight, err_msg)
-    INTEGER, INTENT(in) :: diag_field_id
-    REAL(r8_kind), INTENT(in), DIMENSION(:,:,:) :: field
-    REAL, INTENT(in), OPTIONAL :: weight
-    TYPE (time_type), INTENT(in), OPTIONAL :: time
-    INTEGER, INTENT(in), OPTIONAL :: is_in, js_in, ks_in,ie_in,je_in, ke_in
-    LOGICAL, INTENT(in), DIMENSION(:,:,:), OPTIONAL :: mask
-    REAL, INTENT(in), DIMENSION(:,:,:),OPTIONAL :: rmask
-    CHARACTER(len=*), INTENT(out), OPTIONAL :: err_msg
-
-    REAL, DIMENSION(SIZE(field,1),SIZE(field,2),size(field,3)) :: field_out
-    LOGICAL, DIMENSION(SIZE(field,1),SIZE(field,2),size(field,3)) ::  mask_out
-
-    ! If diag_field_id is < 0 it means that this field is not registered, simply return
-    IF ( diag_field_id <= 0 ) THEN
-       send_data_3d_r8 = .FALSE.
-       RETURN
-    END IF
-
-    ! First copy the data to a three d array with last element 1
-    field_out = field
-
-    ! Default values for mask
-    IF ( PRESENT(mask) ) THEN
-       mask_out = mask
-    ELSE
-       mask_out = .TRUE.
-    END IF
-
-    IF ( PRESENT(rmask) ) WHERE ( rmask < 0.5 ) mask_out = .FALSE.
-    IF ( PRESENT(mask) .OR. PRESENT(rmask) ) THEN
-       send_data_3d_r8 = send_data_3d(diag_field_id,field_out,time,is_in=is_in, js_in=js_in,ks_in=ks_in,mask=mask_out,&
-            & ie_in=ie_in, je_in=je_in, ke_in=ke_in, weight=weight, err_msg=err_msg)
-    ELSE
-       send_data_3d_r8 = send_data_3d(diag_field_id, field_out, time, is_in=is_in, js_in=js_in, ks_in=ks_in,&
-            & ie_in=ie_in, je_in=je_in, ke_in=ke_in, weight=weight, err_msg=err_msg)
-    END IF
-  END FUNCTION send_data_3d_r8
-#endif
-
   !> @return true if send is successful
   LOGICAL FUNCTION send_data_3d(diag_field_id, field, time, is_in, js_in, ks_in, &
              & mask, rmask, ie_in, je_in, ke_in, weight, err_msg)
     INTEGER, INTENT(in) :: diag_field_id
-    REAL, DIMENSION(:,:,:), INTENT(in) :: field
-    REAL, INTENT(in), OPTIONAL :: weight
+    CLASS(*), DIMENSION(:,:,:), INTENT(in) :: field
+    CLASS(*), INTENT(in), OPTIONAL :: weight
     TYPE (time_type), INTENT(in), OPTIONAL :: time
     INTEGER, INTENT(in), OPTIONAL :: is_in, js_in, ks_in,ie_in,je_in, ke_in
     LOGICAL, DIMENSION(:,:,:), INTENT(in), OPTIONAL :: mask
-    REAL, DIMENSION(:,:,:), INTENT(in), OPTIONAL :: rmask
+    CLASS(*), DIMENSION(:,:,:), INTENT(in), OPTIONAL :: rmask
     CHARACTER(len=*), INTENT(out), OPTIONAL :: err_msg
 
     REAL :: weight1
@@ -1730,6 +1662,8 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
     CHARACTER(len=256) :: err_msg_local
     CHARACTER(len=128) :: error_string, error_string1
 
+    REAL, ALLOCATABLE, DIMENSION(:,:,:) :: field_out !< Local copy of field
+
     ! If diag_field_id is < 0 it means that this field is not registered, simply return
     IF ( diag_field_id <= 0 ) THEN
        send_data_3d = .FALSE.
@@ -1752,6 +1686,23 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
 !!$       first_send_data_call = .FALSE.
 !!$    END IF
 
+    ! First copy the data to a three d array
+    ALLOCATE(field_out(SIZE(field,1),SIZE(field,2),SIZE(field,3)), STAT=status)
+    IF ( status .NE. 0 ) THEN
+       WRITE (err_msg_local, FMT='("Unable to allocate field_out(",I5,",",I5,",",I5,"). (STAT: ",I5,")")')&
+            & SIZE(field,1), SIZE(field,2), SIZE(field,3), status
+       IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) RETURN
+    END IF
+    SELECT TYPE (field)
+    TYPE IS (real(kind=r4_kind))
+       field_out = field
+    TYPE IS (real(kind=r8_kind))
+       field_out = real(field)
+    CLASS DEFAULT
+       CALL error_mesg ('diag_manager_mod::send_data_3d',&
+            & 'The field is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
+    END SELECT
+
     ! oor_mask is only used for checking out of range values.
     ALLOCATE(oor_mask(SIZE(field,1),SIZE(field,2),SIZE(field,3)), STAT=status)
     IF ( status .NE. 0 ) THEN
@@ -1765,7 +1716,18 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
     ELSE
        oor_mask = .TRUE.
     END IF
-    IF ( PRESENT(rmask) ) WHERE ( rmask < 0.5 ) oor_mask = .FALSE.
+
+    IF ( PRESENT(rmask) ) THEN
+       SELECT TYPE (rmask)
+       TYPE IS (real(kind=r4_kind))
+          WHERE ( rmask < 0.5_r4_kind ) oor_mask = .FALSE.
+       TYPE IS (real(kind=r8_kind))
+          WHERE ( rmask < 0.5_r8_kind ) oor_mask = .FALSE.
+       CLASS DEFAULT
+          CALL error_mesg ('diag_manager_mod::send_data_3d',&
+               & 'The rmask is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
+       END SELECT
+    END IF
 
     ! send_data works in either one or another of two modes.
     ! 1. Input field is a window (e.g. FMS physics)
@@ -1781,6 +1743,7 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
     IF ( PRESENT(ie_in) ) THEN
        IF ( .NOT.PRESENT(is_in) ) THEN
           IF ( fms_error_handler('diag_manager_mod::send_data_3d', 'ie_in present without is_in', err_msg) ) THEN
+             DEALLOCATE(field_out)
              DEALLOCATE(oor_mask)
              RETURN
           END IF
@@ -1788,6 +1751,7 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
        IF ( PRESENT(js_in) .AND. .NOT.PRESENT(je_in) ) THEN
           IF ( fms_error_handler('diag_manager_modsend_data_3d',&
                & 'is_in and ie_in present, but js_in present without je_in', err_msg) ) THEN
+             DEALLOCATE(field_out)
              DEALLOCATE(oor_mask)
              RETURN
           END IF
@@ -1796,6 +1760,7 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
     IF ( PRESENT(je_in) ) THEN
        IF ( .NOT.PRESENT(js_in) ) THEN
           IF ( fms_error_handler('diag_manager_mod::send_data_3d', 'je_in present without js_in', err_msg) ) THEN
+             DEALLOCATE(field_out)
              DEALLOCATE(oor_mask)
              RETURN
           END IF
@@ -1803,6 +1768,7 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
        IF ( PRESENT(is_in) .AND. .NOT.PRESENT(ie_in) ) THEN
           IF ( fms_error_handler('diag_manager_mod::send_data_3d',&
                & 'js_in and je_in present, but is_in present without ie_in', err_msg)) THEN
+             DEALLOCATE(field_out)
              DEALLOCATE(oor_mask)
              RETURN
           END IF
@@ -1828,7 +1794,8 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
     twohi = n1-(ie-is+1)
     IF ( MOD(twohi,2) /= 0 ) THEN
        IF ( fms_error_handler('diag_manager_mod::send_data_3d', 'non-symmetric halos in first dimension', &
-          &  err_msg) ) THEN
+          & err_msg) ) THEN
+          DEALLOCATE(field_out)
           DEALLOCATE(oor_mask)
           RETURN
        END IF
@@ -1836,7 +1803,8 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
     twohj = n2-(je-js+1)
     IF ( MOD(twohj,2) /= 0 ) THEN
        IF ( fms_error_handler('diag_manager_mod::send_data_3d', 'non-symmetric halos in second dimension', &
-          &  err_msg) ) THEN
+          & err_msg) ) THEN
+          DEALLOCATE(field_out)
           DEALLOCATE(oor_mask)
           RETURN
        END IF
@@ -1861,7 +1829,15 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
 
     ! weight is for time averaging where each time level may has a different weight
     IF ( PRESENT(weight) ) THEN
-       weight1 = weight
+       SELECT TYPE (weight)
+       TYPE IS (real(kind=r4_kind))
+          weight1 = weight
+       TYPE IS (real(kind=r8_kind))
+          weight1 = real(weight)
+       CLASS DEFAULT
+          CALL error_mesg ('diag_manager_mod::send_data_3d',&
+               & 'The weight is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
+       END SELECT
     ELSE
        weight1 = 1.
     END IF
@@ -1890,13 +1866,13 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
           WRITE (error_string, '("[",ES14.5E3,",",ES14.5E3,"]")')&
                & input_fields(diag_field_id)%range(1:2)
           WRITE (error_string1, '("(Min: ",ES14.5E3,", Max: ",ES14.5E3, ")")')&
-                  & MINVAL(field(f1:f2,f3:f4,ks:ke),MASK=oor_mask(f1:f2,f3:f4,ks:ke)),&
-                  & MAXVAL(field(f1:f2,f3:f4,ks:ke),MASK=oor_mask(f1:f2,f3:f4,ks:ke))
+                  & MINVAL(field_out(f1:f2,f3:f4,ks:ke),MASK=oor_mask(f1:f2,f3:f4,ks:ke)),&
+                  & MAXVAL(field_out(f1:f2,f3:f4,ks:ke),MASK=oor_mask(f1:f2,f3:f4,ks:ke))
           IF ( missvalue_present ) THEN
              IF ( ANY(oor_mask(f1:f2,f3:f4,ks:ke) .AND.&
-                  &   ((field(f1:f2,f3:f4,ks:ke) < input_fields(diag_field_id)%range(1) .OR.&
-                  &     field(f1:f2,f3:f4,ks:ke) > input_fields(diag_field_id)%range(2)).AND.&
-                  &     field(f1:f2,f3:f4,ks:ke) .NE. missvalue)) ) THEN
+                  &   ((field_out(f1:f2,f3:f4,ks:ke) < input_fields(diag_field_id)%range(1) .OR.&
+                  &     field_out(f1:f2,f3:f4,ks:ke) > input_fields(diag_field_id)%range(2)).AND.&
+                  &     field_out(f1:f2,f3:f4,ks:ke) .NE. missvalue)) ) THEN
                 ! <ERROR STATUS="WARNING/FATAL">
                 !   A value for <module_name> in field <field_name> (Min: <min_val>, Max: <max_val>)
                 !   is outside the range [<lower_val>,<upper_val>] and not equal to the missing
@@ -1913,8 +1889,8 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
              END IF
           ELSE
              IF ( ANY(oor_mask(f1:f2,f3:f4,ks:ke) .AND.&
-                  &   (field(f1:f2,f3:f4,ks:ke) < input_fields(diag_field_id)%range(1) .OR.&
-                  &    field(f1:f2,f3:f4,ks:ke) > input_fields(diag_field_id)%range(2))) ) THEN
+                  &   (field_out(f1:f2,f3:f4,ks:ke) < input_fields(diag_field_id)%range(1) .OR.&
+                  &    field_out(f1:f2,f3:f4,ks:ke) > input_fields(diag_field_id)%range(2))) ) THEN
                 ! <ERROR STATUS="WARNING/FATAL">
                 !   A value for <module_name> in field <field_name> (Min: <min_val>, Max: <max_val>)
                 !   is outside the range [<lower_val>,<upper_val>].
@@ -1964,7 +1940,7 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
        time_min = output_fields(out_num)%time_min
        ! Sum output over time interval
        time_sum = output_fields(out_num)%time_sum
-       IF ( output_fields(out_num)%total_elements > SIZE(field(f1:f2,f3:f4,ks:ke)) ) THEN
+       IF ( output_fields(out_num)%total_elements > SIZE(field_out(f1:f2,f3:f4,ks:ke)) ) THEN
           output_fields(out_num)%phys_window = .TRUE.
        ELSE
           output_fields(out_num)%phys_window = .FALSE.
@@ -2009,6 +1985,7 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
                      & TRIM(output_fields(out_num)%output_name)
                 IF ( fms_error_handler('diag_manager_mod::send_data_3d', 'module/output_field '//TRIM(error_string)//&
                      & ', time must be present when output frequency = EVERY_TIME', err_msg)) THEN
+                   DEALLOCATE(field_out)
                    DEALLOCATE(oor_mask)
                    RETURN
                 END IF
@@ -2021,6 +1998,7 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
                & TRIM(output_fields(out_num)%output_name)
           IF ( fms_error_handler('diag_manager_mod::send_data_3d', 'module/output_field '//TRIM(error_string)//&
                & ', time must be present for nonstatic field', err_msg)) THEN
+             DEALLOCATE(field_out)
              DEALLOCATE(oor_mask)
              RETURN
           END IF
@@ -2040,6 +2018,7 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
                            & TRIM(output_fields(out_num)%output_name)
                       IF ( fms_error_handler('diag_manager_mod::send_data_3d', 'module/output_field '//&
                            & TRIM(error_string)//' is skipped one time level in output data', err_msg)) THEN
+                         DEALLOCATE(field_out)
                          DEALLOCATE(oor_mask)
                          RETURN
                       END IF
@@ -2051,6 +2030,7 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
                    IF ( mpp_pe() .EQ. mpp_root_pe() ) THEN
                       IF(fms_error_handler('diag_manager_mod::send_data_3d','module/output_field '//TRIM(error_string)&
                            & //', write EMPTY buffer', err_msg)) THEN
+                         DEALLOCATE(field_out)
                          DEALLOCATE(oor_mask)
                          RETURN
                       END IF
@@ -2065,6 +2045,7 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
           CALL check_bounds_are_exact_dynamic(out_num, diag_field_id, Time, err_msg=err_msg_local)
           IF ( err_msg_local /= '' ) THEN
              IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
+                DEALLOCATE(field_out)
                 DEALLOCATE(oor_mask)
                 RETURN
              END IF
@@ -2080,6 +2061,7 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
                      & TRIM(output_fields(out_num)%output_name)
                 IF ( fms_error_handler('diag_manager_mod::send_data_3d', 'module/output_field '//TRIM(error_string)//&
                      & ', regional output NOT supported with mask_variant', err_msg)) THEN
+                   DEALLOCATE(field_out)
                    DEALLOCATE(oor_mask)
                    RETURN
                 END IF
@@ -2094,6 +2076,7 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
                       CALL check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
                       IF ( err_msg_local /= '' ) THEN
                          IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
+                            DEALLOCATE(field_out)
                             DEALLOCATE(oor_mask)
                             RETURN
                          END IF
@@ -2109,11 +2092,11 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
                                      IF ( pow_value /= 1 ) THEN
                                         output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) =&
                                              & output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) +&
-                                             & (field(i-is+1+hi, j-js+1+hj, k) * weight1)**(pow_value)
+                                             & (field_out(i-is+1+hi, j-js+1+hj, k) * weight1)**(pow_value)
                                      ELSE
                                         output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) =&
                                              & output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) +&
-                                             & field(i-is+1+hi, j-js+1+hj, k) * weight1
+                                             & field_out(i-is+1+hi, j-js+1+hj, k) * weight1
                                      END IF
                                      output_fields(out_num)%counter(i-hi,j-hj,k1,sample) =&
                                           & output_fields(out_num)%counter(i-hi,j-hj,k1,sample) + weight1
@@ -2129,11 +2112,11 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
                                      IF ( pow_value /= 1 ) THEN
                                         output_fields(out_num)%buffer(i-hi,j-hj,k,sample) =&
                                              & output_fields(out_num)%buffer(i-hi,j-hj,k,sample) +&
-                                             & (field(i-is+1+hi,j-js+1+hj,k)*weight1)**(pow_value)
+                                             & (field_out(i-is+1+hi,j-js+1+hj,k)*weight1)**(pow_value)
                                      ELSE
                                         output_fields(out_num)%buffer(i-hi,j-hj,k,sample) =&
                                              & output_fields(out_num)%buffer(i-hi,j-hj,k,sample) +&
-                                             & field(i-is+1+hi,j-js+1+hj,k)*weight1
+                                             & field_out(i-is+1+hi,j-js+1+hj,k)*weight1
                                      END IF
                                      output_fields(out_num)%counter(i-hi,j-hj,k,sample) =&
                                           &output_fields(out_num)%counter(i-hi,j-hj,k,sample) + weight1
@@ -2153,11 +2136,11 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
                                      IF ( pow_value /= 1 ) THEN
                                         output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) =&
                                              & output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) +&
-                                             & (field(i-is+1+hi, j-js+1+hj, k) * weight1)**(pow_value)
+                                             & (field_out(i-is+1+hi, j-js+1+hj, k) * weight1)**(pow_value)
                                      ELSE
                                         output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) =&
                                              & output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) +&
-                                             & field(i-is+1+hi, j-js+1+hj, k) * weight1
+                                             & field_out(i-is+1+hi, j-js+1+hj, k) * weight1
                                      END IF
                                      output_fields(out_num)%counter(i-hi,j-hj,k1,sample) =&
                                           & output_fields(out_num)%counter(i-hi,j-hj,k1,sample) + weight1
@@ -2173,11 +2156,11 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
                                      IF ( pow_value /= 1 ) THEN
                                         output_fields(out_num)%buffer(i-hi,j-hj,k,sample) =&
                                              & output_fields(out_num)%buffer(i-hi,j-hj,k,sample) +&
-                                             & (field(i-is+1+hi,j-js+1+hj,k)*weight1)**(pow_value)
+                                             & (field_out(i-is+1+hi,j-js+1+hj,k)*weight1)**(pow_value)
                                      ELSE
                                         output_fields(out_num)%buffer(i-hi,j-hj,k,sample) =&
                                              & output_fields(out_num)%buffer(i-hi,j-hj,k,sample) +&
-                                             & field(i-is+1+hi,j-js+1+hj,k)*weight1
+                                             & field_out(i-is+1+hi,j-js+1+hj,k)*weight1
                                      END IF
                                      output_fields(out_num)%counter(i-hi,j-hj,k,sample) =&
                                           &output_fields(out_num)%counter(i-hi,j-hj,k,sample) + weight1
@@ -2194,6 +2177,7 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
                         & TRIM(output_fields(out_num)%output_name)
                    IF(fms_error_handler('diag_manager_mod::send_data_3d', 'module/output_field '//TRIM(error_string)//&
                         & ', variable mask but no missing value defined', err_msg)) THEN
+                      DEALLOCATE(field_out)
                       DEALLOCATE(oor_mask)
                       RETURN
                    END IF
@@ -2204,6 +2188,7 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
                      & TRIM(output_fields(out_num)%output_name)
                 IF(fms_error_handler('diag_manager_mod::send_data_3d','module/output_field '//TRIM(error_string)//&
                      & ', variable mask but no mask given', err_msg)) THEN
+                   DEALLOCATE(field_out)
                    DEALLOCATE(oor_mask)
                    RETURN
                 END IF
@@ -2225,11 +2210,11 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
                                         IF ( pow_value /= 1 ) THEN
                                            output_fields(out_num)%buffer(i1,j1,k1,sample) =&
                                                 & output_fields(out_num)%buffer(i1,j1,k1,sample) +&
-                                                & (field(i-is+1+hi,j-js+1+hj,k) * weight1)**(pow_value)
+                                                & (field_out(i-is+1+hi,j-js+1+hj,k) * weight1)**(pow_value)
                                         ELSE
                                            output_fields(out_num)%buffer(i1,j1,k1,sample) =&
                                                 & output_fields(out_num)%buffer(i1,j1,k1,sample) +&
-                                                & field(i-is+1+hi,j-js+1+hj,k) * weight1
+                                                & field_out(i-is+1+hi,j-js+1+hj,k) * weight1
                                         END IF
                                      ELSE
                                         output_fields(out_num)%buffer(i1,j1,k1,sample) = missvalue
@@ -2252,11 +2237,11 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
                                         IF ( pow_value /= 1 ) THEN
                                            output_fields(out_num)%buffer(i1,j1,k1,sample) =&
                                                 & output_fields(out_num)%buffer(i1,j1,k1,sample) +&
-                                                & (field(i-is+1+hi,j-js+1+hj,k) * weight1)**(pow_value)
+                                                & (field_out(i-is+1+hi,j-js+1+hj,k) * weight1)**(pow_value)
                                         ELSE
                                            output_fields(out_num)%buffer(i1,j1,k1,sample) =&
                                                 & output_fields(out_num)%buffer(i1,j1,k1,sample) +&
-                                                & field(i-is+1+hi,j-js+1+hj,k) * weight1
+                                                & field_out(i-is+1+hi,j-js+1+hj,k) * weight1
                                         END IF
                                      ELSE
                                         output_fields(out_num)%buffer(i1,j1,k1,sample) = missvalue
@@ -2288,11 +2273,11 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
                                      IF ( pow_value /= 1 ) THEN
                                         output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) =&
                                              & output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) +&
-                                             & (field(i-is+1+hi,j-js+1+hj,k) * weight1)**(pow_value)
+                                             & (field_out(i-is+1+hi,j-js+1+hj,k) * weight1)**(pow_value)
                                      ELSE
                                         output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) =&
                                              & output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) +&
-                                             & field(i-is+1+hi,j-js+1+hj,k) * weight1
+                                             & field_out(i-is+1+hi,j-js+1+hj,k) * weight1
                                      END IF
                                   ELSE
                                      output_fields(out_num)%buffer(i-hi,j-hj,k1,sample)= missvalue
@@ -2310,11 +2295,11 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
                                      IF ( pow_value /= 1 ) THEN
                                         output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) =&
                                              & output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) +&
-                                             & (field(i-is+1+hi,j-js+1+hj,k) * weight1)**(pow_value)
+                                             & (field_out(i-is+1+hi,j-js+1+hj,k) * weight1)**(pow_value)
                                      ELSE
                                         output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) =&
                                              & output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) +&
-                                             & field(i-is+1+hi,j-js+1+hj,k) * weight1
+                                             & field_out(i-is+1+hi,j-js+1+hj,k) * weight1
                                      END IF
                                   ELSE
                                      output_fields(out_num)%buffer(i-hi,j-hj,k1,sample)= missvalue
@@ -2330,6 +2315,7 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
                          CALL check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
                          IF ( err_msg_local /= '' ) THEN
                             IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
+                               DEALLOCATE(field_out)
                                DEALLOCATE(oor_mask)
                                RETURN
                             END IF
@@ -2343,11 +2329,11 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
                                      IF ( pow_value /= 1 ) THEN
                                         output_fields(out_num)%buffer(i-hi,j-hj,k,sample) =&
                                              & output_fields(out_num)%buffer(i-hi,j-hj,k,sample) +&
-                                             & (field(i-is+1+hi,j-js+1+hj,k) * weight1)**(pow_value)
+                                             & (field_out(i-is+1+hi,j-js+1+hj,k) * weight1)**(pow_value)
                                      ELSE
                                         output_fields(out_num)%buffer(i-hi,j-hj,k,sample) =&
                                              & output_fields(out_num)%buffer(i-hi,j-hj,k,sample) +&
-                                             & field(i-is+1+hi,j-js+1+hj,k) * weight1
+                                             & field_out(i-is+1+hi,j-js+1+hj,k) * weight1
                                      END IF
                                   ELSE
                                      output_fields(out_num)%buffer(i-hi,j-hj,k,sample)= missvalue
@@ -2364,11 +2350,11 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
                                      IF ( pow_value /= 1 ) THEN
                                         output_fields(out_num)%buffer(i-hi,j-hj,k,sample) =&
                                              & output_fields(out_num)%buffer(i-hi,j-hj,k,sample) +&
-                                             & (field(i-is+1+hi,j-js+1+hj,k) * weight1)**(pow_value)
+                                             & (field_out(i-is+1+hi,j-js+1+hj,k) * weight1)**(pow_value)
                                      ELSE
                                         output_fields(out_num)%buffer(i-hi,j-hj,k,sample) =&
                                              & output_fields(out_num)%buffer(i-hi,j-hj,k,sample) +&
-                                             & field(i-is+1+hi,j-js+1+hj,k) * weight1
+                                             & field_out(i-is+1+hi,j-js+1+hj,k) * weight1
                                      END IF
                                   ELSE
                                      output_fields(out_num)%buffer(i-hi,j-hj,k,sample)= missvalue
@@ -2414,12 +2400,12 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
                                   IF ( pow_value /= 1 ) THEN
                                      output_fields(out_num)%buffer(i1,j1,:,sample)= &
                                           & output_fields(out_num)%buffer(i1,j1,:,sample)+ &
-                                          & (field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3))*weight1)**(pow_value)
+                                          & (field_out(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3))*weight1)**(pow_value)
                                   ELSE
                                      output_fields(out_num)%buffer(i1,j1,:,sample)= &
                                           & output_fields(out_num)%buffer(i1,j1,:,sample)+ &
-                                          & field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3))*weight1
-                               END IF
+                                          & field_out(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3))*weight1
+                                  END IF
                                END IF
                             END DO
                          END DO
@@ -2434,12 +2420,12 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
                                   IF ( pow_value /= 1 ) THEN
                                      output_fields(out_num)%buffer(i1,j1,:,sample)= &
                                           & output_fields(out_num)%buffer(i1,j1,:,sample)+ &
-                                          & (field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3))*weight1)**(pow_value)
+                                          & (field_out(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3))*weight1)**(pow_value)
                                   ELSE
                                      output_fields(out_num)%buffer(i1,j1,:,sample)= &
                                           & output_fields(out_num)%buffer(i1,j1,:,sample)+ &
-                                          & field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3))*weight1
-                               END IF
+                                          & field_out(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3))*weight1
+                                  END IF
                                END IF
                             END DO
                          END DO
@@ -2464,11 +2450,11 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
                          IF ( pow_value /= 1 ) THEN
                             output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) =&
                                  & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) +&
-                                 & (field(f1:f2,f3:f4,ksr:ker)*weight1)**(pow_value)
+                                 & (field_out(f1:f2,f3:f4,ksr:ker)*weight1)**(pow_value)
                          ELSE
                             output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) =&
                                  & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) +&
-                                 & field(f1:f2,f3:f4,ksr:ker)*weight1
+                                 & field_out(f1:f2,f3:f4,ksr:ker)*weight1
                          END IF
                       ELSE
 !$OMP CRITICAL
@@ -2477,11 +2463,11 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
                          IF ( pow_value /= 1 ) THEN
                             output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) =&
                                  & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) +&
-                                 & (field(f1:f2,f3:f4,ksr:ker)*weight1)**(pow_value)
+                                 & (field_out(f1:f2,f3:f4,ksr:ker)*weight1)**(pow_value)
                          ELSE
                             output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) =&
                                  & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) +&
-                                 & field(f1:f2,f3:f4,ksr:ker)*weight1
+                                 & field_out(f1:f2,f3:f4,ksr:ker)*weight1
                          END IF
 !$OMP END CRITICAL
                       END IF
@@ -2491,6 +2477,7 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
                          CALL check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
                          IF ( err_msg_local /= '') THEN
                             IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
+                               DEALLOCATE(field_out)
                                DEALLOCATE(oor_mask)
                                RETURN
                             END IF
@@ -2500,22 +2487,22 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
                          IF ( pow_value /= 1 ) THEN
                             output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) =&
                                  & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) +&
-                                 & (field(f1:f2,f3:f4,ks:ke)*weight1)**(pow_value)
+                                 & (field_out(f1:f2,f3:f4,ks:ke)*weight1)**(pow_value)
                          ELSE
                             output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) =&
                                  & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) +&
-                                 & field(f1:f2,f3:f4,ks:ke)*weight1
+                                 & field_out(f1:f2,f3:f4,ks:ke)*weight1
                          END IF
                       ELSE
 !$OMP CRITICAL
                          IF ( pow_value /= 1 ) THEN
                             output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) =&
                                  & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) +&
-                                 & (field(f1:f2,f3:f4,ks:ke)*weight1)**(pow_value)
+                                 & (field_out(f1:f2,f3:f4,ks:ke)*weight1)**(pow_value)
                          ELSE
                             output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) =&
                                  & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) +&
-                                 & field(f1:f2,f3:f4,ks:ke)*weight1
+                                 & field_out(f1:f2,f3:f4,ks:ke)*weight1
                          END IF
 !$OMP END CRITICAL
                       END IF
@@ -2537,15 +2524,15 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
                                      & j <= l_end(2)+hj) THEN
                                      i1 = i-l_start(1)-hi+1
                                      j1=  j-l_start(2)-hj+1
-                                     IF ( field(i-is+1+hi,j-js+1+hj,k) /= missvalue ) THEN
+                                     IF ( field_out(i-is+1+hi,j-js+1+hj,k) /= missvalue ) THEN
                                         IF ( pow_value /= 1 ) THEN
                                            output_fields(out_num)%buffer(i1,j1,k1,sample) =&
                                                 & output_fields(out_num)%buffer(i1,j1,k1,sample) +&
-                                                & (field(i-is+1+hi,j-js+1+hj,k) * weight1)**(pow_value)
+                                                & (field_out(i-is+1+hi,j-js+1+hj,k) * weight1)**(pow_value)
                                         ELSE
                                            output_fields(out_num)%buffer(i1,j1,k1,sample) =&
                                                 & output_fields(out_num)%buffer(i1,j1,k1,sample) +&
-                                                & field(i-is+1+hi,j-js+1+hj,k) * weight1
+                                                & field_out(i-is+1+hi,j-js+1+hj,k) * weight1
                                         END IF
                                      ELSE
                                         output_fields(out_num)%buffer(i1,j1,k1,sample) = missvalue
@@ -2564,15 +2551,15 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
                                      & j <= l_end(2)+hj) THEN
                                      i1 = i-l_start(1)-hi+1
                                      j1=  j-l_start(2)-hj+1
-                                     IF ( field(i-is+1+hi,j-js+1+hj,k) /= missvalue ) THEN
+                                     IF ( field_out(i-is+1+hi,j-js+1+hj,k) /= missvalue ) THEN
                                         IF ( pow_value /= 1 ) THEN
                                            output_fields(out_num)%buffer(i1,j1,k1,sample) =&
                                                 & output_fields(out_num)%buffer(i1,j1,k1,sample) +&
-                                                & (field(i-is+1+hi,j-js+1+hj,k) * weight1)**(pow_value)
+                                                & (field_out(i-is+1+hi,j-js+1+hj,k) * weight1)**(pow_value)
                                         ELSE
                                            output_fields(out_num)%buffer(i1,j1,k1,sample) =&
                                                 & output_fields(out_num)%buffer(i1,j1,k1,sample) +&
-                                                & field(i-is+1+hi,j-js+1+hj,k) * weight1
+                                                & field_out(i-is+1+hi,j-js+1+hj,k) * weight1
                                         END IF
                                      ELSE
                                         output_fields(out_num)%buffer(i1,j1,k1,sample) = missvalue
@@ -2597,7 +2584,7 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
                          outer0: DO k = l_start(3), l_end(3)
                             DO j=l_start(2)+hj, l_end(2)+hj
                                DO i=l_start(1)+hi, l_end(1)+hi
-                                  IF ( field(i,j,k) /= missvalue ) THEN
+                                  IF ( field_out(i,j,k) /= missvalue ) THEN
                                      output_fields(out_num)%count_0d(sample) = output_fields(out_num)%count_0d(sample)&
                                                                              & + weight1
                                      EXIT outer0
@@ -2615,15 +2602,15 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
                             k1 = k - ksr + 1
                             DO j=js, je
                                DO i=is, ie
-                                  IF ( field(i-is+1+hi,j-js+1+hj,k) /= missvalue ) THEN
+                                  IF ( field_out(i-is+1+hi,j-js+1+hj,k) /= missvalue ) THEN
                                      IF ( pow_value /= 1 ) THEN
                                         output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) =&
                                              & output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) +&
-                                             & (field(i-is+1+hi,j-js+1+hj,k) * weight1)**(pow_value)
+                                             & (field_out(i-is+1+hi,j-js+1+hj,k) * weight1)**(pow_value)
                                      ELSE
                                         output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) =&
                                              & output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) +&
-                                             & field(i-is+1+hi,j-js+1+hj,k) * weight1
+                                             & field_out(i-is+1+hi,j-js+1+hj,k) * weight1
                                      END IF
                                   ELSE
                                      output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) = missvalue
@@ -2639,15 +2626,15 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
                             k1 = k - ksr + 1
                             DO j=js, je
                                DO i=is, ie
-                                  IF ( field(i-is+1+hi,j-js+1+hj,k) /= missvalue ) THEN
+                                  IF ( field_out(i-is+1+hi,j-js+1+hj,k) /= missvalue ) THEN
                                      IF ( pow_value /= 1 ) THEN
                                         output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) =&
                                              & output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) +&
-                                             & (field(i-is+1+hi,j-js+1+hj,k) * weight1)**(pow_value)
+                                             & (field_out(i-is+1+hi,j-js+1+hj,k) * weight1)**(pow_value)
                                      ELSE
                                         output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) =&
                                              & output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) +&
-                                             & field(i-is+1+hi,j-js+1+hj,k) * weight1
+                                             & field_out(i-is+1+hi,j-js+1+hj,k) * weight1
                                      END IF
                                   ELSE
                                      output_fields(out_num)%buffer(i-hi,j-hj,k1,sample) = missvalue
@@ -2662,7 +2649,7 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
                          k1=k-ksr+1
                          DO j=f3, f4
                             DO i=f1, f2
-                               IF ( field(i,j,k) /= missvalue ) THEN
+                               IF ( field_out(i,j,k) /= missvalue ) THEN
                                   output_fields(out_num)%count_0d(sample) = output_fields(out_num)%count_0d(sample) &
                                                                           & + weight1
                                   EXIT outer3
@@ -2677,6 +2664,7 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
                          CALL check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
                          IF ( err_msg_local /= '' ) THEN
                             IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
+                               DEALLOCATE(field_out)
                                DEALLOCATE(oor_mask)
                                RETURN
                             END IF
@@ -2686,15 +2674,15 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
                          DO k=ks, ke
                             DO j=js, je
                                DO i=is, ie
-                                  IF ( field(i-is+1+hi,j-js+1+hj,k) /= missvalue )  THEN
+                                  IF ( field_out(i-is+1+hi,j-js+1+hj,k) /= missvalue )  THEN
                                      IF ( pow_value /= 1 ) THEN
                                         output_fields(out_num)%buffer(i-hi,j-hj,k,sample) =&
                                              & output_fields(out_num)%buffer(i-hi,j-hj,k,sample) +&
-                                             & (field(i-is+1+hi,j-js+1+hj,k) * weight1)**(pow_value)
+                                             & (field_out(i-is+1+hi,j-js+1+hj,k) * weight1)**(pow_value)
                                      ELSE
                                         output_fields(out_num)%buffer(i-hi,j-hj,k,sample) =&
                                              & output_fields(out_num)%buffer(i-hi,j-hj,k,sample) +&
-                                             & field(i-is+1+hi,j-js+1+hj,k) * weight1
+                                             & field_out(i-is+1+hi,j-js+1+hj,k) * weight1
                                      END IF
                                   ELSE
                                      output_fields(out_num)%buffer(i-hi,j-hj,k,sample) = missvalue
@@ -2707,15 +2695,15 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
                          DO k=ks, ke
                             DO j=js, je
                                DO i=is, ie
-                                  IF ( field(i-is+1+hi,j-js+1+hj,k) /= missvalue )  THEN
+                                  IF ( field_out(i-is+1+hi,j-js+1+hj,k) /= missvalue )  THEN
                                      IF ( pow_value /= 1 ) THEN
                                         output_fields(out_num)%buffer(i-hi,j-hj,k,sample) =&
                                              & output_fields(out_num)%buffer(i-hi,j-hj,k,sample) +&
-                                             & (field(i-is+1+hi,j-js+1+hj,k) * weight1)**(pow_value)
+                                             & (field_out(i-is+1+hi,j-js+1+hj,k) * weight1)**(pow_value)
                                      ELSE
                                         output_fields(out_num)%buffer(i-hi,j-hj,k,sample) =&
                                              & output_fields(out_num)%buffer(i-hi,j-hj,k,sample) +&
-                                             & field(i-is+1+hi,j-js+1+hj,k) * weight1
+                                             & field_out(i-is+1+hi,j-js+1+hj,k) * weight1
                                      END IF
                                   ELSE
                                      output_fields(out_num)%buffer(i-hi,j-hj,k,sample) = missvalue
@@ -2729,7 +2717,7 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
                       outer1: DO k=ks, ke
                          DO j=f3, f4
                             DO i=f1, f2
-                               IF ( field(i,j,k) /= missvalue ) THEN
+                               IF ( field_out(i,j,k) /= missvalue ) THEN
                                   output_fields(out_num)%count_0d(sample) = output_fields(out_num)%count_0d(sample) &
                                                                           & + weight1
                                   EXIT outer1
@@ -2751,12 +2739,12 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
                                   IF ( pow_value /= 1 ) THEN
                                      output_fields(out_num)%buffer(i1,j1,:,sample)= &
                                           & output_fields(out_num)%buffer(i1,j1,:,sample) +&
-                                          & (field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3))*weight1)**(pow_value)
+                                          & (field_out(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3))*weight1)**(pow_value)
                                   ELSE
                                      output_fields(out_num)%buffer(i1,j1,:,sample)= &
                                           & output_fields(out_num)%buffer(i1,j1,:,sample) +&
-                                          & field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3))*weight1
-                               END IF
+                                          & field_out(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3))*weight1
+                                  END IF
                                END IF
                             END DO
                          END DO
@@ -2771,12 +2759,12 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
                                   IF ( pow_value /= 1 ) THEN
                                      output_fields(out_num)%buffer(i1,j1,:,sample)= &
                                           & output_fields(out_num)%buffer(i1,j1,:,sample) +&
-                                          & (field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3))*weight1)**(pow_value)
+                                          & (field_out(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3))*weight1)**(pow_value)
                                   ELSE
                                      output_fields(out_num)%buffer(i1,j1,:,sample)= &
                                           & output_fields(out_num)%buffer(i1,j1,:,sample) +&
-                                          & field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3))*weight1
-                               END IF
+                                          & field_out(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3))*weight1
+                                  END IF
                                END IF
                             END DO
                          END DO
@@ -2802,22 +2790,22 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
                          IF ( pow_value /= 1 ) THEN
                             output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) =&
                                  & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) + &
-                                 & (field(f1:f2,f3:f4,ksr:ker)*weight1)**(pow_value)
+                                 & (field_out(f1:f2,f3:f4,ksr:ker)*weight1)**(pow_value)
                          ELSE
                             output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) =&
                                  & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) + &
-                                 & field(f1:f2,f3:f4,ksr:ker)*weight1
+                                 & field_out(f1:f2,f3:f4,ksr:ker)*weight1
                          END IF
                       ELSE
 !$OMP CRITICAL
                          IF ( pow_value /= 1 ) THEN
                             output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) =&
                                  & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) + &
-                                 & (field(f1:f2,f3:f4,ksr:ker)*weight1)**(pow_value)
+                                 & (field_out(f1:f2,f3:f4,ksr:ker)*weight1)**(pow_value)
                          ELSE
                             output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) =&
                                  & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) + &
-                                 & field(f1:f2,f3:f4,ksr:ker)*weight1
+                                 & field_out(f1:f2,f3:f4,ksr:ker)*weight1
                          END IF
 !$OMP END CRITICAL
                       END IF
@@ -2827,6 +2815,7 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
                          CALL check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
                          IF ( err_msg_local /= '' ) THEN
                             IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
+                               DEALLOCATE(field_out)
                                DEALLOCATE(oor_mask)
                                RETURN
                             END IF
@@ -2836,22 +2825,22 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
                          IF ( pow_value /= 1 ) THEN
                             output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) =&
                                  & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) +&
-                                 & (field(f1:f2,f3:f4,ks:ke)*weight1)**(pow_value)
+                                 & (field_out(f1:f2,f3:f4,ks:ke)*weight1)**(pow_value)
                          ELSE
                             output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) =&
                                  & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) +&
-                                 & field(f1:f2,f3:f4,ks:ke)*weight1
+                                 & field_out(f1:f2,f3:f4,ks:ke)*weight1
                          END IF
                       ELSE
 !$OMP CRITICAL
                          IF ( pow_value /= 1 ) THEN
                             output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) =&
                                  & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) +&
-                                 & (field(f1:f2,f3:f4,ks:ke)*weight1)**(pow_value)
+                                 & (field_out(f1:f2,f3:f4,ks:ke)*weight1)**(pow_value)
                          ELSE
                             output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) =&
                                  & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) +&
-                                 & field(f1:f2,f3:f4,ks:ke)*weight1
+                                 & field_out(f1:f2,f3:f4,ks:ke)*weight1
                          END IF
 !$OMP END CRITICAL
                       END IF
@@ -2883,9 +2872,9 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
                             & j <= l_end(2)+hj ) THEN
                             i1 = i-l_start(1)-hi+1
                             j1=  j-l_start(2)-hj+1
-                            IF ( mask(i-is+1+hi,j-js+1+hj,k) .AND.&
-                                 & field(i-is+1+hi,j-js+1+hj,k)>output_fields(out_num)%buffer(i1,j1,k1,sample)) THEN
-                               output_fields(out_num)%buffer(i1,j1,k1,sample) = field(i-is+1+hi,j-js+1+hj,k)
+                            IF ( mask(i-is+1+hi,j-js+1+hj,k) .AND. field_out(i-is+1+hi,j-js+1+hj,k)>&
+                               & output_fields(out_num)%buffer(i1,j1,k1,sample) ) THEN
+                               output_fields(out_num)%buffer(i1,j1,k1,sample) = field_out(i-is+1+hi,j-js+1+hj,k)
                             END IF
                          END IF
                       END DO
@@ -2895,23 +2884,24 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
              ELSE IF ( reduced_k_range ) THEN
                 ksr = l_start(3)
                 ker = l_end(3)
-                WHERE ( mask(f1:f2,f3:f4,ksr:ker) .AND. &
-                     & field(f1:f2,f3:f4,ksr:ker) > output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample))&
-                     & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) = field(f1:f2,f3:f4,ksr:ker)
+                WHERE ( mask(f1:f2,f3:f4,ksr:ker) .AND. field_out(f1:f2,f3:f4,ksr:ker) >&
+                      & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) )&
+                     & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) = field_out(f1:f2,f3:f4,ksr:ker)
              ELSE
                 IF ( debug_diag_manager ) THEN
                    CALL update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
                    CALL check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
                    IF ( err_msg_local /= '' ) THEN
                       IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
+                         DEALLOCATE(field_out)
                          DEALLOCATE(oor_mask)
                          RETURN
                       END IF
                    END IF
                 END IF
-                WHERE ( mask(f1:f2,f3:f4,ks:ke) .AND.&
-                     & field(f1:f2,f3:f4,ks:ke)>output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample))&
-                     & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) = field(f1:f2,f3:f4,ks:ke)
+                WHERE ( mask(f1:f2,f3:f4,ks:ke) .AND. field_out(f1:f2,f3:f4,ks:ke)>&
+                      & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) )&
+                   & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) = field_out(f1:f2,f3:f4,ks:ke)
              END IF
           ELSE
              IF ( need_compute ) THEN
@@ -2923,8 +2913,8 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
                           & j <= l_end(2)+hj ) THEN
                             i1 = i-l_start(1)-hi+1
                             j1 =  j-l_start(2)-hj+1
-                            IF ( field(i-is+1+hi,j-js+1+hj,k) > output_fields(out_num)%buffer(i1,j1,k1,sample) ) THEN
-                               output_fields(out_num)%buffer(i1,j1,k1,sample) = field(i-is+1+hi,j-js+1+hj,k)
+                            IF ( field_out(i-is+1+hi,j-js+1+hj,k)>output_fields(out_num)%buffer(i1,j1,k1,sample) ) THEN
+                               output_fields(out_num)%buffer(i1,j1,k1,sample) = field_out(i-is+1+hi,j-js+1+hj,k)
                             END IF
                          END IF
                       END DO
@@ -2934,21 +2924,24 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
              ELSE IF ( reduced_k_range ) THEN
                 ksr = l_start(3)
                 ker = l_end(3)
-                WHERE ( field(f1:f2,f3:f4,ksr:ker) > output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) )&
-                     & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) = field(f1:f2,f3:f4,ksr:ker)
+                WHERE ( field_out(f1:f2,f3:f4,ksr:ker) >&
+                      & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) ) &
+                   & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) = field_out(f1:f2,f3:f4,ksr:ker)
              ELSE
                 IF ( debug_diag_manager ) THEN
                    CALL update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
                    CALL check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
                    IF ( err_msg_local /= '' ) THEN
                       IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
+                         DEALLOCATE(field_out)
                          DEALLOCATE(oor_mask)
                          RETURN
                       END IF
                    END IF
                 END IF
-                WHERE (field(f1:f2,f3:f4,ks:ke) > output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample))&
-                     & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) = field(f1:f2,f3:f4,ks:ke)
+                WHERE ( field_out(f1:f2,f3:f4,ks:ke) >&
+                      & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) ) &
+                   & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) = field_out(f1:f2,f3:f4,ks:ke)
              END IF
           END IF
           output_fields(out_num)%count_0d(sample) = 1
@@ -2963,9 +2956,9 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
                             & j <= l_end(2)+hj ) THEN
                             i1 = i-l_start(1)-hi+1
                             j1 =  j-l_start(2)-hj+1
-                            IF ( mask(i-is+1+hi,j-js+1+hj,k) .AND.&
-                                 & field(i-is+1+hi,j-js+1+hj,k) < output_fields(out_num)%buffer(i1,j1,k1,sample) ) THEN
-                               output_fields(out_num)%buffer(i1,j1,k1,sample) = field(i-is+1+hi,j-js+1+hj,k)
+                            IF ( mask(i-is+1+hi,j-js+1+hj,k) .AND. field_out(i-is+1+hi,j-js+1+hj,k) <&
+                               & output_fields(out_num)%buffer(i1,j1,k1,sample) ) THEN
+                               output_fields(out_num)%buffer(i1,j1,k1,sample) = field_out(i-is+1+hi,j-js+1+hj,k)
                             END IF
                          END IF
                       END DO
@@ -2975,23 +2968,24 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
              ELSE IF ( reduced_k_range ) THEN
                 ksr= l_start(3)
                 ker= l_end(3)
-                WHERE ( mask(f1:f2,f3:f4,ksr:ker) .AND.&
-                     & field(f1:f2,f3:f4,ksr:ker) < output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample)) &
-                     & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) = field(f1:f2,f3:f4,ksr:ker)
+                WHERE ( mask(f1:f2,f3:f4,ksr:ker) .AND. field_out(f1:f2,f3:f4,ksr:ker) <&
+                      & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) ) &
+                   & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) = field_out(f1:f2,f3:f4,ksr:ker)
              ELSE
                 IF ( debug_diag_manager ) THEN
                    CALL update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
                    CALL check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
                    IF ( err_msg_local /= '' ) THEN
                       IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
+                         DEALLOCATE(field_out)
                          DEALLOCATE(oor_mask)
                          RETURN
                       END IF
                    END IF
                 END IF
-                WHERE ( mask(f1:f2,f3:f4,ks:ke) .AND.&
-                     & field(f1:f2,f3:f4,ks:ke) < output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample))&
-                     & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) = field(f1:f2,f3:f4,ks:ke)
+                WHERE ( mask(f1:f2,f3:f4,ks:ke) .AND. field_out(f1:f2,f3:f4,ks:ke) <&
+                      & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) ) &
+                   & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) = field_out(f1:f2,f3:f4,ks:ke)
              END IF
           ELSE
              IF ( need_compute ) THEN
@@ -3002,8 +2996,9 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
                          IF ( l_start(1)+hi <=i.AND.i<=l_end(1)+hi.AND.l_start(2)+hj<=j.AND.j<=l_end(2)+hj) THEN
                             i1 = i-l_start(1)-hi+1
                             j1=  j-l_start(2)-hj+1
-                            IF ( field(i-is+1+hi,j-js+1+hj,k) < output_fields(out_num)%buffer(i1,j1,k1,sample) ) THEN
-                               output_fields(out_num)%buffer(i1,j1,k1,sample) = field(i-is+1+hi,j-js+1+hj,k)
+                            IF ( field_out(i-is+1+hi,j-js+1+hj,k) <&
+                               & output_fields(out_num)%buffer(i1,j1,k1,sample) ) THEN
+                               output_fields(out_num)%buffer(i1,j1,k1,sample) = field_out(i-is+1+hi,j-js+1+hj,k)
                             END IF
                          END IF
                       END DO
@@ -3013,21 +3008,24 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
              ELSE IF ( reduced_k_range ) THEN
                 ksr= l_start(3)
                 ker= l_end(3)
-                WHERE ( field(f1:f2,f3:f4,ksr:ker) < output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) )&
-                    & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) = field(f1:f2,f3:f4,ksr:ker)
+                WHERE ( field_out(f1:f2,f3:f4,ksr:ker) <&
+                      & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) ) &
+                   & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) = field_out(f1:f2,f3:f4,ksr:ker)
              ELSE
                 IF ( debug_diag_manager ) THEN
                    CALL update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
                    CALL check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
                    IF ( err_msg_local /= '' ) THEN
                       IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
+                         DEALLOCATE(field_out)
                          DEALLOCATE(oor_mask)
                          RETURN
                       END IF
                    END IF
                 END IF
-                WHERE (field(f1:f2,f3:f4,ks:ke) < output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample))&
-                     & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) = field(f1:f2,f3:f4,ks:ke)
+                WHERE ( field_out(f1:f2,f3:f4,ks:ke) <&
+                      & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) )&
+                   & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) = field_out(f1:f2,f3:f4,ks:ke)
              END IF
           END IF
           output_fields(out_num)%count_0d(sample) = 1
@@ -3045,7 +3043,7 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
                             IF ( mask(i-is+1+hi,j-js+1+hj,k) ) THEN
                                output_fields(out_num)%buffer(i1,j1,k1,sample) = &
                                     output_fields(out_num)%buffer(i1,j1,k1,sample) + &
-                                    field(i-is+1+hi,j-js+1+hj,k)
+                                    field_out(i-is+1+hi,j-js+1+hj,k)
                             END IF
                          END IF
                       END DO
@@ -3057,13 +3055,14 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
                 ker= l_end(3)
                 output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) = &
                      &   output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) + &
-                     &   field(f1:f2,f3:f4,ksr:ker)
+                     &   field_out(f1:f2,f3:f4,ksr:ker)
              ELSE
                 IF ( debug_diag_manager ) THEN
                    CALL update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
                    CALL check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
                    IF ( err_msg_local /= '' ) THEN
                       IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
+                         DEALLOCATE(field_out)
                          DEALLOCATE(oor_mask)
                          RETURN
                       END IF
@@ -3072,7 +3071,7 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
                 WHERE ( mask(f1:f2,f3:f4,ks:ke) ) &
                      & output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) = &
                      &  output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) + &
-                     &  field(f1:f2,f3:f4,ks:ke)
+                     &  field_out(f1:f2,f3:f4,ks:ke)
              END IF
           ELSE
              IF ( need_compute ) THEN
@@ -3085,7 +3084,7 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
                             j1=  j-l_start(2)-hj+1
                             output_fields(out_num)%buffer(i1,j1,k1,sample) = &
                                &    output_fields(out_num)%buffer(i1,j1,k1,sample) + &
-                               &    field(i-is+1+hi,j-js+1+hj,k)
+                               &    field_out(i-is+1+hi,j-js+1+hj,k)
                          END IF
                       END DO
                    END DO
@@ -3095,13 +3094,14 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
                 ker= l_end(3)
                 output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) = &
                      &  output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) + &
-                     &  field(f1:f2,f3:f4,ksr:ker)
+                     &  field_out(f1:f2,f3:f4,ksr:ker)
              ELSE
                 IF ( debug_diag_manager ) THEN
                    CALL update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
                    CALL check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
                    IF ( err_msg_local /= '' ) THEN
                       IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
+                         DEALLOCATE(field_out)
                          DEALLOCATE(oor_mask)
                          RETURN
                       END IF
@@ -3109,7 +3109,7 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
                 END IF
                 output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) = &
                 &    output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) + &
-                &    field(f1:f2,f3:f4,ks:ke)
+                &    field_out(f1:f2,f3:f4,ks:ke)
              END IF
           END IF
           output_fields(out_num)%count_0d(sample) = 1
@@ -3121,7 +3121,8 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
                    IF ( l_start(1)+hi <= i .AND. i <= l_end(1)+hi .AND. l_start(2)+hj <= j .AND. j <= l_end(2)+hj) THEN
                       i1 = i-l_start(1)-hi+1
                       j1 = j-l_start(2)-hj+1
-                      output_fields(out_num)%buffer(i1,j1,:,sample) = field(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3))
+                      output_fields(out_num)%buffer(i1,j1,:,sample) =&
+                         & field_out(i-is+1+hi,j-js+1+hj,l_start(3):l_end(3))
                    END IF
                 END DO
              END DO
@@ -3129,19 +3130,20 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
           ELSE IF ( reduced_k_range ) THEN
              ksr = l_start(3)
              ker = l_end(3)
-             output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) = field(f1:f2,f3:f4,ksr:ker)
+             output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,:,sample) = field_out(f1:f2,f3:f4,ksr:ker)
           ELSE
              IF ( debug_diag_manager ) THEN
                 CALL update_bounds(out_num, is-hi, ie-hi, js-hj, je-hj, ks, ke)
                 CALL check_out_of_bounds(out_num, diag_field_id, err_msg=err_msg_local)
                 IF ( err_msg_local /= '' ) THEN
                    IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) THEN
+                      DEALLOCATE(field_out)
                       DEALLOCATE(oor_mask)
                       RETURN
                    END IF
                 END IF
              END IF
-             output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) = field(f1:f2,f3:f4,ks:ke)
+             output_fields(out_num)%buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,sample) = field_out(f1:f2,f3:f4,ks:ke)
           END IF
 
           IF ( PRESENT(mask) .AND. missvalue_present ) THEN
@@ -3189,6 +3191,7 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
           CALL check_bounds_are_exact_static(out_num, diag_field_id, err_msg=err_msg_local)
           IF ( err_msg_local /= '' ) THEN
              IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg)) THEN
+                DEALLOCATE(field_out)
                 DEALLOCATE(oor_mask)
                 RETURN
              END IF
@@ -3198,46 +3201,99 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
        ! If rmask and missing value present, then insert missing value
        IF ( PRESENT(rmask) .AND. missvalue_present ) THEN
           IF ( need_compute ) THEN
-             DO k = l_start(3), l_end(3)
-                k1 = k - l_start(3) + 1
-                DO j = js, je
-                   DO i = is, ie
-                      IF ( l_start(1)+hi <= i .AND. i <= l_end(1)+hi .AND. l_start(2)+hj <= j .AND. &
-                         & j <= l_end(2)+hj ) THEN
-                         i1 = i-l_start(1)-hi+1
-                         j1 =  j-l_start(2)-hj+1
-                         IF ( rmask(i-is+1+hi,j-js+1+hj,k) < 0.5 ) &
-                              & output_fields(out_num)%buffer(i1,j1,k1,sample) = missvalue
-                      END IF
+             SELECT TYPE (rmask)
+             TYPE IS (real(kind=r4_kind))
+                DO k = l_start(3), l_end(3)
+                   k1 = k - l_start(3) + 1
+                   DO j = js, je
+                      DO i = is, ie
+                         IF ( l_start(1)+hi <= i .AND. i <= l_end(1)+hi .AND. l_start(2)+hj <= j .AND.&
+                            & j <= l_end(2)+hj ) THEN
+                            i1 = i-l_start(1)-hi+1
+                            j1 =  j-l_start(2)-hj+1
+                            IF ( rmask(i-is+1+hi,j-js+1+hj,k) < 0.5_r4_kind ) &
+                                 & output_fields(out_num)%buffer(i1,j1,k1,sample) = missvalue
+                         END IF
+                      END DO
                    END DO
                 END DO
-             END DO
+             TYPE IS (real(kind=r8_kind))
+                DO k = l_start(3), l_end(3)
+                   k1 = k - l_start(3) + 1
+                   DO j = js, je
+                      DO i = is, ie
+                         IF ( l_start(1)+hi <= i .AND. i <= l_end(1)+hi .AND. l_start(2)+hj <= j .AND.&
+                            & j <= l_end(2)+hj ) THEN
+                            i1 = i-l_start(1)-hi+1
+                            j1 =  j-l_start(2)-hj+1
+                            IF ( rmask(i-is+1+hi,j-js+1+hj,k) < 0.5_r8_kind ) &
+                                 & output_fields(out_num)%buffer(i1,j1,k1,sample) = missvalue
+                         END IF
+                      END DO
+                   END DO
+                END DO
+             CLASS DEFAULT
+                CALL error_mesg ('diag_manager_mod::send_data_3d',&
+                     & 'The rmask is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
+             END SELECT
           ELSE IF ( reduced_k_range ) THEN
              ksr= l_start(3)
              ker= l_end(3)
-             DO k= ksr, ker
-                k1 = k - ksr + 1
-                DO j=js, je
-                   DO i=is, ie
-                      IF ( rmask(i-is+1+hi,j-js+1+hj,k) < 0.5 ) &
-                           & output_fields(out_num)%buffer(i-hi,j-hj,k1,sample)= missvalue
+             SELECT TYPE (rmask)
+             TYPE IS (real(kind=r4_kind))
+                DO k= ksr, ker
+                   k1 = k - ksr + 1
+                   DO j=js, je
+                      DO i=is, ie
+                         IF ( rmask(i-is+1+hi,j-js+1+hj,k) < 0.5_r4_kind ) &
+                              & output_fields(out_num)%buffer(i-hi,j-hj,k1,sample)= missvalue
+                      END DO
                    END DO
                 END DO
-             END DO
+             TYPE IS (real(kind=r8_kind))
+                DO k= ksr, ker
+                   k1 = k - ksr + 1
+                   DO j=js, je
+                      DO i=is, ie
+                         IF ( rmask(i-is+1+hi,j-js+1+hj,k) < 0.5_r8_kind ) &
+                              & output_fields(out_num)%buffer(i-hi,j-hj,k1,sample)= missvalue
+                      END DO
+                   END DO
+                END DO
+             CLASS DEFAULT
+                CALL error_mesg ('diag_manager_mod::send_data_3d',&
+                     & 'The rmask is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
+             END SELECT
           ELSE
-             DO k=ks, ke
-                DO j=js, je
-                   DO i=is, ie
-                      IF ( rmask(i-is+1+hi,j-js+1+hj,k) < 0.5 ) &
-                           & output_fields(out_num)%buffer(i-hi,j-hj,k,sample)= missvalue
+             SELECT TYPE (rmask)
+             TYPE IS (real(kind=r4_kind))
+                DO k=ks, ke
+                   DO j=js, je
+                      DO i=is, ie
+                         IF ( rmask(i-is+1+hi,j-js+1+hj,k) < 0.5_r4_kind ) &
+                              & output_fields(out_num)%buffer(i-hi,j-hj,k,sample)= missvalue
+                      END DO
                    END DO
                 END DO
-             END DO
+             TYPE IS (real(kind=r8_kind))
+                DO k=ks, ke
+                   DO j=js, je
+                      DO i=is, ie
+                         IF ( rmask(i-is+1+hi,j-js+1+hj,k) < 0.5_r8_kind ) &
+                              & output_fields(out_num)%buffer(i-hi,j-hj,k,sample)= missvalue
+                      END DO
+                   END DO
+                END DO
+             CLASS DEFAULT
+                CALL error_mesg ('diag_manager_mod::send_data_3d',&
+                     & 'The rmask is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
+             END SELECT
           END IF
        END IF
 
     END DO num_out_fields
 
+    DEALLOCATE(field_out)
     DEALLOCATE(oor_mask)
   END FUNCTION send_data_3d
 

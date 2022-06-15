@@ -329,7 +329,6 @@ module fms_diag_axis_object_mod
     class(*),           INTENT(INOUT) :: bounds(:) !< bound of the subaxis
 
     integer :: sub_axes_id
-
     integer :: i !< For do loops
 
     !< Check if the subaxis for this bouds already exists
@@ -422,7 +421,7 @@ module fms_diag_axis_object_mod
     & result(id)
 
     CHARACTER(len=*),   INTENT(in)           :: axis_name       !< Name of the axis
-    REAL,               INTENT(in)           :: axis_data(:)    !< Array of coordinate values
+    CLASS(*),           INTENT(in)           :: axis_data(:)    !< Array of coordinate values
     CHARACTER(len=*),   INTENT(in)           :: units           !< Units for the axis
     CHARACTER(len=1),   INTENT(in)           :: cart_name       !< Cartesian axis ("X", "Y", "Z", "T", "U", "N")
     CHARACTER(len=*),   INTENT(in), OPTIONAL :: long_name       !< Long name for the axis.

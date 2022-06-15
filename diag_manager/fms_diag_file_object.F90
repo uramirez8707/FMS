@@ -32,6 +32,7 @@ use fms_diag_yaml_mod, only: diag_yaml, diagYamlObject_type, diagYamlFiles_type
 #endif
 use fms_diag_axis_object_mod, only: diagDomain_t
 use mpp_mod, only: mpp_error, FATAL
+
 implicit none
 private
 

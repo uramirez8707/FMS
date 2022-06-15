@@ -51,6 +51,7 @@ type fmsDiagObject_type
      character(len=:), allocatable, private           :: modname           !< the module
      character(len=:), allocatable, private           :: realm             !< String to set as the value
                                                                            !! to the modeling_realm attribute
+     character(len=:), allocatable, private           :: err_msg           !< An error message
      character(len=:), allocatable, private           :: interp_method     !< The interp method to be used
                                                             !! when regridding the field in post-processing.
                                                             !! Valid options are "conserve_order1",
@@ -178,7 +179,6 @@ end subroutine diag_obj_init
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !> \Description Fills in and allocates (when necessary) the values in the diagnostic object
 subroutine fms_register_diag_field_obj &
-                !(dobj, modname, varname, axes, time, longname, units, missing_value, metadata)
        (dobj, modname, varname, init_time, diag_field_indices, axes, &
        longname, units, missing_value, varRange, mask_variant, standname, &
        do_not_log, err_msg, interp_method, tile_count, area, volume, realm, metadata)
