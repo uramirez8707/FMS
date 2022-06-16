@@ -45,7 +45,6 @@ type :: fmsDiagFile_type
  private
   integer :: id !< The number associated with this file in the larger array of files
   class(FmsNetcdfFile_t), allocatable :: fileobj !< fms2_io file object for this history file
-  character(len=1) :: file_domain_type !< (I don't think we will need this)
 #ifdef use_yaml
   type(diagYamlFiles_type), pointer :: diag_yaml_file => null() !< Pointer to the diag_yaml_file data
 #endif
@@ -73,6 +72,7 @@ type :: fmsDiagFile_type
   procedure, public :: has_diag_yaml_file
   procedure, public :: set_file_domain
   procedure, public :: add_axes
+  procedure, public :: get_sub_axis_id
 #endif
   procedure, public :: has_var_ids
   procedure, public :: get_id
@@ -476,5 +476,21 @@ subroutine add_axes(obj, axis_ids)
   enddo
 
 end subroutine add_axes
+
+!> @brief Get the sub_axis_id corresponding to the input parent axis_id
+!> @return The sub_axis_id
+function get_sub_axis_id(obj, axis_id) &
+result(sub_axis_id)
+
+  class(fmsDiagFile_type), intent(inout)       :: obj            !< The file object
+  integer,                 INTENT(in)          :: axis_id        !< Axes_id
+
+  integer :: i !< For do loop
+  integer :: sub_axis_id
+
+  do i = 1, size(obj%axis_ids)
+    if (obj%axis_ids(i) .eq. axis_id) sub_axis_id = obj%sub_axis_ids(i)
+  end do
+end function
 #endif
 end module fms_diag_file_object_mod
