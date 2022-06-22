@@ -36,7 +36,8 @@ type fmsDiagObject_type
 #endif
      integer, allocatable, private                    :: diag_id           !< unique id for varable
      type(fmsDiagAttribute_type), private, allocatable:: attributes(:)     !< attributes for the variable
-     integer, private                                 :: num_attributes    !< Number of attributes currently in the variable
+     integer, private                                 :: num_attributes    !< Number of attributes currently
+                                                                           !! in the variable
      logical, allocatable, private                    :: static            !< true if this is a static var
      logical, allocatable, private                    :: registered        !< true when registered
      logical, allocatable, private                    :: mask_variant      !< If there is a mask variant
