@@ -8,7 +8,7 @@ module fms_diag_object_mod
 !! that contains all of the information of the variable.  It is extended by a type that holds the
 !! appropriate buffer for the data for manipulation.
 use diag_data_mod,  only: diag_null, CMOR_MISSING_VALUE, diag_null_string
-use diag_data_mod,  only: r8, r4, i8, i4, string, null_type_int
+use diag_data_mod,  only: r8, r4, i8, i4, string, null_type_int, fmsDiagAttribute_type, max_field_attributes
 use diag_data_mod,  only: diag_null, diag_not_found, diag_not_registered, diag_registered_id
 
 use diag_axis_mod,  only: diag_axis_type
@@ -35,7 +35,8 @@ type fmsDiagObject_type
                                                                            !! the objects variable
 #endif
      integer, allocatable, private                    :: diag_id           !< unique id for varable
-     character(len=:), allocatable, dimension(:)      :: metadata          !< metadata for the variable
+     type(fmsDiagAttribute_type), private, allocatable:: attributes(:)     !< attributes for the variable
+     integer, private                                 :: num_attributes    !< Number of attributes currently in the variable
      logical, allocatable, private                    :: static            !< true if this is a static var
      logical, allocatable, private                    :: registered        !< true when registered
      logical, allocatable, private                    :: mask_variant      !< If there is a mask variant
@@ -79,6 +80,7 @@ type fmsDiagObject_type
      procedure :: setID => set_diag_id
      procedure :: set_type => set_vartype
      procedure :: vartype_inq => what_is_vartype
+     procedure :: add_attribute
 ! Check functions
      procedure :: is_static => diag_obj_is_static
      procedure :: is_registered => diag_ob_registered
@@ -91,7 +93,7 @@ type fmsDiagObject_type
 #ifdef use_yaml
      procedure :: has_diag_files
 #endif
-     procedure :: has_metadata
+     procedure :: has_attributes
      procedure :: has_static
      procedure :: has_registered
      procedure :: has_mask_variant
@@ -118,7 +120,7 @@ type fmsDiagObject_type
      procedure :: has_axis
 ! Get functions
      procedure :: get_diag_id => fms_diag_get_id
-     procedure :: get_metadata
+     procedure :: get_attributes
      procedure :: get_static
      procedure :: get_registered
      procedure :: get_mask_variant
@@ -163,7 +165,7 @@ public :: fms_diag_object_init
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 subroutine fms_diag_object_init (mlv,mlm)
  integer, intent(in) :: mlv !< The maximum length of the varname
- integer, intent(in) :: mlm !< The maximum length of the metadata
+ integer, intent(in) :: mlm !< The maximum length of the attributes
 !> Get info from the namelist
  MAX_LEN_VARNAME = mlv
  MAX_LEN_META = mlm
@@ -183,10 +185,10 @@ end subroutine diag_obj_init
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !> \Description Fills in and allocates (when necessary) the values in the diagnostic object
 subroutine fms_register_diag_field_obj &
-                !(dobj, modname, varname, axes, time, longname, units, missing_value, metadata)
+                !(dobj, modname, varname, axes, time, longname, units, missing_value, attributes)
        (dobj, modname, varname, axes, init_time, &
        longname, units, missing_value, varRange, mask_variant, standname, &
-       do_not_log, err_msg, interp_method, tile_count, area, volume, realm, metadata)
+       do_not_log, err_msg, interp_method, tile_count, area, volume, realm)
  class(fmsDiagObject_type)     , intent(inout)            :: dobj
  CHARACTER(len=*), INTENT(in) :: modname !< The module name
  CHARACTER(len=*), INTENT(in) :: varname !< The variable name
@@ -208,7 +210,6 @@ subroutine fms_register_diag_field_obj &
  INTEGER, OPTIONAL, INTENT(in) :: area !< diag_field_id containing the cell area field
  INTEGER, OPTIONAL, INTENT(in) :: volume !< diag_field_id containing the cell volume field
  CHARACTER(len=*), OPTIONAL, INTENT(in):: realm !< String to set as the value to the modeling_realm attribute
- character(len=*), optional, intent(in), dimension(:)     :: metadata !< metedata for the variable
 
 !> Fill in information from the register call
   allocate(character(len=MAX_LEN_VARNAME) :: dobj%varname)
@@ -251,10 +252,6 @@ subroutine fms_register_diag_field_obj &
      allocate(character(len=len(units)) :: dobj%units)
      dobj%units = trim(units)
   endif
-  if (present(metadata)) then
-     allocate(character(len=MAX_LEN_META) :: dobj%metadata(size(metadata)))
-     dobj%metadata = metadata
-  endif
   if (present(missing_value)) then
     select type (missing_value)
      type is (integer(kind=i4_kind))
@@ -289,6 +286,46 @@ subroutine fms_register_diag_field_obj &
  ! save it in the diag object container.
 
 end subroutine fms_register_diag_field_obj
+
+!> @brief Add an attribute to an axis
+subroutine add_attribute(obj, att_name, att_value)
+  class(fmsDiagObject_type),INTENT(INOUT) :: obj          !< diag_axis obj
+  character(len=*),         intent(in)    :: att_name     !< Name of the attribute
+  class(*),                 intent(in)    :: att_value(:) !< The attribute value to add
+
+  integer :: j    !< obj%num_attributes (for less typing)
+  integer :: natt !< the size of att_value
+
+  if (.not. allocated(obj%attributes)) &
+    allocate(obj%attributes(max_field_attributes))
+
+  obj%num_attributes = obj%num_attributes + 1
+  if (obj%num_attributes > max_field_attributes) &
+    call mpp_error(FATAL, "diag_field_add_attribute: Number of attributes exceeds max_field_attributes for field:"&
+                           //trim(obj%varname)//".  Increase diag_manager_nml:max_field_attributes.")
+
+  natt = size(att_value)
+
+  j = obj%num_attributes
+  obj%attributes(j)%att_name = att_name
+  select type (att_value)
+  type is (integer(kind=i4_kind))
+    allocate(integer(kind=i4_kind) :: obj%attributes(j)%att_value(natt))
+    obj%attributes(j)%att_value = att_value
+  type is (integer(kind=i8_kind))
+    allocate(integer(kind=i8_kind) :: obj%attributes(j)%att_value(natt))
+    obj%attributes(j)%att_value = att_value
+  type is (real(kind=r4_kind))
+    allocate(real(kind=r4_kind) :: obj%attributes(j)%att_value(natt))
+    obj%attributes(j)%att_value = att_value
+  type is (real(kind=r8_kind))
+    allocate(real(kind=r8_kind) :: obj%attributes(j)%att_value(natt))
+    obj%attributes(j)%att_value = att_value
+  type is (character(len=*))
+    allocate(character(len=len(att_value)) :: obj%attributes(j)%att_value(natt))
+    obj%attributes(j)%att_value = att_value
+  end select
+end subroutine add_attribute
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !> \brief Sets the diag_id.  This can only be done if a variable is unregistered
 subroutine set_diag_id(objin , id)
@@ -377,7 +414,7 @@ select type (objout)
   endif
      objout%diag_id = objin%diag_id
 
-     if (allocated(objin%metadata)) objout%metadata = objin%metadata
+     if (allocated(objin%attributes)) objout%attributes = objin%attributes
      objout%static = objin%static
      if (allocated(objin%frequency)) objout%frequency = objin%frequency
      if (allocated(objin%varname)) objout%varname = objin%varname
@@ -462,19 +499,17 @@ end function diag_obj_is_static
 !! Get functions
 
 !> @brief Gets metedata
-!! @return copy of metadata string array, or a single space if metadata is not allocated
-pure function get_metadata (obj) &
+!! @return a pointer to the attribute array or a null pointer if no attributes have been defined
+function get_attributes (obj) &
 result(rslt)
-     class (fmsDiagObject_type), intent(in) :: obj !< diag object
-     character(len=:), allocatable, dimension(:) :: rslt
-     if (allocated(obj%metadata)) then
-       allocate(character(len=(len(obj%metadata(1)))) :: rslt (size(obj%metadata)) )
-       rslt = obj%metadata
+     class (fmsDiagObject_type), intent(in), target :: obj !< diag object
+     type(fmsDiagAttribute_type), pointer :: rslt(:)
+     if (allocated(obj%attributes)) then
+       rslt => obj%attributes
      else
-       allocate(character(len=1) :: rslt(1:1))
-       rslt = diag_null_string
+       rslt => null()
      endif
-end function get_metadata
+end function get_attributes
 !> @brief Gets static
 !! @return copy of variable static
 pure function get_static (obj) &
@@ -797,12 +832,12 @@ pure logical function has_diag_files (obj)
   has_diag_files = associated(obj%diag_files)
 end function has_diag_files
 #endif
-!> @brief Checks if obj%metadata is allocated
-!! @return true if obj%metadata is allocated
-pure logical function has_metadata (obj)
+!> @brief Checks if obj%attributes is allocated
+!! @return true if obj%attributes is allocated
+pure logical function has_attributes (obj)
   class (fmsDiagObject_type), intent(in) :: obj !< diag object
-  has_metadata = allocated(obj%metadata)
-end function has_metadata
+  has_attributes = allocated(obj%attributes)
+end function has_attributes
 !> @brief Checks if obj%static is allocated
 !! @return true if obj%static is allocated
 pure logical function has_static (obj)

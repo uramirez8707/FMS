@@ -26,7 +26,7 @@ use   mpp_domains_mod,  only: domain2d, mpp_domains_set_stack_size, mpp_define_d
                               mpp_get_compute_domain, mpp_get_data_domain, mpp_get_UG_domain_grid_index, &
                               mpp_get_UG_compute_domain
 use   diag_manager_mod, only: diag_manager_init, diag_manager_end, diag_axis_init, register_diag_field, &
-                              diag_axis_add_attribute
+                              diag_axis_add_attribute, diag_field_add_attribute
 use   fms_mod,          only: fms_init, fms_end
 use   mpp_mod,          only: FATAL, mpp_error, mpp_npes, mpp_pe, mpp_root_pe, mpp_broadcast
 use   time_manager_mod, only: time_type, set_calendar_type, set_date, JULIAN, set_time
@@ -131,6 +131,12 @@ id_var4 = register_diag_field  ('atm_mod', 'var4', (/id_x3, id_y3, id_z/), Time,
 id_var5 = register_diag_field  ('lnd_mod', 'var5', (/id_ug/), Time, 'Var in a UG domain', 'mullions')
 id_var6 = register_diag_field  ('lnd_mod', 'var6', (/id_z/), Time, 'Var not domain decomposed', 'mullions')
 id_var7 = register_diag_field  ('lnd_mod', 'var7', Time, 'Some scalar var', 'mullions')
+
+call diag_field_add_attribute (id_var1, "some string", "this is a string")
+call diag_field_add_attribute (id_var1, "integer", 10)
+call diag_field_add_attribute (id_var1, "1d integer", (/10, 10/))
+call diag_field_add_attribute (id_var1, "real", 10.)
+call diag_field_add_attribute (id_var2, '1d real', (/10./))
 
 if (id_var1  .ne. 1) call mpp_error(FATAL, "var1 does not have the expected id")
 if (id_var2  .ne. 2) call mpp_error(FATAL, "var2 does not have the expected id")
