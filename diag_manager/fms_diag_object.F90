@@ -297,8 +297,10 @@ subroutine add_attribute(obj, att_name, att_value)
   integer :: j    !< obj%num_attributes (for less typing)
   integer :: natt !< the size of att_value
 
-  if (.not. allocated(obj%attributes)) &
+  if (.not. allocated(obj%attributes)) then
     allocate(obj%attributes(max_field_attributes))
+    obj%num_attributes = 0
+  endif
 
   obj%num_attributes = obj%num_attributes + 1
   if (obj%num_attributes > max_field_attributes) &
