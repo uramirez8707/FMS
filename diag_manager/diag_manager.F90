@@ -1272,9 +1272,22 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
     CHARACTER(len=*), INTENT(in) :: module_name !< Module name that registered the variable
     CHARACTER(len=*), INTENT(in) :: field_name !< Variable name
 
-    ! find_input_field will return DIAG_FIELD_NOT_FOUND if the field is not
-    ! included in the diag_table
-    get_diag_field_id = find_input_field(module_name, field_name, tile_count=1)
+    integer :: i !< For do loops
+
+    get_diag_field_id = DIAG_FIELD_NOT_FOUND
+    if (use_modern_diag) then
+      do i = 1, registered_variables
+        if (diag_objs(i)%get_varname() .eq. trim(field_name) .and. &
+            diag_objs(i)%get_modname() .eq. trim(module_name)) then
+            get_diag_field_id = i
+            return
+        endif
+      enddo
+    else
+      ! find_input_field will return DIAG_FIELD_NOT_FOUND if the field is not
+      ! included in the diag_table
+      get_diag_field_id = find_input_field(module_name, field_name, tile_count=1)
+    endif
   END FUNCTION get_diag_field_id
 
   !> @brief Finds the corresponding related output field and file for a given input field
