@@ -467,6 +467,71 @@ CONTAINS
     endif
 end function register_diag_field_array
 
+  !> @brief Return field index for subsequent call to send_data.
+  !! @return field index for subsequent call to send_data.
+  INTEGER FUNCTION register_static_field(module_name, field_name, axes, long_name, units,&
+       & missing_value, range, mask_variant, standard_name, DYNAMIC, do_not_log, interp_method,&
+       & tile_count, area, volume, realm)
+    CHARACTER(len=*),                         INTENT(in) :: module_name   !< Name of the module, the field is on
+    CHARACTER(len=*),                         INTENT(in) :: field_name    !< Name of the field
+    INTEGER,          DIMENSION(:),           INTENT(in) :: axes          !< Axes_id of the field
+    CHARACTER(len=*),               OPTIONAL, INTENT(in) :: long_name     !< Longname to be added as a attribute
+    CHARACTER(len=*),               OPTIONAL, INTENT(in) :: units         !< Units to be added as a attribute
+    CHARACTER(len=*),               OPTIONAL, INTENT(in) :: standard_name !< Standard name to be added as a attribute
+    CLASS(*),                       OPTIONAL, INTENT(in) :: missing_value !< Missing value to be added as a attribute
+    CLASS(*),         DIMENSION(:), OPTIONAL, INTENT(in) :: range         !< Range to be added as a attribute
+    LOGICAL,                        OPTIONAL, INTENT(in) :: mask_variant  !< Flag indicating if the field is has
+                                                                          !! a mask variant
+    LOGICAL,                        OPTIONAL, INTENT(in) :: DYNAMIC       !< Flag indicating if the field is dynamic
+    LOGICAL,                        OPTIONAL, INTENT(in) :: do_not_log    !< if TRUE, field information is not logged
+    CHARACTER(len=*),               OPTIONAL, INTENT(in) :: interp_method !< The interp method to be used when
+                                                                          !! regridding the field in post-processing
+                                                                          !! Valid options are "conserve_order1",
+                                                                          !! "conserve_order2", and "none".
+    INTEGER,                        OPTIONAL, INTENT(in) :: tile_count    !! Number of tiles
+    INTEGER,                        OPTIONAL, INTENT(in) :: area          !< Field ID for the area field associated
+                                                                          !! with this field
+    INTEGER,                        OPTIONAL, INTENT(in) :: volume        !< Field ID for the volume field associated
+                                                                          !! with this field
+    CHARACTER(len=*),               OPTIONAL, INTENT(in) :: realm         !< String to set as the value to the
+                                                                          !! modeling_realm attribute
+#ifdef use_yaml
+    integer, allocatable :: diag_field_indices(:) !< indices where the field was found
+#endif
+
+    ! Fatal error if the module has not been initialized.
+    IF ( .NOT.module_is_initialized ) THEN
+       ! <ERROR STATUS="FATAL">diag_manager has NOT been initialized</ERROR>
+       CALL error_mesg ('diag_manager_mod::register_static_field', 'diag_manager has NOT been initialized', FATAL)
+    END IF
+
+    if (use_modern_diag) then
+#ifdef use_yaml
+      diag_field_indices = find_diag_field(field_name)
+      if (diag_field_indices(1) .eq. diag_null) then
+        !< The field was not found in the table, so return diag_null
+        register_static_field = diag_null
+        deallocate(diag_field_indices)
+        return
+      endif
+
+      registered_variables = registered_variables + 1
+      register_static_field = registered_variables
+
+      call diag_objs(registered_variables)%setID(registered_variables)
+      call diag_objs(registered_variables)%register(module_name, field_name, diag_field_indices, axes=axes, &
+        & longname=long_name, units=units, missing_value=missing_value, varrange=range, &
+        & standname=standard_name, do_not_log=do_not_log, area=area, volume=volume, realm=realm)
+      deallocate(diag_field_indices)
+#endif
+    else
+      register_static_field = register_static_field_old(module_name, field_name, axes, &
+       & long_name=long_name, units=units, missing_value=missing_value, range=range, mask_variant=mask_variant, &
+       & standard_name=standard_name, dynamic=DYNAMIC, do_not_log=do_not_log, interp_method=interp_method,&
+       & tile_count=tile_count, area=area, volume=volume, realm=realm)
+    endif
+end function register_static_field
+
   !> @brief Registers a scalar field
   !! @return field index for subsequent call to send_data.
   INTEGER FUNCTION register_diag_field_scalar_modern(module_name, field_name, init_time, &
@@ -501,7 +566,7 @@ end function register_diag_field_array
     register_diag_field_scalar_modern = registered_variables
 
     call diag_objs(registered_variables)%setID(registered_variables)
-    call diag_objs(registered_variables)%register(module_name, field_name, init_time, diag_field_indices, &
+    call diag_objs(registered_variables)%register(module_name, field_name, diag_field_indices, init_time=init_time, &
       & longname=long_name, units=units, missing_value=missing_value, varrange=var_range, &
       & standname=standard_name, do_not_log=do_not_log, err_msg=err_msg, &
       & area=area, volume=volume, realm=realm)
@@ -552,8 +617,8 @@ end function register_diag_field_array
     register_diag_field_array_modern = registered_variables
 
     call diag_objs(registered_variables)%setID(registered_variables)
-    call diag_objs(registered_variables)%register(module_name, field_name, init_time, diag_field_indices, axes,  &
-      & longname=long_name, units=units, missing_value=missing_value, varrange=var_range, &
+    call diag_objs(registered_variables)%register(module_name, field_name, diag_field_indices, init_time=init_time, &
+      & axes=axes, longname=long_name, units=units, missing_value=missing_value, varrange=var_range, &
       & mask_variant=mask_variant, standname=standard_name, do_not_log=do_not_log, err_msg=err_msg, &
       & interp_method=interp_method, tile_count=tile_count, area=area, volume=volume, realm=realm)
     deallocate(diag_field_indices)
@@ -785,7 +850,7 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
   END FUNCTION register_diag_field_array_old
   !> @brief Return field index for subsequent call to send_data.
   !! @return field index for subsequent call to send_data.
-  INTEGER FUNCTION register_static_field(module_name, field_name, axes, long_name, units,&
+  INTEGER FUNCTION register_static_field_old(module_name, field_name, axes, long_name, units,&
        & missing_value, range, mask_variant, standard_name, DYNAMIC, do_not_log, interp_method,&
        & tile_count, area, volume, realm)
     CHARACTER(len=*), INTENT(in) :: module_name, field_name
@@ -813,12 +878,6 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
     LOGICAL :: mask_variant1, dynamic1, allow_log
     CHARACTER(len=128) :: msg
     INTEGER :: domain_type
-
-    ! Fatal error if the module has not been initialized.
-    IF ( .NOT.module_is_initialized ) THEN
-       ! <ERROR STATUS="FATAL">diag_manager has NOT been initialized</ERROR>
-       CALL error_mesg ('diag_manager_mod::register_static_field', 'diag_manager has NOT been initialized', FATAL)
-    END IF
 
     ! Check if OPTIONAL parameters were passed in.
     IF ( PRESENT(missing_value) ) THEN
@@ -879,10 +938,10 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
             & DYNAMIC=dynamic1)
     END IF
 
-    register_static_field = find_input_field(module_name, field_name, 1)
-    field = register_static_field
+    register_static_field_old = find_input_field(module_name, field_name, 1)
+    field = register_static_field_old
     ! Negative index returned if this field was not found in the diag_table.
-    IF ( register_static_field < 0 ) RETURN
+    IF ( register_static_field_old < 0 ) RETURN
 
     ! Check that the axes are compatible with each other
     domain_type = axis_compatible_check(axes,field_name)
@@ -899,7 +958,7 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
        END IF
 
        CALL init_input_field(module_name, field_name, tile)
-       register_static_field = find_input_field(module_name, field_name, tile)
+       register_static_field_old = find_input_field(module_name, field_name, tile)
        DO j = 1, input_fields(field)%num_output_fields
           out_num = input_fields(field)%output_fields(j)
           file_num = output_fields(out_num)%output_file
@@ -912,7 +971,7 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
                   & files(file_num)%name,output_fields(out_num)%time_method, output_fields(out_num)%pack, tile)
           END IF
        END DO
-       field = register_static_field
+       field = register_static_field_old
     END IF
 
     ! Store information for this input field into input field table
@@ -933,7 +992,7 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
     ! Verify that area and volume do not point to the same variable
     IF ( PRESENT(volume).AND.PRESENT(area) ) THEN
        IF ( area.EQ.volume ) THEN
-          CALL error_mesg ('diag_manager_mod::register_static_field', 'module/output_field '&
+          CALL error_mesg ('diag_manager_mod::register_static_field_old', 'module/output_field '&
                &//TRIM(module_name)//'/'// TRIM(field_name)//' AREA and VOLUME CANNOT be the same variable.&
                & Contact the developers.',&
                & FATAL)
@@ -943,7 +1002,7 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
     ! Check for the existence of the area/volume field(s)
     IF ( PRESENT(area) ) THEN
        IF ( area < 0 ) THEN
-          CALL error_mesg ('diag_manager_mod::register_static_field', 'module/output_field '&
+          CALL error_mesg ('diag_manager_mod::register_static_field_old', 'module/output_field '&
                &//TRIM(module_name)//'/'// TRIM(field_name)//' AREA measures field NOT found in diag_table.&
                & Contact the model liaison.n',&
                & FATAL)
@@ -951,7 +1010,7 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
     END IF
     IF ( PRESENT(volume) ) THEN
        IF ( volume < 0 ) THEN
-          CALL error_mesg ('diag_manager_mod::register_static_field', 'module/output_field '&
+          CALL error_mesg ('diag_manager_mod::register_static_field_old', 'module/output_field '&
                &//TRIM(module_name)//'/'// TRIM(field_name)//' VOLUME measures field NOT found in diag_table&
                & Contact the model liaison.',&
                & FATAL)
@@ -994,7 +1053,7 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
        TYPE IS (real(kind=r8_kind))
           range_use = real(range)
        CLASS DEFAULT
-          CALL error_mesg ('diag_manager_mod::register_static_field',&
+          CALL error_mesg ('diag_manager_mod::register_static_field_old',&
                & 'The range is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
        END SELECT
        input_fields(field)%range = range_use
@@ -1071,7 +1130,7 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
        file_num = output_fields(out_num)%output_file
        if (domain_type .eq. DIAG_AXIS_2DDOMAIN) then
            if (files(file_num)%use_domainUG) then
-               call error_mesg("diag_manager_mod::register_static_field", &
+               call error_mesg("diag_manager_mod::register_static_field_old", &
                                "Diagnostics living on a structured grid" &
                                //" and an unstructured grid cannot exist" &
                                //" in the same file (" &
@@ -1082,7 +1141,7 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
            endif
        elseif (domain_type .eq. DIAG_AXIS_UGDOMAIN) then
            if (files(file_num)%use_domain2D) then
-               call error_mesg("diag_manager_mod::register_static_field", &
+               call error_mesg("diag_manager_mod::register_static_field_old", &
                                "Diagnostics living on a structured grid" &
                                //" and an unstructured grid cannot exist" &
                                //" in the same file (" &
@@ -1182,7 +1241,7 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
              !   minimum on static fields.  Setting the time operation to 'NONE'
              !   for this field.
              ! </ERROR>
-             CALL error_mesg ('diag_manager_mod::register_static_field',&
+             CALL error_mesg ('diag_manager_mod::register_static_field_old',&
                   & 'module/field '//TRIM(msg)//' is STATIC.  Cannot perform time operations&
                   & average, maximum, or minimum on static fields.  Setting the time operation&
                   & to "NONE" for this field.', WARNING)
@@ -1229,7 +1288,7 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
        ! Set the cell_measures attribute in the out file
        CALL init_field_cell_measures(output_fields(out_num), area=area, volume=volume, err_msg=msg)
        IF ( LEN_TRIM(msg).GT.0 ) THEN
-          CALL error_mesg ('diag_manager_mod::register_static_field',&
+          CALL error_mesg ('diag_manager_mod::register_static_field_old',&
                & TRIM(msg)//' for module/field '//TRIM(module_name)//'/'//TRIM(field_name),&
                & FATAL)
        END IF
@@ -1262,7 +1321,7 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
           END IF
        END DO
     END IF
-  END FUNCTION register_static_field
+  END FUNCTION register_static_field_old
 
   !> @brief Return the diagnostic field ID of a given variable.
   !! @return get_diag_field_id will return the ID returned during the register_diag_field call.

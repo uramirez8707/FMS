@@ -183,15 +183,15 @@ end subroutine diag_obj_init
 !> \Description Fills in and allocates (when necessary) the values in the diagnostic object
 subroutine fms_register_diag_field_obj &
                 !(dobj, modname, varname, axes, time, longname, units, missing_value, metadata)
-       (dobj, modname, varname, init_time, diag_field_indices, axes, &
+       (dobj, modname, varname, diag_field_indices, init_time, axes, &
        longname, units, missing_value, varRange, mask_variant, standname, &
        do_not_log, err_msg, interp_method, tile_count, area, volume, realm)
  class(fmsDiagObject_type),      INTENT(inout) :: dobj                  !< Diaj_obj to fill
  CHARACTER(len=*),               INTENT(in)    :: modname               !< The module name
  CHARACTER(len=*),               INTENT(in)    :: varname               !< The variable name
- TYPE(time_type),                INTENT(in)    :: init_time             !< Initial time !< TO DO
  integer,                        INTENT(in)    :: diag_field_indices(:) !< Array of indices to the field
                                                                         !! in the yaml object
+ TYPE(time_type),  OPTIONAL,     INTENT(in)    :: init_time             !< Initial time !< TO DO
  INTEGER, TARGET,  OPTIONAL,     INTENT(in)    :: axes(:)               !< The axes indicies
  CHARACTER(len=*), OPTIONAL,     INTENT(in)    :: longname              !< THe variables long name
  CHARACTER(len=*), OPTIONAL,     INTENT(in)    :: units                 !< The units of the variables
