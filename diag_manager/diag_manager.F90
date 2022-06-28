@@ -507,7 +507,7 @@ end function register_diag_field_array
 
     if (use_modern_diag) then
 #ifdef use_yaml
-      diag_field_indices = find_diag_field(field_name)
+      diag_field_indices = find_diag_field(field_name, module_name)
       if (diag_field_indices(1) .eq. diag_null) then
         !< The field was not found in the table, so return diag_null
         register_static_field = diag_null
@@ -554,7 +554,7 @@ end function register_static_field
 #ifdef use_yaml
     integer, allocatable :: diag_field_indices(:) !< indices where the field was found
 
-    diag_field_indices = find_diag_field(field_name)
+    diag_field_indices = find_diag_field(field_name, module_name)
     if (diag_field_indices(1) .eq. diag_null) then
       !< The field was not found in the table, so return diag_null
       register_diag_field_scalar_modern = diag_null
@@ -605,7 +605,7 @@ end function register_static_field
 #ifdef use_yaml
     integer, allocatable :: diag_field_indices(:) !< indices of diag_field yaml where the field was found
 
-    diag_field_indices = find_diag_field(field_name)
+    diag_field_indices = find_diag_field(field_name, module_name)
     if (diag_field_indices(1) .eq. diag_null) then
       !< The field was not found in the table, so return diag_null
       register_diag_field_array_modern = diag_null
@@ -4397,8 +4397,7 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
     CHARACTER(len=*), INTENT(in) :: att_name      !< new attribute name
     class(*),         INTENT(in) :: att_value(:)  !< new attribute value
 
-   if (diag_field_id < 0 .and. diag_field_id > registered_variables) &
-      call mpp_error(FATAL, "diag_field_add_attribute: The diag_field_id is not valid")
+   if (diag_field_id < 0) return
 
    call diag_objs(diag_field_id)%add_attribute(att_name, att_value)
   end subroutine fms_diag_field_add_attribute

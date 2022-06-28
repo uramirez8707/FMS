@@ -1193,15 +1193,51 @@ end function get_num_unique_fields
 
 !> @brief Determines if a diag_field is in the diag_yaml_object
 !! @return Indices of the locations where the field was found
-function find_diag_field(diag_field_name) &
+function find_diag_field(diag_field_name, modname) &
 result(indices)
 
   character(len=*), intent(in) :: diag_field_name !< diag_field name to search for
+  character(len=*), intent(in) :: modname         !< module name to search for
+  integer, allocatable         :: indices(:)      !< The indices where the diag_field_name and the
+                                                  !! module name matches
+  integer, allocatable         :: indices_all(:)  !< All of the indices where the the diag_field_name
+                                                  !! was found
 
-  integer, allocatable :: indices(:)
+  integer :: i !< For do loops
+  integer :: j !< indices_all(i) (for less typing)
+  integer :: k !< iterator
 
-  indices = fms_find_my_string(variable_list%var_pointer, size(variable_list%var_pointer), &
+  indices_all = fms_find_my_string(variable_list%var_pointer, size(variable_list%var_pointer), &
                                & diag_field_name//c_null_char)
+
+  !< If the field is not in the diag_table, set indices to diag_null and return
+  if (indices_all(1) .eq. diag_null) then
+    allocate(indices(1))
+    indices(1) = diag_null
+    return !< The field was not found at all
+  endif
+
+  !< Loop through the indices where the diag_field_name matches and determine if the modname also
+  !! matches. It is possible to have fields with the same name that come from a different module
+  k = 0
+  do i = 1, size(indices_all)
+    j = indices_all(i)
+    if (diag_yaml%diag_fields(j)%var_module .eq. modname) then
+       k = k+1
+    else
+       indices_all(i) = diag_null
+    endif
+  enddo
+
+  !< Set indices to be only the indices where the diag_field_name and the modname matches
+  allocate(indices(k))
+  k = 0
+  do i = 1, size(indices_all)
+     if (indices_all(i) .ne. diag_null) then
+       k = k +1
+       indices(k) = indices_all(i)
+     endif
+  enddo
 end function find_diag_field
 
 !> @brief Gets the diag_field entries corresponding to the indices of the sorted variable_list
