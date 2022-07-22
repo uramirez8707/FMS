@@ -1076,7 +1076,7 @@ end function has_file_sub_region
 !! @return true 
 pure logical function has_file_new_file_freq (obj)
   class(diagYamlFiles_type), intent(in) :: obj !< diagYamlFiles_type object to initialize
-  has_file_new_file_freq = .true.
+  has_file_new_file_freq = obj%file_new_file_freq .ne. DIAG_NULL
 end function has_file_new_file_freq
 !> @brief Checks if obj%file_new_file_freq_units is allocated
 !! @return true if obj%file_new_file_freq_units is allocated
@@ -1094,7 +1094,7 @@ end function has_file_start_time
 !! @return true 
 pure logical function has_file_duration (obj)
   class(diagYamlFiles_type), intent(in) :: obj !< diagYamlFiles_type object to initialize
-  has_file_duration = .true.
+  has_file_duration = obj%file_duration .ne. DIAG_NULL
 end function has_file_duration
 !> @brief obj%file_duration_units is on the stack, so this will retrun true
 !! @return true 

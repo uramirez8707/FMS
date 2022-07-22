@@ -374,7 +374,8 @@ void write_yaml_from_struct_3 (char *yamlname, int asize, struct fmsyamloutkeys 
 	return;
     }
   /* loop through the structs */
-    for (int s2 = 0 ; s2 < a2size ; s2++){
+    int s2;
+    for (s2 = 0 ; s2 < a2size ; s2++){
       yaml_mapping_start_event_initialize(&event, NULL, (yaml_char_t *)YAML_MAP_TAG,
         				  1, YAML_ANY_MAPPING_STYLE);
       if (!yaml_emitter_emit(&emitter, &event)){
@@ -403,7 +404,8 @@ void write_yaml_from_struct_3 (char *yamlname, int asize, struct fmsyamloutkeys 
     	/* loop through the structs */
 	int s3start = s3count;
 	int s3end = s3start + n3each[s2];
-	for (int s3 = s3start ; s3 < s3end ; s3++){
+  int s3;
+	for (s3 = s3start ; s3 < s3end ; s3++){
       	  yaml_mapping_start_event_initialize(&event, NULL, (yaml_char_t *)YAML_MAP_TAG,
           			1, YAML_ANY_MAPPING_STYLE);
       	  if (!yaml_emitter_emit(&emitter, &event)){

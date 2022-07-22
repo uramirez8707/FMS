@@ -239,11 +239,12 @@ use platform_mod
   USE fms_diag_object_mod, ONLY: fmsDiagObject_type, fms_diag_object_init, fms_register_diag_field_array, &
       & fms_register_diag_field_scalar, fms_diag_object_end, fms_register_static_field, fms_diag_field_add_attribute, &
       & fms_get_diag_field_id
-  USE fms_diag_file_object_mod, only: fms_diag_files_object_initialized
+  USE fms_diag_file_object_mod, only: fms_diag_files_object_initialized, fmsDiagFile_type, FMS_diag_files
 #ifdef use_yaml
   use fms_diag_yaml_mod, only: diag_yaml_object_init, diag_yaml_object_end, get_num_unique_fields, find_diag_field
-  use fms_diag_axis_object_mod, only: fms_diag_axis_object_end, fms_diag_axis_object_init
+  use fms_diag_axis_object_mod, only: fms_diag_axis_object_end, fms_diag_axis_object_init, axis_obj, diagAxis_t
   use fms_diag_file_object_mod, only: fms_diag_files_object_init
+  use fms2_io_mod, only: FmsNetcdfFile_t
 #endif
 
   USE constants_mod, ONLY: SECONDS_PER_DAY
@@ -274,6 +275,7 @@ use platform_mod
   PUBLIC :: diag_send_complete_instant
   ! Public interfaces from diag_data_mod
   PUBLIC :: DIAG_FIELD_NOT_FOUND
+  public :: close_all_fileobjs, open_all_fileobjs
 
   ! version number of this module
   ! Include variable "version" to be written to log file.
@@ -4247,6 +4249,57 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
        END DO
     END IF
   END SUBROUTINE diag_field_add_cell_measures
+
+  !< @brief Open all the files using the correst fileobj, and write out the metadata
+  !! @note  This will likely be moved to another module.
+  subroutine open_all_fileobjs(Time)
+    type(time_type), intent(in) :: Time !< Current model time
+
+#ifdef use_yaml
+    integer :: i, j !< For do loops
+    type(fmsDiagFile_type), pointer :: obj !< FMS_diag_files(i) (for less typing)
+    integer :: number_of_axis
+    integer, pointer :: axis_ids(:)
+    type(diagAxis_t), pointer :: aobj !< axis_obj(axis_ids(j)) (for less typing)
+    class(FmsNetcdfFile_t), pointer :: fileobj
+
+    do i = 1, size(FMS_diag_files)
+      obj => FMS_diag_files(i)
+
+      if (.not. obj%need_to_open_file(Time)) CYCLE
+      call obj%open_the_file()
+      call obj%set_next_open()
+      number_of_axis = obj%get_file_number_of_axis()
+      axis_ids => obj%get_axis_ids()
+      fileobj => obj%get_fileobj()
+
+      do j = 1, number_of_axis
+        aobj => axis_obj(axis_ids(i))
+        call aobj%write_axis_metadata(fileobj)
+        nullify(aobj)
+      enddo
+
+      nullify(obj)
+    enddo
+#endif
+  end subroutine open_all_fileobjs
+
+  !< @brief close all the files
+  !! @note  This will likely be moved to another module.
+  subroutine close_all_fileobjs()
+#ifdef use_yaml
+    integer :: i !< For do loops
+    type(fmsDiagFile_type), pointer :: obj !< FMS_diag_files(i) (for less typing)
+
+    do i = 1, size(FMS_diag_files)
+      obj => FMS_diag_files(i)
+
+      call obj%close_the_file()
+
+      nullify(obj)
+   enddo
+#endif
+  end subroutine close_all_fileobjs
 
 END MODULE diag_manager_mod
 !> @}

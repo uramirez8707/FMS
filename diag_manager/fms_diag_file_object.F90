@@ -24,14 +24,17 @@
 !! a pointer to the information from the diag yaml, additional metadata that comes from the model, and a
 !! list of the variables and their variable IDs that are in the file.
 module fms_diag_file_object_mod
-use fms2_io_mod, only: FmsNetcdfFile_t, FmsNetcdfUnstructuredDomainFile_t, FmsNetcdfDomainFile_t
-use diag_data_mod, only: DIAG_NULL, NO_DOMAIN, max_axes, SUB_REGIONAL, get_base_time
+use fms2_io_mod, only: FmsNetcdfFile_t, FmsNetcdfUnstructuredDomainFile_t, FmsNetcdfDomainFile_t, &
+                      &open_file, close_file
+use diag_data_mod, only: DIAG_NULL, NO_DOMAIN, max_axes, SUB_REGIONAL, get_base_time, &
+                        &TWO_D_DOMAIN, UG_DOMAIN, VERY_LARGE_FILE_FREQ, NO_CALENDAR, &
+                        &DIAG_DAYS, DIAG_YEARS
 use diag_util_mod, only: diag_time_inc
-use time_manager_mod, only: time_type, operator(/=), operator(==)
+use time_manager_mod, only: time_type, operator(/=), operator(==), operator(>=), get_calendar_type
 #ifdef use_yaml
 use fms_diag_yaml_mod, only: diag_yaml, diagYamlObject_type, diagYamlFiles_type
 #endif
-use fms_diag_axis_object_mod, only: diagDomain_t
+use fms_diag_axis_object_mod, only: diagDomain_t, diagDomain2d_t, diagDomainUg_t, axis_obj
 use mpp_mod, only: mpp_error, FATAL
 implicit none
 private
@@ -81,13 +84,19 @@ type :: fmsDiagFile_type
   procedure, public :: set_file_domain
   procedure, public :: add_axes
   procedure, public :: add_start_time
+  procedure, public :: open_the_file
+  procedure, public :: close_the_file
+  procedure, public :: need_to_open_file
+  procedure, public :: set_next_open
 #endif
   procedure, public :: has_var_ids
   procedure, public :: get_id
-! TODO  procedure, public :: get_fileobj ! TODO
+  procedure, public :: get_fileobj
 ! TODO  procedure, public :: get_diag_yaml_file ! TODO
   procedure, public :: get_file_metadata_from_model
   procedure, public :: get_var_ids
+  procedure, public :: get_file_number_of_axis
+  procedure, public :: get_axis_ids
 ! The following fuctions come will use the yaml inquiry functions
 #ifdef use_yaml
  procedure, public :: get_file_fname
@@ -220,11 +229,11 @@ end function get_id
 !! TODO
 !> \brief Returns a copy of the value of fileobj
 !! \return A copy of fileobj
-!pure function get_fileobj (obj) result (res)
-!  class(fmsDiagFile_type), intent(in) :: obj !< The file object
-!  class(FmsNetcdfFile_t) :: res
-!  res = obj%fileobj
-!end function get_fileobj
+function get_fileobj (obj) result (res)
+  class(fmsDiagFile_type), target, intent(in) :: obj !< The file object
+  class(FmsNetcdfFile_t), pointer :: res
+  res => obj%fileobj
+end function get_fileobj
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! TODO
 !!> \brief Returns a copy of the value of diag_yaml_file
@@ -251,6 +260,23 @@ pure function get_var_ids (obj) result (res)
   allocate(res(size(obj%var_ids)))
   res = obj%var_ids
 end function get_var_ids
+
+!> \brief Returns the number of axis in the fileobj
+!! \return Number of axis in the fileobj
+pure function get_file_number_of_axis (obj) result (res)
+  class(fmsDiagFile_type), intent(in) :: obj !< The file object
+  integer :: res
+  res = obj%number_of_axis
+end function get_file_number_of_axis
+
+!> \brief Returns a pointer to the axis_ids
+!! \return A copy of axis_ids
+function get_axis_ids (obj) result (res)
+  class(fmsDiagFile_type), target, intent(in) :: obj !< The file object
+  integer, dimension(:), pointer :: res
+
+  res => obj%axis_ids
+end function get_axis_ids
 !!!!!!!!! Functions from diag_yaml_file
 #ifdef use_yaml
 !> \brief Returns a copy of file_fname from the yaml object
@@ -523,5 +549,97 @@ subroutine add_start_time(obj, start_time)
   endif
 
 end subroutine
+
+subroutine open_the_file(obj)
+  class(fmsDiagFile_type), intent(inout), target       :: obj            !< The file object
+
+  character(len=9) :: mype_string !< a string to store the pe
+  class(diagDomain_t), pointer :: domain
+  class(FmsNetcdfFile_t), pointer :: fileobj
+
+  character(len=200) :: filename !< Name of the file
+
+  if (allocated(obj%fileobj)) &
+    &call mpp_error(FATAL, "The fileobj for the file:"//obj%get_file_fname()//" is already opened!")
+
+  select case (obj%type_of_domain)
+  case (NO_DOMAIN, SUB_REGIONAL)
+    allocate(FmsNetcdfFile_t :: obj%fileobj)
+  case (TWO_D_DOMAIN)
+    allocate(FmsNetcdfDomainFile_t :: obj%fileobj)
+  case (UG_DOMAIN)
+    allocate(FmsNetcdfUnstructuredDomainFile_t :: obj%fileobj)
+  end select
+
+  if (obj%type_of_domain .eq. SUB_REGIONAL) then
+    filename = obj%get_file_fname()//".nc."//trim(mype_string)
+  else
+    filename = obj%get_file_fname()//".nc"
+  endif
+
+  domain => obj%domain
+  fileobj => obj%fileobj
+  select type (fileobj)
+  type is (FmsNetcdfFile_t)
+    if (.not. open_file(fileobj, filename, "overwrite")) &
+      &call mpp_error(FATAL, "Error opening the file:"//filename)
+  type is (FmsNetcdfDomainFile_t)
+    select type (domain)
+    type is (diagDomain2d_t)
+      if (.not. open_file(fileobj, filename, "overwrite", domain%Domain2)) &
+        &call mpp_error(FATAL, "Error opening the file:"//obj%get_file_fname())
+    end select
+  type is (FmsNetcdfUnstructuredDomainFile_t)
+    select type (domain)
+    type is (diagDomainUg_t)
+      if (.not. open_file(fileobj, filename, "overwrite", domain%DomainUG)) &
+        &call mpp_error(FATAL, "Error opening the file:"//obj%get_file_fname())
+    end select
+  end select
+end subroutine open_the_file
+
+subroutine close_the_file(obj)
+  class(fmsDiagFile_type), intent(inout), target       :: obj            !< The file object
+
+  call close_file(obj%fileobj)
+  deallocate(obj%fileobj)
+
+end subroutine close_the_file
+
+function need_to_open_file(obj, Time) &
+result(need_to_open)
+  class(fmsDiagFile_type), intent(inout), target       :: obj            !< The file object
+  type(time_type),         intent(in)                  :: Time           !< Current model time
+
+  logical :: need_to_open
+
+  need_to_open = .false.
+  if (Time >= obj%next_open) need_to_open = .true.
+end function need_to_open_file
+
+subroutine set_next_open(obj)
+  class(fmsDiagFile_type), intent(inout), target       :: obj            !< The file object
+
+  integer :: file_frequency
+  integer :: file_frequency_units
+
+  if (obj%has_file_duration()) then
+    file_frequency = obj%get_file_duration()
+    file_frequency_units = obj%get_file_duration_units()
+  elseif (obj%has_file_new_file_freq()) then
+    file_frequency = obj%get_file_new_file_freq()
+    file_frequency_units = obj%get_file_new_file_freq_units()
+  else
+    file_frequency = VERY_LARGE_FILE_FREQ
+    if (get_calendar_type() == NO_CALENDAR ) THEN
+       file_frequency_units = DIAG_DAYS
+    ELSE
+       file_frequency_units = DIAG_YEARS
+    endif
+  endif
+
+  obj%next_open = diag_time_inc(obj%next_open, file_frequency, file_frequency_units)
+end subroutine set_next_open
+
 #endif
 end module fms_diag_file_object_mod

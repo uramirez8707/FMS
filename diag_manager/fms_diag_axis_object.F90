@@ -42,7 +42,7 @@ module fms_diag_axis_object_mod
 
   public :: diagAxis_t, set_subaxis, fms_diag_axis_init, fms_diag_axis_object_init, fms_diag_axis_object_end, &
           & get_domain_and_domain_type, axis_obj, diagDomain_t, sub_axis_objs, fms_diag_axis_add_attribute, &
-          & DIAGDOMAIN2D_T, fms_get_axis_length
+          & DIAGDOMAIN2D_T, diagDomainUg_t, fms_get_axis_length
   !> @}
 
   !> @brief Type to hold the domain info for an axis
@@ -306,7 +306,7 @@ module fms_diag_axis_object_mod
     endif
 
     if(allocated(obj%attributes)) then
-      do i = 1, size(obj%attributes)
+      do i = 1, obj%num_attributes
         call register_variable_attribute(fileobj, axis_name, obj%attributes(i)%att_name, &
           & obj%attributes(i)%att_value)
       enddo
