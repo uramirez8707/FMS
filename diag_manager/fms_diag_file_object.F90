@@ -35,7 +35,7 @@ use time_manager_mod, only: time_type, operator(/=), operator(==), operator(>=),
 use fms_diag_yaml_mod, only: diag_yaml, diagYamlObject_type, diagYamlFiles_type
 #endif
 use fms_diag_axis_object_mod, only: diagDomain_t, diagDomain2d_t, diagDomainUg_t, axis_obj
-use mpp_mod, only: mpp_error, FATAL
+use mpp_mod, only: mpp_error, FATAL, mpp_pe, mpp_root_pe
 implicit none
 private
 
@@ -88,6 +88,7 @@ type :: fmsDiagFile_type
   procedure, public :: close_the_file
   procedure, public :: need_to_open_file
   procedure, public :: set_next_open
+  procedure, public :: set_diag_obj_id
 #endif
   procedure, public :: has_var_ids
   procedure, public :: get_id
@@ -257,8 +258,8 @@ end function get_file_metadata_from_model
 pure function get_var_ids (obj) result (res)
   class(fmsDiagFile_type), intent(in) :: obj !< The file object
   integer, dimension(:), allocatable :: res
-  allocate(res(size(obj%var_ids)))
-  res = obj%var_ids
+  allocate(res(size(obj%var_index)))
+  res = obj%var_index
 end function get_var_ids
 
 !> \brief Returns the number of axis in the fileobj
@@ -359,10 +360,10 @@ pure function get_file_duration_units (obj) result(res)
 end function get_file_duration_units
 !> \brief Returns a copy of file_varlist from the yaml object
 !! \return Copy of file_varlist
-pure function get_file_varlist (obj) result(res)
- class(fmsDiagFile_type), intent(in) :: obj !< The file object
- character (len=:), allocatable, dimension(:) :: res
-  res = obj%diag_yaml_file%get_file_varlist()
+function get_file_varlist (obj) result(res)
+ class(fmsDiagFile_type), target, intent(in) :: obj !< The file object
+ character (len=:), pointer, dimension(:) :: res
+  res => obj%diag_yaml_file%get_file_varlist()
 end function get_file_varlist
 !> \brief Returns a copy of file_global_meta from the yaml object
 !! \return Copy of file_global_meta
@@ -641,5 +642,26 @@ subroutine set_next_open(obj)
   obj%next_open = diag_time_inc(obj%next_open, file_frequency, file_frequency_units)
 end subroutine set_next_open
 
+subroutine set_diag_obj_id(obj, varname, diag_id)
+  class(fmsDiagFile_type), intent(inout), target       :: obj            !< The file object
+  character(len=*), intent(in) :: varname
+  integer, intent(in) :: diag_id
+
+  character(len=:), pointer :: file_var_list(:)
+  integer :: i
+
+  file_var_list => obj%get_file_varlist()
+
+  if (mpp_pe() .eq. mpp_root_pe()) print *, "Looking for ", varname
+  do i=1, size(file_var_list)
+    if (file_var_list(i) .eq. varname) then
+      obj%var_index(i) = diag_id
+      obj%var_reg(i) = .true.
+      if (mpp_pe() .eq. mpp_root_pe()) print *, "Found ", varname
+      return
+    endif
+  enddo
+
+end subroutine set_diag_obj_id
 #endif
 end module fms_diag_file_object_mod

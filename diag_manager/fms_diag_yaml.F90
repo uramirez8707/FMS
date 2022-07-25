@@ -883,11 +883,11 @@ result (res)
 end function get_file_duration_units
 !> @brief Inquiry for diag_files_obj%file_varlist
 !! @return file_varlist of a diag_yaml_file_obj
-pure function get_file_varlist (diag_files_obj) &
+function get_file_varlist (diag_files_obj) &
 result (res)
- class (diagYamlFiles_type), intent(in) :: diag_files_obj !< The object being inquiried
- character (:), allocatable :: res(:) !< What is returned
-  res = diag_files_obj%file_varlist
+ class (diagYamlFiles_type), target, intent(in) :: diag_files_obj !< The object being inquiried
+ character (:), pointer :: res(:) !< What is returned
+  res => diag_files_obj%file_varlist
 end function get_file_varlist
 !> @brief Inquiry for diag_files_obj%file_global_meta
 !! @return file_global_meta of a diag_yaml_file_obj

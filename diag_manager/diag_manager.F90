@@ -238,7 +238,7 @@ use platform_mod
   USE diag_grid_mod, ONLY: diag_grid_init, diag_grid_end
   USE fms_diag_object_mod, ONLY: fmsDiagObject_type, fms_diag_object_init, fms_register_diag_field_array, &
       & fms_register_diag_field_scalar, fms_diag_object_end, fms_register_static_field, fms_diag_field_add_attribute, &
-      & fms_get_diag_field_id
+      & fms_get_diag_field_id, diag_objs
   USE fms_diag_file_object_mod, only: fms_diag_files_object_initialized, fmsDiagFile_type, FMS_diag_files
 #ifdef use_yaml
   use fms_diag_yaml_mod, only: diag_yaml_object_init, diag_yaml_object_end, get_num_unique_fields, find_diag_field
@@ -4262,6 +4262,8 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
     integer, pointer :: axis_ids(:)
     type(diagAxis_t), pointer :: aobj !< axis_obj(axis_ids(j)) (for less typing)
     class(FmsNetcdfFile_t), pointer :: fileobj
+    integer, dimension(:), allocatable :: var_list
+    type(fmsDiagObject_type), pointer :: dobj
 
     do i = 1, size(FMS_diag_files)
       obj => FMS_diag_files(i)
@@ -4274,11 +4276,18 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
       fileobj => obj%get_fileobj()
 
       do j = 1, number_of_axis
-        aobj => axis_obj(axis_ids(i))
+        aobj => axis_obj(axis_ids(j))
         call aobj%write_axis_metadata(fileobj)
         nullify(aobj)
       enddo
 
+      var_list = obj%get_var_ids()
+      do j = 1, size(var_list)
+         dobj => diag_objs(var_list(j))
+         if (mpp_pe() .eq. mpp_root_pe()) print *, "File: ", i, " ID:", var_list(j), " Var:", dobj%get_varname()
+
+         nullify(dobj)
+      enddo
       nullify(obj)
     enddo
 #endif

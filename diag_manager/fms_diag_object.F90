@@ -150,7 +150,7 @@ integer,private :: MAX_LEN_VARNAME
 integer,private :: MAX_LEN_META
 logical,private :: module_is_initialized = .false. !< Flag indicating if the module is initialized
 
-TYPE(fmsDiagObject_type), private, ALLOCATABLE, target :: diag_objs(:) !< Array of diag objects
+TYPE(fmsDiagObject_type), public, ALLOCATABLE, target :: diag_objs(:) !< Array of diag objects
                                                                        !! one for each registered variable
 integer, private :: registered_variables !< Number of registered variables
 
@@ -262,6 +262,7 @@ subroutine fms_register_diag_field_obj &
        call FMS_diag_files(j)%set_file_domain(dobj%domain, dobj%type_of_domain)
        call FMS_diag_files(j)%add_axes(axes)
        if (present(init_time)) call FMS_diag_files(j)%add_start_time(init_time)
+       call FMS_diag_files(j)%set_diag_obj_id(dobj%varname, dobj%diag_id)
     enddo
      !> TO DO:
      !!     Mark the field as registered in the diag_files
