@@ -98,7 +98,7 @@ type diagYamlFiles_type
                                                                       !! Required if “new_file_freq” used
                                                                       !! (DIAG_SECONDS, DIAG_MINUTES, &
                                                                       !! DIAG_HOURS, DIAG_DAYS, DIAG_YEARS)
-  character (len=:), private, allocatable :: file_start_time !< Time to start the file for the first time. Requires
+  integer, private, allocatable :: file_start_time(:) !< Time to start the file for the first time. Requires
                                                              !! “new_file_freq”
   integer, private :: file_duration !< How long the file should receive data after start time
                                     !! in “file_duration_units”.  This optional field can only
@@ -489,7 +489,10 @@ subroutine fill_in_diag_files(diag_yaml_id, diag_file_id, fileobj)
   call set_new_file_freq(fileobj, buffer)
 
   deallocate(buffer)
-  call diag_get_value_from_key(diag_yaml_id, diag_file_id, "start_time", fileobj%file_start_time, is_optional=.true.)
+  allocate(fileobj%file_start_time(6))
+  fileobj%file_start_time = diag_null
+
+  call get_value_from_key(diag_yaml_id, diag_file_id, "start_time", fileobj%file_start_time, is_optional=.true.)
   call get_value_from_key(diag_yaml_id, diag_file_id, "file_duration", fileobj%file_duration, is_optional=.true.)
   call diag_get_value_from_key(diag_yaml_id, diag_file_id, "file_duration_units", buffer, &
     is_optional=.true.)
@@ -892,7 +895,7 @@ end function get_file_new_file_freq_units
 pure function get_file_start_time (diag_files_obj) &
 result (res)
  class (diagYamlFiles_type), intent(in) :: diag_files_obj !< The object being inquiried
- character (len=:), allocatable :: res !< What is returned
+ integer, allocatable :: res(:) !< What is returned
   res = diag_files_obj%file_start_time
 end function get_file_start_time
 !> @brief Inquiry for diag_files_obj%file_duration
@@ -1126,7 +1129,15 @@ end function has_file_new_file_freq_units
 !! @return true if obj%file_start_time is allocated
 pure logical function has_file_start_time (obj)
   class(diagYamlFiles_type), intent(in) :: obj !< diagYamlFiles_type object to initialize
-  has_file_start_time = allocated(obj%file_start_time)
+  if (allocated(obj%file_start_time)) then
+    if(any(obj%file_start_time == diag_null)) then
+      has_file_start_time = .false.
+    else
+      has_file_start_time = .true.
+    endif
+  else
+    has_file_start_time = .false.
+  endif
 end function has_file_start_time
 !> @brief obj%file_duration is allocated on th stack, so this is always true
 !! @return true

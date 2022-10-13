@@ -29,7 +29,9 @@ use fms2_io_mod, only: FmsNetcdfFile_t, FmsNetcdfUnstructuredDomainFile_t, FmsNe
                        get_instance_filename, open_file, close_file, get_mosaic_tile_file
 use diag_data_mod, only: DIAG_NULL, NO_DOMAIN, max_axes, SUB_REGIONAL, get_base_time, DIAG_NOT_REGISTERED, &
                          TWO_D_DOMAIN, UG_DOMAIN, prepend_date, DIAG_DAYS, VERY_LARGE_FILE_FREQ
-use time_manager_mod, only: time_type, operator(>), operator(/=), operator(==), get_date
+use time_manager_mod, only: time_type, operator(>), operator(/=), operator(==), get_date, operator(<=),&
+                            set_time, set_date, get_calendar_type, NO_CALENDAR
+USE constants_mod, ONLY: SECONDS_PER_HOUR, SECONDS_PER_MINUTE
 use fms_diag_time_utils_mod, only: diag_time_inc, get_time_string
 use time_manager_mod, only: time_type, operator(/=), operator(==), date_to_string
 use fms_diag_yaml_mod, only: diag_yaml, diagYamlObject_type, diagYamlFiles_type
@@ -53,6 +55,7 @@ type :: fmsDiagFile_type
   TYPE(time_type) :: last_output      !< Time of the last time output was writen
   TYPE(time_type) :: next_output      !< Time of the next write
   TYPE(time_type) :: next_next_output !< Time of the next next write
+  TYPE(time_type) :: end_time         !< The time to stop receiving data
 
   !< This will be used when using the new_file_freq keys in the diag_table.yaml
   TYPE(time_type) :: next_open        !< The next time to open the file
@@ -183,11 +186,22 @@ logical function fms_diag_files_object_init (files_array)
      obj%number_of_axis = 0
 
      !> Set the start_time of the file to the base_time and set up the *_output variables
-     obj%start_time = get_base_time()
-     obj%last_output = get_base_time()
+     if (obj%has_file_start_time()) then
+       obj%start_time = get_time_from_date(obj%get_file_start_time())
+     else
+       obj%start_time = get_base_time()
+     endif
+
+     obj%last_output = obj%start_time
      obj%next_output = diag_time_inc(obj%start_time, obj%get_file_freq(), obj%get_file_frequnit())
      obj%next_next_output = diag_time_inc(obj%next_output, obj%get_file_freq(), obj%get_file_frequnit())
-     obj%next_open = get_base_time()
+     obj%next_open = obj%start_time
+
+     if (obj%has_file_duration()) then
+       obj%end_time = diag_time_inc(obj%start_time, obj%get_file_duration(), obj%get_file_duration_units())
+     else
+       obj%end_time = diag_time_inc(obj%start_time, VERY_LARGE_FILE_FREQ, DIAG_DAYS)
+     endif
 
      nullify(obj)
    enddo set_ids_loop
@@ -355,7 +369,7 @@ end function get_file_new_file_freq_units
 !! \return Copy of file_start_time
 pure function get_file_start_time (this) result(res)
  class(fmsDiagFile_type), intent(in) :: this !< The file object
- character (len=:), allocatable :: res
+ integer, allocatable :: res(:)
   res = this%diag_yaml_file%get_file_start_time()
 end function get_file_start_time
 
@@ -567,6 +581,9 @@ subroutine add_start_time(this, start_time)
   class(fmsDiagFile_type), intent(inout)       :: this            !< The file object
   TYPE(time_type),         intent(in)          :: start_time     !< Start time to add to the fileobj
 
+  !< Go away if the file has the start_time
+  if (this%has_file_start_time()) return
+
   !< If the start_time sent in is equal to the base_time return because
   !! this%start_time was already set to the base_time
   if (start_time .eq. get_base_time()) return
@@ -644,6 +661,9 @@ subroutine open_diag_file(this, time_step)
 
   !< Go away if it is not time to open the file
   if (diag_file%next_open > time_step) return
+
+  !< Go away if no longer receiving data
+  if (diag_file%end_time <= time_step) return
 
   is_regional = .false.
   !< Figure out what fileobj to use!
@@ -752,8 +772,33 @@ subroutine open_diag_file(this, time_step)
   endif
 
 !TODO: closing the file here for now, just to see if it works
-  call close_file(diag_file%fileobj)
+  select type (fileobj => diag_file%fileobj)
+  type is (FmsNetcdfDomainFile_t)
+    call close_file(fileobj)
+  end select
 end subroutine open_diag_file
 
+!> \brief Determine the time_type from an array of integers representing the date
+!! \return The date set a time_type
+function get_time_from_date(int_date) &
+  result(time)
+  integer, intent(in) :: int_date(6) !< An array of integers representing the date to convert
+                                     !! in format [year, month, day, hour, minute, time]
+
+  type(time_type) :: time
+
+  IF ( get_calendar_type() /= NO_CALENDAR ) THEN
+    IF ( int_date(1)==0 .OR. int_date(2)==0 .OR. int_date(3)==0 ) THEN
+         call mpp_error(FATAL, 'fms_diag_file_object_mod::get_time_from_date'//&
+            &  'The year/month/day can not equal zero')
+    END IF
+      time = set_date(int_date(1),int_date(2), int_date(3), int_date(4), int_date(5), int_date(6))
+  ELSE
+    ! No calendar - ignore year and month
+    time = set_time(NINT(int_date(4)*SECONDS_PER_HOUR)+NINT(int_date(5)*SECONDS_PER_MINUTE)+int_date(6), &
+                          &  int_date(3))
+  END IF
+
+end function get_time_from_date
 #endif
 end module fms_diag_file_object_mod
