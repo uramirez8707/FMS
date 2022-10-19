@@ -213,6 +213,7 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
      call fileptr%set_file_domain(fieldptr%get_domain(), fieldptr%get_type_of_domain())
      call fileptr%add_axes(axes, this%diag_axis, this%registered_axis)
      call fileptr%add_start_time(init_time)
+     call fileptr%set_file_time_ops (fieldptr%diag_field(i))
     enddo
   elseif (present(axes)) then !only axes present
     do i = 1, size(file_ids)
@@ -220,17 +221,20 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
      call fileptr%add_field_id(fieldptr%get_id())
      call fileptr%set_file_domain(fieldptr%get_domain(), fieldptr%get_type_of_domain())
      call fileptr%add_axes(axes, this%diag_axis, this%registered_axis)
+     call fileptr%set_file_time_ops (fieldptr%diag_field(i))
     enddo
   elseif (present(init_time)) then !only inti time present
     do i = 1, size(file_ids)
      fileptr => this%FMS_diag_files(file_ids(i))%FMS_diag_file
      call fileptr%add_field_id(fieldptr%get_id())
      call fileptr%add_start_time(init_time)
+     call fileptr%set_file_time_ops (fieldptr%diag_field(i))
     enddo
   else !no axis or init time present
     do i = 1, size(file_ids)
      fileptr => this%FMS_diag_files(file_ids(i))%FMS_diag_file
      call fileptr%add_field_id(fieldptr%get_id())
+     call fileptr%set_file_time_ops (fieldptr%diag_field(i))
     enddo
   endif
   nullify (fileptr)
@@ -434,8 +438,17 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
     diag_file => this%FMS_diag_files(i)
     call diag_file%open_diag_file(time_step, file_is_opened)
     if (file_is_opened) then
+      call diag_file%add_time_metadata()
       call diag_file%write_metadata(this%diag_axis)
+      !TODO call diag_file%write_field_metadata()
       call diag_file%write_axis_data(this%diag_axis)
+    endif
+
+    if (diag_file%is_time_to_write(time_step)) then
+      call diag_file%increase_unlimited_dimension()
+      call diag_file%add_time_data(time_step)
+    !TODO call diag_files%add_variable_data()
+    !TDDO call diag_files%update_next_write()
     endif
   enddo
 #endif
@@ -627,7 +640,7 @@ subroutine dump_diag_obj( filename )
     write(unit_num, *) 'axes_initialized:', fms_diag_object%axes_initialized
     write(unit_num, *) 'Files:'
     if( fms_diag_object%files_initialized ) then
-      do i=1, SIZE(fms_diag_object%FMS_diag_files) 
+      do i=1, SIZE(fms_diag_object%FMS_diag_files)
         write(unit_num, *) 'File num:', i
         fileptr => fms_diag_object%FMS_diag_files(i)%FMS_diag_file
         call fileptr%dump_file_obj(unit_num)
@@ -636,7 +649,7 @@ subroutine dump_diag_obj( filename )
       write(unit_num, *) 'files not initialized'
     endif
     if( fms_diag_object%fields_initialized) then
-      do i=1, SIZE(fms_diag_object%FMS_diag_fields) 
+      do i=1, SIZE(fms_diag_object%FMS_diag_fields)
         write(unit_num, *) 'Field num:', i
         fieldptr => fms_diag_object%FMS_diag_fields(i)
         call fieldptr%dump_field_obj(unit_num)
