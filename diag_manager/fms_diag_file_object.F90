@@ -145,10 +145,12 @@ type fmsDiagFileContainer_type
   procedure :: add_time_metadata
   procedure :: write_metadata
   procedure :: write_axis_data
+  procedure :: writing_on_this_pe
   procedure :: is_time_to_write
   procedure :: add_time_data
   procedure :: update_next_write
   procedure :: increase_unlimited_dimension
+  procedure :: close_diag_file
 end type fmsDiagFileContainer_type
 
 !type(fmsDiagFile_type), dimension (:), allocatable, target :: FMS_diag_file !< The array of diag files
@@ -715,12 +717,8 @@ subroutine open_diag_file(this, time_step, file_is_opened)
   if (.not. allocated(diag_file%fileobj)) then
     select type (diag_file)
     type is (subRegionalFile_type)
-      !< Go away if the subregion is not on current PE
-      if (.not. diag_file%write_on_this_pe) return
-
       !< In this case each PE is going to write its own file
       allocate(FmsNetcdfFile_t :: diag_file%fileobj)
-
       is_regional = .true.
     type is (fmsDiagFile_type)
       !< Use the type_of_domain to get the correct fileobj
@@ -735,7 +733,7 @@ subroutine open_diag_file(this, time_step, file_is_opened)
     end select
   else
     !< In this case, we are opening a new file so close the current the file
-    call close_file(diag_file%fileobj)
+    call this%close_diag_file()
   endif
 
   !< Figure out what to name of the file
@@ -876,6 +874,18 @@ logical function is_time_to_write(this, time_step)
   endif
 end function is_time_to_write
 
+logical function writing_on_this_pe(this)
+  class(fmsDiagFileContainer_type), intent(in), target   :: this            !< The file object
+
+  writing_on_this_pe = .true.
+
+  select type(diag_file => this%FMS_diag_file)
+  type is (subRegionalFile_type)
+    writing_on_this_pe = diag_file%write_on_this_pe
+  end select
+
+end function
+
 subroutine add_time_data(this, time_step)
   class(fmsDiagFileContainer_type), intent(in), target   :: this            !< The file object
   TYPE(time_type),                  intent(in)           :: time_step       !< Current model step time
@@ -974,6 +984,22 @@ subroutine write_axis_data(this, diag_axis)
   enddo
 
 end subroutine write_axis_data
+
+subroutine close_diag_file(this)
+  class(fmsDiagFileContainer_type), intent(inout), target :: this            !< The file object
+
+  !< The select types are needed here because otherwise the code will go to the
+  !! wrong close_file routine and things will not close propertly
+  select type( fileobj => this%FMS_diag_file%fileobj)
+  type is (FmsNetcdfDomainFile_t)
+    call close_file(fileobj)
+  type is (FmsNetcdfFile_t)
+    call close_file(fileobj)
+  type is (FmsNetcdfUnstructuredDomainFile_t)
+    call close_file(fileobj)
+  end select
+
+end subroutine close_diag_file
 
 #endif
 end module fms_diag_file_object_mod

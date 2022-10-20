@@ -158,8 +158,8 @@ call dump_diag_obj()
 call diag_manager_set_time_end(Time)
 call diag_manager_set_time_end(set_date(2,1,2,0,0,0))
 
-do i=1,1 !23
-  call diag_send_complete(set_date(2,1,1,6,0,0))
+do i=1,23
+  call diag_send_complete(set_date(2,1,1,i,0,0))
 enddo
 
 call diag_manager_end(Time)
