@@ -147,6 +147,7 @@ type fmsDiagFileContainer_type
   procedure :: write_axis_data
   procedure :: is_time_to_write
   procedure :: add_time_data
+  procedure :: update_next_write
   procedure :: increase_unlimited_dimension
 end type fmsDiagFileContainer_type
 
@@ -902,6 +903,20 @@ subroutine add_time_data(this, time_step)
 
 end subroutine add_time_data
 
+subroutine update_next_write(this, time_step)
+  class(fmsDiagFileContainer_type), intent(in), target   :: this            !< The file object
+  TYPE(time_type),                  intent(in)           :: time_step       !< Current model step time
+
+  class(fmsDiagFile_type), pointer     :: diag_file      !< Diag_file object to open
+
+  diag_file => this%FMS_diag_file
+  diag_file%next_output = diag_time_inc(diag_file%next_output, diag_file%get_file_freq(), &
+    diag_file%get_file_frequnit())
+  diag_file%next_next_output = diag_time_inc(diag_file%next_output, diag_file%get_file_freq(), &
+    diag_file%get_file_frequnit())
+
+end subroutine update_next_write
+
 subroutine increase_unlimited_dimension(this)
   class(fmsDiagFileContainer_type), intent(inout), target   :: this            !< The file object
 
@@ -958,8 +973,6 @@ subroutine write_axis_data(this, diag_axis)
     endif
   enddo
 
-  !TODO: closing the file here for now, just to see if it works
-  call close_file(fileobj)
 end subroutine write_axis_data
 
 #endif
