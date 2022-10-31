@@ -83,6 +83,7 @@ type :: fmsDiagFile_type
   integer :: number_of_axis !< Number of axis in the file
   logical :: time_ops !< .True. if file contains variables that are time_min, time_max, time_average or time_sum
   integer :: unlimited_dimension !< The unlimited dimension currently being written
+  logical :: is_static !< .True. if the frequency is -1
 
  contains
   procedure, public :: add_field_id
@@ -212,6 +213,7 @@ logical function fms_diag_files_object_init (files_array)
      obj%next_open = get_base_time()
      obj%time_ops = .false.
      obj%unlimited_dimension = 0
+     obj%is_static = obj%get_file_freq() .eq. -1
 
      nullify(obj)
    enddo set_ids_loop
@@ -237,11 +239,13 @@ subroutine add_field_id (this, new_field_id)
   endif
 end subroutine add_field_id
 
-subroutine set_file_time_ops(this, VarYaml)
+subroutine set_file_time_ops(this, VarYaml, is_static)
   class(fmsDiagFile_type), intent(inout) :: this !< The file object
   type (diagYamlFilesVar_type), intent(in) :: VarYaml
+  logical, intent(in) :: is_static
 
   if (this%time_ops) then
+    if (is_static) return
     if (VarYaml%get_var_reduction() .eq. time_none) then
       call mpp_error(FATAL, "The file: "//this%get_file_fname()//" has variables that are time averaged and instantaneous")
     endif
@@ -867,8 +871,9 @@ logical function is_time_to_write(this, time_step)
 
   if (time_step >= this%FMS_diag_file%next_output) then
     is_time_to_write = .true.
+    if (this%FMS_diag_file%is_static) return
     if (time_step >= this%FMS_diag_file%next_next_output) &
-      call mpp_error(FATAL, "You skip a time!")
+      call mpp_error(FATAL, this%FMS_diag_file%get_file_fname()//": You skip a time!")
   else
     is_time_to_write = .false.
   endif
@@ -920,10 +925,15 @@ subroutine update_next_write(this, time_step)
   class(fmsDiagFile_type), pointer     :: diag_file      !< Diag_file object to open
 
   diag_file => this%FMS_diag_file
-  diag_file%next_output = diag_time_inc(diag_file%next_output, diag_file%get_file_freq(), &
-    diag_file%get_file_frequnit())
-  diag_file%next_next_output = diag_time_inc(diag_file%next_output, diag_file%get_file_freq(), &
-    diag_file%get_file_frequnit())
+  if (diag_file%is_static) then
+    diag_file%next_output = diag_time_inc(diag_file%next_output, VERY_LARGE_FILE_FREQ, DIAG_DAYS)
+    diag_file%next_next_output = diag_time_inc(diag_file%next_output, VERY_LARGE_FILE_FREQ, DIAG_DAYS)
+  else
+    diag_file%next_output = diag_time_inc(diag_file%next_output, diag_file%get_file_freq(), &
+      diag_file%get_file_frequnit())
+    diag_file%next_next_output = diag_time_inc(diag_file%next_output, diag_file%get_file_freq(), &
+      diag_file%get_file_frequnit())
+  endif
 
 end subroutine update_next_write
 

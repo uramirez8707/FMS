@@ -1088,7 +1088,7 @@ CONTAINS
     CHARACTER(len=*), INTENT(in) :: att_value
 
     if (use_modern_diag) then
-      call fms_diag_object%fms_diag_axis_add_attribute(diag_axis_id, att_name, (/ att_value /))
+      !call fms_diag_object%fms_diag_axis_add_attribute(diag_axis_id, att_name, (/ att_value /))
     else
       CALL diag_axis_attribute_init(diag_axis_id, att_name, NF90_CHAR, cval=att_value)
     endif
