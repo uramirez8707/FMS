@@ -32,6 +32,13 @@ output_dir
 printf "EOF\n&dummy\nEOF" | cat > input.nml
 printf "5, 14   \n23\n\"forlendula\"" | cat > ascii_test1
 
+cat <<_EOF > ascii_distributed
+uno dos
+1234
+5678
+6.19 6.66
+_EOF
+
 # run the tests
 test_expect_success "test ascii reads" '
   mpirun -n 6 ../test_read_ascii_file

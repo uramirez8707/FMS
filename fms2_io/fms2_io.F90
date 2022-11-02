@@ -91,6 +91,7 @@ public :: write_restart_bc
 public :: read_restart_bc
 public :: get_mosaic_tile_grid
 public :: ascii_read
+public :: read_ascii_distributed
 public :: get_mosaic_tile_file
 public :: parse_mask_table
 public :: get_filename_appendix

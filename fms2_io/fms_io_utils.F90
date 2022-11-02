@@ -57,6 +57,7 @@ public :: open_check
 public :: string_compare
 public :: restart_filepath_mangle
 public :: ascii_read
+public :: read_ascii_distributed
 public :: parse_mask_table
 public :: get_mosaic_tile_file
 public :: get_filename_appendix
@@ -469,6 +470,84 @@ subroutine ascii_read(ascii_filename, ascii_var, num_lines, max_length)
   if(present(num_lines)) num_lines = lines_and_length(1)
   if(present(max_length)) max_length = lines_and_length(2)
 end subroutine ascii_read
+
+!> @brief A root pe reads data from an open file and distributes it to the other ranks
+!! This is basically a wrapper to the fortran intrinsic, read.
+!! This is an example of how to use:
+!! @code{.F90}
+!! if (mpp_pe(). eq. mpp_root_pe) open(newunit=unit_number, FILE="filename", ACTION='READ', IOSTAT=error_code)
+!! call read_ascii_distributed(unit_number, '(4i1)', buffer, error_code)
+!! if (mpp_pe() .eq. mpp_root_pe()) close(unit_number)
+!! @endcode
+subroutine read_ascii_distributed(unit_number, format_identifier, vdata, error_code)
+  integer,          intent(in)    :: unit_number       !< The unit number of an open ascii file
+  character(*),     intent(in)    :: format_identifier !< String describing the format of the data to read
+  class(*),         intent(inout) :: vdata(:)          !< Variable to read the data to
+  integer,          intent(out)   :: error_code        !< Error code from the read, 0 if the read was sucessful
+                                                       !! user is responsible for checking the error code
+
+  integer, allocatable :: pes(:) !< The current pelist
+
+  error_code = 0
+
+  !< Get the current pelist
+  allocate(pes(mpp_npes()))
+  call mpp_get_current_pelist(pes)
+
+  !< A root rank reads the data and broadcasts to the other ranks
+  select type(vdata)
+  type is (character(len=*))
+    if (mpp_pe() .eq. mpp_root_pe()) then
+      if (trim(format_identifier) .eq. '*') then
+        read(unit_number, fmt=*, iostat=error_code) vdata
+      else
+        read(unit_number, fmt=trim(format_identifier), iostat=error_code) vdata
+      endif
+      if (error_code /= 0) return
+    endif
+    call mpp_broadcast(vdata, len(vdata), mpp_root_pe(), pes)
+  type is (integer(kind=i4_kind))
+    if (mpp_pe() .eq. mpp_root_pe()) then
+      if (trim(format_identifier) .eq. '*') then
+        read(unit_number, fmt=*, iostat=error_code) vdata
+      else
+        read(unit_number, fmt=trim(format_identifier), iostat=error_code) vdata
+      endif
+      if (error_code /= 0) return
+    endif
+    call mpp_broadcast(vdata, size(vdata), mpp_root_pe(), pes)
+  type is (integer(kind=i8_kind))
+    if (mpp_pe() .eq. mpp_root_pe()) then
+      if (trim(format_identifier) .eq. '*') then
+        read(unit_number, fmt=*, iostat=error_code) vdata
+      else
+        read(unit_number, fmt=trim(format_identifier), iostat=error_code) vdata
+      endif
+      if (error_code /= 0) return
+    endif
+    call mpp_broadcast(vdata, size(vdata), mpp_root_pe(), pes)
+  type is (real(kind=r4_kind))
+    if (mpp_pe() .eq. mpp_root_pe()) then
+      if (trim(format_identifier) .eq. '*') then
+        read(unit_number, fmt=*, iostat=error_code) vdata
+      else
+        read(unit_number, fmt=trim(format_identifier), iostat=error_code) vdata
+      endif
+      if (error_code /= 0) return
+    endif
+    call mpp_broadcast(vdata, size(vdata), mpp_root_pe(), pes)
+  type is (real(kind=r8_kind))
+    if (mpp_pe() .eq. mpp_root_pe()) then
+      if (trim(format_identifier) .eq. '*') then
+        read(unit_number, fmt=*, iostat=error_code) vdata
+      else
+        read(unit_number, fmt=trim(format_identifier), iostat=error_code) vdata
+      endif
+      if (error_code /= 0) return
+    endif
+    call mpp_broadcast(vdata, size(vdata), mpp_root_pe(), pes)
+  end select
+end subroutine
 
 !> @brief Populate 2D maskmap from mask_table given a model
 subroutine parse_mask_table_2d(mask_table, maskmap, modelname)
