@@ -177,6 +177,12 @@ interface get_data_type_string
   module procedure get_data_type_string_5d
 end interface get_data_type_string
 
+!> @ingroup fms_io_utils_mod
+interface read_ascii_distributed
+  module procedure read_ascii_distributed_0d
+  module procedure read_ascii_distributed_1d
+end interface read_ascii_distributed
+
 !> @addtogroup fms_io_utils_mod
 !> @{
 contains
@@ -479,7 +485,53 @@ end subroutine ascii_read
 !! call read_ascii_distributed(unit_number, '(4i1)', buffer, error_code)
 !! if (mpp_pe() .eq. mpp_root_pe()) close(unit_number)
 !! @endcode
-subroutine read_ascii_distributed(unit_number, format_identifier, vdata, error_code)
+subroutine read_ascii_distributed_0d(unit_number, format_identifier, vdata, error_code)
+  integer,          intent(in)    :: unit_number       !< The unit number of an open ascii file
+  character(*),     intent(in)    :: format_identifier !< String describing the format of the data to read
+  class(*), target, intent(inout) :: vdata             !< Variable to read the data to
+  integer,          intent(out)   :: error_code        !< Error code from the read, 0 if the read was sucessful
+                                                       !! user is responsible for checking the error code
+
+  character(len=256)              :: vdata_str(1)
+  real(kind=r8_kind)            :: vdata_r8(1)
+  real(kind=r4_kind)            :: vdata_r4(1)
+  integer(kind=i4_kind)         :: vdata_i4(1)
+  integer(kind=i8_kind)         :: vdata_i8(1)
+
+  select type(vdata)
+  type is (character(len=*))
+    vdata_str(1) = trim(vdata)
+    call read_ascii_distributed_1d(unit_number, format_identifier, vdata_str, error_code)
+    vdata = trim(vdata_str(1))
+  type is (integer(kind=i4_kind))
+    vdata_i4(1) = vdata
+    call read_ascii_distributed_1d(unit_number, format_identifier, vdata_i4, error_code)
+    vdata = vdata_i4(1)
+  type is (integer(kind=i8_kind))
+    vdata_i8(1) = vdata
+    call read_ascii_distributed_1d(unit_number, format_identifier, vdata_i8, error_code)
+    vdata = vdata_i8(1)
+  type is (real(kind=r4_kind))
+    vdata_r4(1) = vdata
+    call read_ascii_distributed_1d(unit_number, format_identifier, vdata_r4, error_code)
+    vdata = vdata_r4(1)
+  type is (real(kind=r8_kind))
+    vdata_r8(1) = vdata
+    call read_ascii_distributed_1d(unit_number, format_identifier, vdata_r8, error_code)
+    vdata = vdata_r8(1)
+  end select
+
+end subroutine read_ascii_distributed_0d
+
+!> @brief A root pe reads data from an open file and distributes it to the other ranks
+!! This is basically a wrapper to the fortran intrinsic, read.
+!! This is an example of how to use:
+!! @code{.F90}
+!! if (mpp_pe(). eq. mpp_root_pe) open(newunit=unit_number, FILE="filename", ACTION='READ', IOSTAT=error_code)
+!! call read_ascii_distributed(unit_number, '(4i1)', buffer, error_code)
+!! if (mpp_pe() .eq. mpp_root_pe()) close(unit_number)
+!! @endcode
+subroutine read_ascii_distributed_1d(unit_number, format_identifier, vdata, error_code)
   integer,          intent(in)    :: unit_number       !< The unit number of an open ascii file
   character(*),     intent(in)    :: format_identifier !< String describing the format of the data to read
   class(*),         intent(inout) :: vdata(:)          !< Variable to read the data to
@@ -547,7 +599,7 @@ subroutine read_ascii_distributed(unit_number, format_identifier, vdata, error_c
     endif
     call mpp_broadcast(vdata, size(vdata), mpp_root_pe(), pes)
   end select
-end subroutine
+end subroutine read_ascii_distributed_1d
 
 !> @brief Populate 2D maskmap from mask_table given a model
 subroutine parse_mask_table_2d(mask_table, maskmap, modelname)
