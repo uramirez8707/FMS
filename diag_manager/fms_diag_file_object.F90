@@ -34,7 +34,7 @@ use diag_data_mod, only: DIAG_NULL, NO_DOMAIN, max_axes, SUB_REGIONAL, get_base_
                          get_base_second, time_unit_list, time_average, time_rms, time_max, time_min, time_sum, &
                          time_diurnal, time_power, time_none
 use time_manager_mod, only: time_type, operator(>), operator(/=), operator(==), get_date, get_calendar_type, &
-                            VALID_CALENDAR_TYPES, operator(>=)
+                            VALID_CALENDAR_TYPES, operator(>=), date_to_string
 use fms_diag_time_utils_mod, only: diag_time_inc, get_time_string, get_date_dif
 use fms_diag_yaml_mod, only: diag_yaml, diagYamlObject_type, diagYamlFiles_type, subRegion_type, diagYamlFilesVar_type
 use fms_diag_axis_object_mod, only: diagDomain_t, get_domain_and_domain_type, fmsDiagAxis_type, &
@@ -42,7 +42,6 @@ use fms_diag_axis_object_mod, only: diagDomain_t, get_domain_and_domain_type, fm
                                     fmsDiagFullAxis_type, define_subaxis
 use mpp_mod, only: mpp_get_current_pelist, mpp_npes, mpp_root_pe, mpp_pe, mpp_error, FATAL, stdout, &
                    uppercase, lowercase
-use time_manager_mod, only: time_type, operator(/=), operator(==), date_to_string
 
 implicit none
 private
@@ -134,7 +133,7 @@ end type fmsDiagFile_type
 type, extends (fmsDiagFile_type) :: subRegionalFile_type
   integer, dimension(:), allocatable :: sub_axis_ids !< Array of axis ids in the file
   logical :: write_on_this_pe !< Flag indicating if the subregion is on the current PE
-  logical :: subaxis_defined !< Flag indicating if the subaxes have already been defined
+  logical :: is_subaxis_defined !< Flag indicating if the subaxes have already been defined
 end type subRegionalFile_type
 
 !> \brief A container for fmsDiagFile_type.  This is used to create the array of files
@@ -144,7 +143,7 @@ type fmsDiagFileContainer_type
   contains
   procedure :: open_diag_file
   procedure :: add_time_metadata
-  procedure :: write_metadata
+  procedure :: write_axis_metadata
   procedure :: write_axis_data
   procedure :: writing_on_this_pe
   procedure :: is_time_to_write
@@ -180,7 +179,7 @@ logical function fms_diag_files_object_init (files_array)
            allocate(obj%sub_axis_ids(max_axes))
            obj%sub_axis_ids = diag_null
            obj%write_on_this_pe = .false.
-           obj%subaxis_defined = .false.
+           obj%is_subaxis_defined = .false.
            obj%number_of_axis = 0
        end select
      else
@@ -375,7 +374,7 @@ end function get_file_unlimdim
 !> \brief Returns a copy of file_sub_region from the yaml object
 !! \return Copy of file_sub_region
 function get_file_sub_region (obj) result(res)
- class(fmsDiagFile_type), target, intent(in) :: obj !< The file object
+ class(fmsDiagFile_type), intent(in) :: obj !< The file object
  type(subRegion_type) :: res
   res = obj%diag_yaml_file%get_file_sub_region()
 end function get_file_sub_region
@@ -595,14 +594,14 @@ subroutine add_axes(this, axis_ids, diag_axis, naxis)
 
   select type(this)
   type is (subRegionalFile_type)
-    if (.not. this%subaxis_defined) then
+    if (.not. this%is_subaxis_defined) then
       if (associated(this%domain)) then
         if (this%domain%get_ntiles() .eq. 6) is_cube_sphere = .true.
       endif
 
       call define_subaxis(diag_axis, axis_ids, naxis, this%get_file_sub_region(), &
         is_cube_sphere, this%write_on_this_pe)
-      this%subaxis_defined = .true.
+      this%is_subaxis_defined = .true.
 
       !> add the axis to the list of axis in the file
       if (this%write_on_this_pe) then
@@ -945,7 +944,7 @@ subroutine increase_unlimited_dimension(this)
 end subroutine increase_unlimited_dimension
 
 !< @brief Writes the axis metadata for the file
-subroutine write_metadata(this, diag_axis)
+subroutine write_axis_metadata(this, diag_axis)
   class(fmsDiagFileContainer_type), intent(inout), target :: this            !< The file object
   class(fmsDiagAxisContainer_type), intent(in)            :: diag_axis(:)    !< Diag_axis object
 
@@ -968,7 +967,7 @@ subroutine write_metadata(this, diag_axis)
     endif
   enddo
 
-end subroutine write_metadata
+end subroutine write_axis_metadata
 
 !< @brief Writes the axis data for the file
 subroutine write_axis_data(this, diag_axis)

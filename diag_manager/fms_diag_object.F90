@@ -438,8 +438,8 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
 #else
   class(fmsDiagFileContainer_type), pointer :: diag_file !< Pointer to this%FMS_diag_files(i) (for convenience)
 
-  logical :: file_is_opened !< True if the file was opened in this time_step
-                            !! If true the metadata will need to be written
+  logical :: file_is_opened_this_time_step !< True if the file was opened in this time_step
+                                           !! If true the metadata will need to be written
 
   do i = 1, size(this%FMS_diag_files)
     diag_file => this%FMS_diag_files(i)
@@ -447,11 +447,10 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
     !< Go away if the file is a subregional file and the current PE does not have any data for it
     if (.not. diag_file%writing_on_this_pe()) cycle
 
-    call diag_file%open_diag_file(time_step, file_is_opened)
-    if (file_is_opened) then
+    call diag_file%open_diag_file(time_step, file_is_opened_this_time_step)
+    if (file_is_opened_this_time_step) then
       call diag_file%add_time_metadata()
-      call diag_file%write_metadata(this%diag_axis)
-      !TODO call diag_file%write_field_metadata()
+      call diag_file%write_axis_metadata(this%diag_axis)
       call diag_file%write_axis_data(this%diag_axis)
     endif
 
