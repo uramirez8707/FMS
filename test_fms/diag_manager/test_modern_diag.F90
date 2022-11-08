@@ -109,7 +109,7 @@ id_ug = diag_axis_init("grid_index",  real(ug_dim_data), "none", "U", long_name=
                          set_name="land", DomainU=land_domain, aux="geolon_t geolat_t")
 
 id_z  = diag_axis_init('z',  z,  'point_Z', 'z', long_name='point_Z')
-call diag_axis_add_attribute (id_z, 'formula', 'p(n,k,j,i) = ap(k) + b(k)*ps(n,j,i)')
+!TODO call diag_axis_add_attribute (id_z, 'formula', 'p(n,k,j,i) = ap(k) + b(k)*ps(n,j,i)')
 call diag_axis_add_attribute (id_z, 'integer', 10)
 call diag_axis_add_attribute (id_z, '1d integer', (/10, 10/))
 call diag_axis_add_attribute (id_z, 'real', 10.)
