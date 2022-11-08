@@ -341,8 +341,13 @@ module fms_diag_axis_object_mod
 
     if(allocated(diag_axis%attributes)) then
       do i = 1, diag_axis%num_attributes
-        call register_variable_attribute(fileobj, axis_name, diag_axis%attributes(i)%att_name, &
-          & diag_axis%attributes(i)%att_value)
+        select type (att_value => diag_axis%attributes(i)%att_value)
+        type is (character(len=*))
+          call register_variable_attribute(fileobj, axis_name, diag_axis%attributes(i)%att_name, trim(att_value(1)), &
+                                           str_len=len_trim(att_value(1)))
+        class default
+          call register_variable_attribute(fileobj, axis_name, diag_axis%attributes(i)%att_name, att_value)
+        end select
       enddo
     endif
 

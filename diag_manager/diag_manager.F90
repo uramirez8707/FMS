@@ -4230,7 +4230,7 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
     CHARACTER(len=*), INTENT(in) :: att_value !< new attribute value
 
     if (use_modern_diag) then
-      !call fms_diag_object%fms_diag_field_add_attribute(diag_field_id, att_name, (/att_value /))
+      call fms_diag_object%fms_diag_field_add_attribute(diag_field_id, att_name, (/att_value /))
     else
       CALL diag_field_attribute_init(diag_field_id, att_name, NF90_CHAR, cval=att_value)
     endif

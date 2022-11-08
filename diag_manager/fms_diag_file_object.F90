@@ -247,7 +247,8 @@ subroutine set_file_time_ops(this, VarYaml, is_static)
   if (this%time_ops) then
     if (is_static) return
     if (VarYaml%get_var_reduction() .eq. time_none) then
-      call mpp_error(FATAL, "The file: "//this%get_file_fname()//" has variables that are time averaged and instantaneous")
+      call mpp_error(FATAL, "The file: "//this%get_file_fname()//&
+                            " has variables that are time averaged and instantaneous")
     endif
   else
     select case (VarYaml%get_var_reduction())
