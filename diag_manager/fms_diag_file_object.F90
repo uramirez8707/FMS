@@ -142,12 +142,12 @@ type fmsDiagFileContainer_type
 
   contains
   procedure :: open_diag_file
-  procedure :: add_time_metadata
+  procedure :: write_time_metadata
   procedure :: write_axis_metadata
   procedure :: write_axis_data
   procedure :: writing_on_this_pe
   procedure :: is_time_to_write
-  procedure :: add_time_data
+  procedure :: write_time_data
   procedure :: update_next_write
   procedure :: increase_unlimited_dimension
   procedure :: close_diag_file
@@ -238,10 +238,11 @@ subroutine add_field_id (this, new_field_id)
   endif
 end subroutine add_field_id
 
+!> \brief Set the time_ops variable in the diag_file object
 subroutine set_file_time_ops(this, VarYaml, is_static)
-  class(fmsDiagFile_type), intent(inout) :: this !< The file object
-  type (diagYamlFilesVar_type), intent(in) :: VarYaml
-  logical, intent(in) :: is_static
+  class(fmsDiagFile_type),      intent(inout) :: this      !< The file object
+  type (diagYamlFilesVar_type), intent(in)    :: VarYaml   !< The variable's yaml file
+  logical,                      intent(in)    :: is_static !< Flag indicating if variable is static
 
   if (this%time_ops) then
     if (is_static) return
@@ -823,13 +824,14 @@ subroutine open_diag_file(this, time_step, file_is_opened)
   diag_file => null()
 end subroutine open_diag_file
 
-subroutine add_time_metadata(this)
-  class(fmsDiagFileContainer_type), intent(inout), target :: this            !< The file object
+!> \brief Write the time metadata to the diag file
+subroutine write_time_metadata(this)
+  class(fmsDiagFileContainer_type), intent(inout), target :: this !< The file object
 
-  class(fmsDiagFile_type), pointer     :: diag_file      !< Diag_file object to open
-  class(FmsNetcdfFile_t),  pointer     :: fileobj        !< The fileobj to write to
-  character(len=50) :: time_units_str
-  character(len=50) :: calendar
+  class(fmsDiagFile_type), pointer  :: diag_file      !< Diag_file object to open
+  class(FmsNetcdfFile_t),  pointer  :: fileobj        !< The fileobj to write to
+  character(len=50)                 :: time_units_str !< Time units written as a string
+  character(len=50)                 :: calendar       !< The calendar name
 
   character(len=:), allocatable :: time_var_name !< The name of the time variable as it is defined in the yaml
 
@@ -863,8 +865,9 @@ subroutine add_time_metadata(this)
   if (diag_file%time_ops) call register_variable_attribute(fileobj, time_var_name, "bounds", &
     trim(time_var_name)//"_bounds", str_len=len_trim(time_var_name//"_bounds"))
 
-end subroutine add_time_metadata
+end subroutine write_time_metadata
 
+!> \brief Determine if it is time to "write" to the file
 logical function is_time_to_write(this, time_step)
   class(fmsDiagFileContainer_type), intent(in), target   :: this            !< The file object
   TYPE(time_type),                  intent(in)           :: time_step       !< Current model step time
@@ -879,6 +882,7 @@ logical function is_time_to_write(this, time_step)
   endif
 end function is_time_to_write
 
+!> \brief Determine if the current PE has data to write
 logical function writing_on_this_pe(this)
   class(fmsDiagFileContainer_type), intent(in), target   :: this            !< The file object
 
@@ -891,11 +895,12 @@ logical function writing_on_this_pe(this)
 
 end function
 
-subroutine add_time_data(this, time_step)
+!> \brief Write out the time data to the file
+subroutine write_time_data(this, time_step)
   class(fmsDiagFileContainer_type), intent(in), target   :: this            !< The file object
   TYPE(time_type),                  intent(in)           :: time_step       !< Current model step time
 
-  real :: dif
+  real                                 :: dif            !< The time as a real number
   class(fmsDiagFile_type), pointer     :: diag_file      !< Diag_file object to open
   class(FmsNetcdfFile_t),  pointer     :: fileobj        !< The fileobj to write to
 
@@ -916,8 +921,9 @@ subroutine add_time_data(this, time_step)
       unlim_dim_level=diag_file%unlimited_dimension)
   end select
 
-end subroutine add_time_data
+end subroutine write_time_data
 
+!> \brief Set up the next_output and next_next_output variable in a file obj
 subroutine update_next_write(this, time_step)
   class(fmsDiagFileContainer_type), intent(in), target   :: this            !< The file object
   TYPE(time_type),                  intent(in)           :: time_step       !< Current model step time
@@ -937,6 +943,7 @@ subroutine update_next_write(this, time_step)
 
 end subroutine update_next_write
 
+!> \brief Increase the unlimited dimension variable that the file is currently being written to
 subroutine increase_unlimited_dimension(this)
   class(fmsDiagFileContainer_type), intent(inout), target   :: this            !< The file object
 
@@ -995,6 +1002,7 @@ subroutine write_axis_data(this, diag_axis)
 
 end subroutine write_axis_data
 
+!< @brief Closes the diag_file
 subroutine close_diag_file(this)
   class(fmsDiagFileContainer_type), intent(inout), target :: this            !< The file object
 

@@ -353,21 +353,17 @@ module fms_diag_axis_object_mod
 
   !> @brief Write the axis data to an open fileobj
   subroutine write_axis_data(this, fileobj, parent_axis)
-    class(fmsDiagAxis_type), target, INTENT(IN) :: this     !< diag_axis obj
-    class(FmsNetcdfFile_t),    INTENT(INOUT) :: fileobj     !< Fms2_io fileobj to write the data to
-    class(fmsDiagAxis_type), OPTIONAL, target,       INTENT(IN)    :: parent_axis
+    class(fmsDiagAxis_type),           target, INTENT(IN)    :: this        !< diag_axis obj
+    class(FmsNetcdfFile_t),                    INTENT(INOUT) :: fileobj     !< Fms2_io fileobj to write the data to
+    class(fmsDiagAxis_type), OPTIONAL, target, INTENT(IN)    :: parent_axis !< The parent axis if this is a subaxis
 
-    integer                       :: i         !< Starting index of a sub_axis
-    integer                       :: j         !< Ending index of a sub_axis
-    integer                       :: com_idx(2)!< Global io domain
+    integer                       :: i                 !< Starting index of a sub_axis
+    integer                       :: j                 !< Ending index of a sub_axis
+    integer                       :: global_io_index(2)!< Global io domain starting and ending index
     select type(this)
     type is (fmsDiagFullAxis_type)
-      select type (wut => this%axis_data)
-      type is (real(kind=r8_kind))
-        write(mpp_pe()+100, *) "file:", trim(fileobj%path), " -", trim(this%axis_name), ": shape=", shape(wut)
-      end select
-      call this%get_global_io_domain(com_idx)
-      call write_data(fileobj, this%axis_name, this%axis_data(com_idx(1):com_idx(2)))
+      call this%get_global_io_domain(global_io_index)
+      call write_data(fileobj, this%axis_name, this%axis_data(global_io_index(1):global_io_index(2)))
     type is (fmsDiagSubAxis_type)
       i = this%starting_index
       j = this%ending_index
@@ -381,28 +377,31 @@ module fms_diag_axis_object_mod
     end select
   end subroutine write_axis_data
 
-  subroutine get_global_io_domain(this, com_idx)
-    class(fmsDiagFullAxis_type), intent(in) :: this !< diag_axis obj
-    integer, intent(out) :: com_idx(2)
+  !> @brief Get the starting and ending indices of the global io domain of the axis
+  subroutine get_global_io_domain(this, global_io_index)
+    class(fmsDiagFullAxis_type), intent(in)  :: this               !< diag_axis obj
+    integer,                     intent(out) :: global_io_index(2) !< Global io domain starting and ending index
 
-    type(domain2d), pointer :: io_domain
+    type(domain2d), pointer :: io_domain !< pointer to the io domain
 
     if (allocated(this%axis_domain)) then
       select type(domain => this%axis_domain)
       type is (diagDomain2d_t)
         io_domain => mpp_get_io_domain(domain%domain2)
         if (this%cart_name .eq. "X") then
-          call mpp_get_global_domain(io_domain, xbegin=com_idx(1), xend=com_idx(2), position=this%domain_position)
+          call mpp_get_global_domain(io_domain, xbegin=global_io_index(1), xend=global_io_index(2), &
+            position=this%domain_position)
         elseif (this%cart_name .eq. "Y") then
-          call mpp_get_global_domain(io_domain, ybegin=com_idx(1), yend=com_idx(2), position=this%domain_position)
+          call mpp_get_global_domain(io_domain, ybegin=global_io_index(1), yend=global_io_index(2), &
+            position=this%domain_position)
         endif
       class default
-        com_idx(1) = 1
-        com_idx(2) = this%length
+        global_io_index(1) = 1
+        global_io_index(2) = this%length
       end select
     else
-      com_idx(1) = 1
-      com_idx(2) = this%length
+      global_io_index(1) = 1
+      global_io_index(2) = this%length
     endif
   end subroutine get_global_io_domain
 
