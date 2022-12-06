@@ -41,6 +41,7 @@ use fms_diag_yaml_mod, only: diag_yaml, diagYamlObject_type, diagYamlFiles_type,
 use fms_diag_axis_object_mod, only: diagDomain_t, get_domain_and_domain_type, fmsDiagAxis_type, &
                                     fmsDiagAxisContainer_type, DIAGDOMAIN2D_T, DIAGDOMAINUG_T, &
                                     fmsDiagFullAxis_type, define_subaxis
+use fms_diag_field_object_mod, only: fmsDiagField_type
 use mpp_mod, only: mpp_get_current_pelist, mpp_npes, mpp_root_pe, mpp_pe, mpp_error, FATAL, stdout, &
                    uppercase, lowercase
 
@@ -145,9 +146,11 @@ type fmsDiagFileContainer_type
   class (fmsDiagFile_type),allocatable :: FMS_diag_file !< The individual file object
 
   contains
+  procedure :: is_regional
   procedure :: open_diag_file
   procedure :: write_time_metadata
   procedure :: write_axis_metadata
+  procedure :: write_field_metadata
   procedure :: write_axis_data
   procedure :: writing_on_this_pe
   procedure :: is_time_to_write
@@ -716,6 +719,18 @@ subroutine dump_file_obj(this, unit_num)
 
 end subroutine
 
+logical function is_regional(this)
+  class(fmsDiagFileContainer_type), intent(inout), target :: this            !< The file object
+
+  select type (wut=>this%FMS_diag_file)
+  type is (subRegionalFile_type)
+    is_regional = .true.
+  type is (fmsDiagFile_type)
+    is_regional = .false.
+  end select
+
+end function
+
 !< @brief Opens the diag_file if it is time to do so
 subroutine open_diag_file(this, time_step, file_is_opened)
   class(fmsDiagFileContainer_type), intent(inout), target :: this            !< The file object
@@ -1058,6 +1073,7 @@ subroutine update_current_new_file_freq_index(this, time_step)
        diag_file%next_output = diag_file%no_more_data
        diag_file%next_next_output = diag_file%no_more_data
        diag_file%last_output = diag_file%no_more_data
+       diag_file%next_close = diag_file%no_more_data
     endif
   endif
 end subroutine update_current_new_file_freq_index
@@ -1116,6 +1132,34 @@ subroutine write_axis_metadata(this, diag_axis)
   enddo
 
 end subroutine write_axis_metadata
+
+!< @brief Writes the field metadata for the file
+subroutine write_field_metadata(this, diag_field, diag_axis)
+  class(fmsDiagFileContainer_type), intent(inout), target :: this            !< The file object
+  class(fmsDiagField_type)        , intent(inout), target :: diag_field(:)   !<
+  class(fmsDiagAxisContainer_type), intent(in)            :: diag_axis(:)    !< Diag_axis object
+
+  class(FmsNetcdfFile_t),  pointer     :: fileobj        !< The fileobj to write to
+  class(fmsDiagFile_type), pointer     :: diag_file      !< Diag_file object to open
+
+  integer :: i
+  integer :: j
+  logical :: is_regional
+
+  is_regional = this%is_regional()
+
+  diag_file => this%FMS_diag_file
+  fileobj => diag_file%fileobj
+
+  do i = 1, size(diag_file%field_ids)
+    j = diag_file%field_ids(i)
+    if (.not. diag_file%field_registered(i)) cycle !TODO do something else here
+
+    call diag_field(j)%write_field_metadata(fileobj, this%FMS_diag_file%id, diag_axis, &
+      this%FMS_diag_file%get_file_unlimdim(), is_regional)
+  enddo
+
+end subroutine write_field_metadata
 
 !< @brief Writes the axis data for the file
 subroutine write_axis_data(this, diag_axis)

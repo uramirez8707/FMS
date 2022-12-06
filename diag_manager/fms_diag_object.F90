@@ -212,6 +212,7 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
        do_not_log, err_msg, interp_method, tile_count, area, volume, realm, static)
 !> Get the file IDs from the field indicies from the yaml
   file_ids = get_diag_files_id(diag_field_indices)
+  call fieldptr%set_file_ids(file_ids)
 !> Add the axis information, initial time, and field IDs to the files
   if (present(axes) .and. present(init_time)) then
     do i = 1, size(file_ids)
@@ -451,6 +452,7 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
     if (file_is_opened_this_time_step) then
       call diag_file%write_time_metadata()
       call diag_file%write_axis_metadata(this%diag_axis)
+      call diag_file%write_field_metadata(this%FMS_diag_fields, this%diag_axis)
       call diag_file%write_axis_data(this%diag_axis)
     endif
 

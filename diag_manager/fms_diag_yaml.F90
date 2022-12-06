@@ -1073,11 +1073,16 @@ result (res)
 end function get_var_kind
 !> @brief Inquiry for diag_yaml_files_var_obj%var_outname
 !! @return var_outname of a diag_yaml_files_var_obj
-pure function get_var_outname (diag_var_obj) &
+function get_var_outname (diag_var_obj) &
 result (res)
  class (diagYamlFilesVar_type), intent(in) :: diag_var_obj !< The object being inquiried
  character (len=:), allocatable :: res !< What is returned
-  res = diag_var_obj%var_outname
+
+ if (diag_var_obj%has_var_outname()) then
+   res = diag_var_obj%var_outname
+ else
+   res = diag_var_obj%var_varname !< If outname is not set, the variable name will be used
+ endif
 end function get_var_outname
 !> @brief Inquiry for diag_yaml_files_var_obj%var_longname
 !! @return var_longname of a diag_yaml_files_var_obj
@@ -1281,7 +1286,7 @@ end function has_var_write
 !! @return true if obj%var_outname is allocated
 pure logical function has_var_outname (obj)
   class(diagYamlFilesVar_type), intent(in) :: obj !< diagYamlvar_type object to initialize
-  has_var_outname = allocated(obj%var_outname)
+  has_var_outname = allocated(obj%var_outname) .and. obj%var_outname .ne. ""
 end function has_var_outname
 !> @brief Checks if obj%var_longname is allocated
 !! @return true if obj%var_longname is allocated

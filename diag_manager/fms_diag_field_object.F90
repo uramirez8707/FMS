@@ -19,6 +19,8 @@ use fms_diag_yaml_mod, only:  diagYamlFilesVar_type, get_diag_fields_entries, ge
 use fms_diag_axis_object_mod, only: diagDomain_t, get_domain_and_domain_type, fmsDiagAxis_type, &
   & fmsDiagAxisContainer_type
 use time_manager_mod, ONLY: time_type
+use fms2_io_mod, only: FmsNetcdfFile_t, FmsNetcdfDomainFile_t, FmsNetcdfUnstructuredDomainFile_t, register_field, &
+                       register_variable_attribute
 !!!set_time, set_date, get_time, time_type, OPERATOR(>=), OPERATOR(>),&
 !!!       & OPERATOR(<), OPERATOR(==), OPERATOR(/=), OPERATOR(/), OPERATOR(+), ASSIGNMENT(=), get_date, &
 !!!       & get_ticks_per_second
@@ -128,6 +130,12 @@ type fmsDiagField_type
      procedure :: dump_field_obj
      procedure :: get_domain
      procedure :: get_type_of_domain
+     procedure :: get_field_yaml
+     procedure :: set_file_ids
+     procedure :: get_dimnames
+     procedure :: get_var_skind
+     procedure :: get_longname_to_write
+     procedure :: write_field_metadata
 end type fmsDiagField_type
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! variables !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 type(fmsDiagField_type) :: null_ob
@@ -788,6 +796,133 @@ result(rslt)
 
   rslt = this%type_of_domain
 end function get_type_of_domain
+
+subroutine set_file_ids(this, file_ids)
+  class (fmsDiagField_type), target, intent(inout) :: this  !< diag field
+  integer,                           intent(in) :: file_ids(:)
+
+  allocate(this%file_ids(size(file_ids)))
+  this%file_ids = file_ids
+end subroutine
+
+function get_field_yaml (this, file_id) &
+result(rslt)
+  class (fmsDiagField_type), target, intent(in) :: this  !< diag field
+  integer                          , intent(in) :: file_id
+
+  type (diagYamlFilesVar_type), pointer :: rslt
+
+  integer :: i !< For do loops
+
+  rslt => null()
+  do i = 1, size(this%file_ids)
+    if (this%file_ids(i) .eq. file_id) then
+      rslt => this%diag_field(i)
+      return
+    endif
+  enddo
+end function get_field_yaml
+
+function get_var_skind(this, field_yaml) &
+result(rslt)
+  class (fmsDiagField_type), intent(in) :: this  !< diag field
+  type(diagYamlFilesVar_type), intent(in) :: field_yaml
+
+  character(len=:), allocatable :: rslt
+
+  integer :: var_kind
+
+  var_kind = field_yaml%get_var_kind()
+  select case (var_kind)
+  case (r4)
+    rslt = "double"
+  case (r8)
+    rslt = "float"
+  case (i4)
+    rslt = "int"
+  case (i8)
+    rslt = "int64"
+  end select
+
+end function get_var_skind
+
+function get_longname_to_write(this, field_yaml) &
+result(rslt)
+  class (fmsDiagField_type), intent(in) :: this  !< diag field
+  type(diagYamlFilesVar_type), intent(in) :: field_yaml
+
+  character(len=:), allocatable :: rslt
+
+  rslt = field_yaml%get_var_longname()
+  if (rslt .eq. "") then
+    rslt = this%get_longname()
+  endif
+end function get_longname_to_write
+
+function get_dimnames(this, diag_axis, unlim_dimname, is_regional) &
+result(rslt)
+
+  class (fmsDiagField_type), target, intent(inout) :: this  !< diag field
+  class(fmsDiagAxisContainer_type), intent(in)            :: diag_axis(:)    !< Diag_axis object
+  character(len=*), intent(in) :: unlim_dimname
+  logical, intent(in) :: is_regional
+
+  character(len=120), allocatable :: rslt(:)
+
+  integer :: i !< For do loops
+  integer :: j
+  integer :: naxis
+
+  if (this%is_static()) then
+    naxis = size(this%axis_ids)
+  else
+    naxis = size(this%axis_ids) + 1
+  endif
+
+  allocate(rslt(naxis)) !< Adding 1 for the unlimited dimension
+
+  do i = 1, size(this%axis_ids)
+    j = this%axis_ids(i)
+    rslt(i) = diag_axis(j)%axis%get_axis_name(is_regional)
+  enddo
+  if (.not. this%is_static()) rslt(naxis) = unlim_dimname
+
+end function get_dimnames
+
+subroutine write_field_metadata(this, fileobj, file_id, diag_axis, unlim_dimname, is_regional)
+  class (fmsDiagField_type), target, intent(inout) :: this  !< diag field
+  class(FmsNetcdfFile_t),                    INTENT(INOUT) :: fileobj     !< Fms2_io fileobj to write the data to
+  integer, intent(in) :: file_id
+  class(fmsDiagAxisContainer_type), intent(in)            :: diag_axis(:)    !< Diag_axis object
+  character(len=*), intent(in) :: unlim_dimname
+  logical, intent(in) :: is_regional
+
+  type(diagYamlFilesVar_type), pointer :: field_yaml
+  character(len=:), allocatable :: var_name
+  character(len=:), allocatable :: long_name
+  character(len=:), allocatable :: units
+  character(len=120), allocatable :: dimnames(:)
+  integer :: id
+
+  field_yaml => this%get_field_yaml(file_id)
+  var_name = field_yaml%get_var_outname()
+
+  if (allocated(this%axis_ids)) then
+    dimnames = this%get_dimnames(diag_axis, unlim_dimname, is_regional)
+    call register_field(fileobj, var_name, this%get_var_skind(field_yaml), dimnames)
+  else
+    call register_field(fileobj, var_name, this%get_var_skind(field_yaml))
+  endif
+
+  !TODO Not sure what the old diag_manager did if long_name was never defined
+  long_name = this%get_longname_to_write(field_yaml)
+  call register_variable_attribute(fileobj, var_name, "long_name", long_name, str_len=len_trim(long_name))
+
+  units = this%get_units()
+  if (unit .ne. diag_null_string) &
+    call register_variable_attribute(fileobj, var_name, "units", units, str_len=len_trim(units))
+
+end subroutine write_field_metadata
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!! Allocation checks
 

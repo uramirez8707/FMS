@@ -93,6 +93,7 @@ module fms_diag_axis_object_mod
      contains
        procedure :: get_parent_axis_id
        procedure :: get_subaxes_id
+       procedure :: get_axis_name
        procedure :: write_axis_metadata
        procedure :: write_axis_data
   END TYPE fmsDiagAxis_type
@@ -143,7 +144,7 @@ module fms_diag_axis_object_mod
      PROCEDURE :: add_axis_attribute
      PROCEDURE :: register => register_diag_axis_obj
      PROCEDURE :: axis_length => get_axis_length
-     PROCEDURE :: get_axis_name
+     PROCEDURE :: get_full_axis_name
      PROCEDURE :: set_edges_name
      PROCEDURE :: set_axis_id
      PROCEDURE :: get_compute_domain
@@ -316,7 +317,7 @@ module fms_diag_axis_object_mod
 
     !< Add the axis as a variable and write its metada
     call register_field(fileobj, axis_name, diag_axis%type_of_data, (/axis_name/))
-    call register_variable_attribute(fileobj, axis_name, "longname", diag_axis%long_name, &
+    call register_variable_attribute(fileobj, axis_name, "long_name", diag_axis%long_name, &
       str_len=len_trim(diag_axis%long_name))
 
     if (diag_axis%cart_name .NE. "N") &
@@ -420,13 +421,13 @@ module fms_diag_axis_object_mod
 
   !> @brief Get the name of the axis
   !> @return axis name
-  pure function get_axis_name(this) &
+  pure function get_full_axis_name(this) &
   result (axis_name)
     class(fmsDiagFullAxis_type), intent(in)    :: this !< diag_axis obj
     CHARACTER(len=:),   ALLOCATABLE            :: axis_name
 
     axis_name = this%axis_name
-  end function
+  end function get_full_axis_name
 
   !> @brief Set the axis_id
   subroutine set_axis_id(this, axis_id)
@@ -641,6 +642,25 @@ module fms_diag_axis_object_mod
     fms_diag_axis_object_end = .false.
 
   end function fms_diag_axis_object_end
+
+  function get_axis_name(this, is_regional) &
+  result(axis_name)
+    class(fmsDiagAxis_type), intent(in) :: this
+    character(len=:), allocatable :: axis_name
+    logical, intent(in), optional :: is_regional
+
+    select type (this)
+    type is (fmsDiagFullAxis_type)
+      axis_name = this%axis_name
+      if (present(is_regional)) then
+        if (is_regional) then
+          if (this%cart_name .eq. "X" .or. this%cart_name .eq. "Y") axis_name = axis_name//"_sub01"
+        endif
+      endif
+    type is (fmsDiagSubAxis_type)
+      axis_name = this%subaxis_name
+    end select
+  end function
 
   !> @brief Check if a cart_name is valid and crashes if it isn't
   subroutine check_if_valid_cart_name(cart_name)
