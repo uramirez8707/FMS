@@ -919,7 +919,7 @@ subroutine write_field_metadata(this, fileobj, file_id, diag_axis, unlim_dimname
   call register_variable_attribute(fileobj, var_name, "long_name", long_name, str_len=len_trim(long_name))
 
   units = this%get_units()
-  if (unit .ne. diag_null_string) &
+  if (units .ne. diag_null_string) &
     call register_variable_attribute(fileobj, var_name, "units", units, str_len=len_trim(units))
 
 end subroutine write_field_metadata
