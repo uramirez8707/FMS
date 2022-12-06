@@ -859,15 +859,14 @@ result(rslt)
   endif
 end function get_longname_to_write
 
-function get_dimnames(this, diag_axis, unlim_dimname, is_regional) &
-result(rslt)
+subroutine get_dimnames(this, diag_axis, unlim_dimname, rslt, is_regional)
 
   class (fmsDiagField_type), target, intent(inout) :: this  !< diag field
   class(fmsDiagAxisContainer_type), intent(in)            :: diag_axis(:)    !< Diag_axis object
   character(len=*), intent(in) :: unlim_dimname
   logical, intent(in) :: is_regional
 
-  character(len=120), allocatable :: rslt(:)
+  character(len=120), intent(out), allocatable :: rslt(:)
 
   integer :: i !< For do loops
   integer :: j
@@ -887,7 +886,7 @@ result(rslt)
   enddo
   if (.not. this%is_static()) rslt(naxis) = unlim_dimname
 
-end function get_dimnames
+end subroutine get_dimnames
 
 subroutine write_field_metadata(this, fileobj, file_id, diag_axis, unlim_dimname, is_regional)
   class (fmsDiagField_type), target, intent(inout) :: this  !< diag field
@@ -908,7 +907,7 @@ subroutine write_field_metadata(this, fileobj, file_id, diag_axis, unlim_dimname
   var_name = field_yaml%get_var_outname()
 
   if (allocated(this%axis_ids)) then
-    dimnames = this%get_dimnames(diag_axis, unlim_dimname, is_regional)
+    call this%get_dimnames(diag_axis, unlim_dimname, dimnames, is_regional)
     call register_field(fileobj, var_name, this%get_var_skind(field_yaml), dimnames)
   else
     call register_field(fileobj, var_name, this%get_var_skind(field_yaml))
