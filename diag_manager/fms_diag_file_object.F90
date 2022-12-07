@@ -77,6 +77,7 @@ type :: fmsDiagFile_type
   character(len=:) , dimension(:), allocatable :: file_metadata_from_model !< File metadata that comes from
                                                                            !! the model.
   integer, dimension(:), allocatable :: field_ids !< Variable IDs corresponding to file_varlist
+  integer, dimension(:), allocatable :: yaml_ids !< IDs corresponding to the yaml field section
   logical, dimension(:), private, allocatable :: field_registered   !< Array corresponding to `field_ids`, .true.
                                                                  !! if the variable has been registered and
                                                                  !! `field_id` has been set for the variable
@@ -90,7 +91,7 @@ type :: fmsDiagFile_type
   logical :: is_static !< .True. if the frequency is -1
 
  contains
-  procedure, public :: add_field_id
+  procedure, public :: add_field_and_yaml_id
   procedure, public :: has_file_metadata_from_model
   procedure, public :: has_fileobj
   procedure, public :: has_diag_yaml_file
@@ -199,9 +200,11 @@ logical function fms_diag_files_object_init (files_array)
      obj%diag_yaml_file => diag_yaml%diag_files(i)
      obj%id = i
      allocate(obj%field_ids(diag_yaml%diag_files(i)%size_file_varlist()))
+     allocate(obj%yaml_ids(diag_yaml%diag_files(i)%size_file_varlist()))
      allocate(obj%field_registered(diag_yaml%diag_files(i)%size_file_varlist()))
      !! Initialize the integer arrays
      obj%field_ids = DIAG_NOT_REGISTERED
+     obj%yaml_ids = DIAG_NOT_REGISTERED
      obj%field_registered = .FALSE.
      obj%num_registered_fields = 0
 
@@ -249,18 +252,21 @@ logical function fms_diag_files_object_init (files_array)
 end function fms_diag_files_object_init
 
 !> \brief Adds a field ID to the file
-subroutine add_field_id (this, new_field_id)
+subroutine add_field_and_yaml_id (this, new_field_id, yaml_id)
   class(fmsDiagFile_type), intent(inout) :: this !< The file object
   integer, intent(in) :: new_field_id !< The field ID to be added to field_ids
+  integer, intent(in) :: yaml_id !< The yaml_id
+
   this%num_registered_fields = this%num_registered_fields + 1
   if (this%num_registered_fields .le. size(this%field_ids)) then
     this%field_ids( this%num_registered_fields ) = new_field_id
+    this%yaml_ids( this%num_registered_fields ) = yaml_id
     this%field_registered( this%num_registered_fields ) = .true.
   else
     call mpp_error(FATAL, "The file: "//this%get_file_fname()//" has already been assigned its maximum "//&
                  "number of fields.")
   endif
-end subroutine add_field_id
+end subroutine add_field_and_yaml_id
 
 !> \brief Set the time_ops variable in the diag_file object
 subroutine set_file_time_ops(this, VarYaml, is_static)
@@ -1156,7 +1162,7 @@ subroutine write_field_metadata(this, diag_field, diag_axis)
     j = diag_file%field_ids(i)
     if (.not. diag_file%field_registered(i)) cycle !TODO do something else here
 
-    call diag_field(j)%write_field_metadata(fileobj, this%FMS_diag_file%id, diag_axis, &
+    call diag_field(j)%write_field_metadata(fileobj, diag_file%id, diag_file%yaml_ids(i), diag_axis, &
       this%FMS_diag_file%get_file_unlimdim(), is_regional)
   enddo
 

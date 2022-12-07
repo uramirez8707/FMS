@@ -217,7 +217,7 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
   if (present(axes) .and. present(init_time)) then
     do i = 1, size(file_ids)
      fileptr => this%FMS_diag_files(file_ids(i))%FMS_diag_file
-     call fileptr%add_field_id(fieldptr%get_id())
+     call fileptr%add_field_and_yaml_id(fieldptr%get_id(), diag_field_indices(i))
      call fileptr%set_file_domain(fieldptr%get_domain(), fieldptr%get_type_of_domain())
      call fileptr%add_axes(axes, this%diag_axis, this%registered_axis)
      call fileptr%add_start_time(init_time)
@@ -226,7 +226,7 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
   elseif (present(axes)) then !only axes present
     do i = 1, size(file_ids)
      fileptr => this%FMS_diag_files(file_ids(i))%FMS_diag_file
-     call fileptr%add_field_id(fieldptr%get_id())
+     call fileptr%add_field_and_yaml_id(fieldptr%get_id(), diag_field_indices(i))
      call fileptr%set_file_domain(fieldptr%get_domain(), fieldptr%get_type_of_domain())
      call fileptr%add_axes(axes, this%diag_axis, this%registered_axis)
      call fileptr%set_file_time_ops (fieldptr%diag_field(i), fieldptr%is_static())
@@ -234,14 +234,14 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
   elseif (present(init_time)) then !only inti time present
     do i = 1, size(file_ids)
      fileptr => this%FMS_diag_files(file_ids(i))%FMS_diag_file
-     call fileptr%add_field_id(fieldptr%get_id())
+     call fileptr%add_field_and_yaml_id(fieldptr%get_id(), diag_field_indices(i))
      call fileptr%add_start_time(init_time)
      call fileptr%set_file_time_ops (fieldptr%diag_field(i), fieldptr%is_static())
     enddo
   else !no axis or init time present
     do i = 1, size(file_ids)
      fileptr => this%FMS_diag_files(file_ids(i))%FMS_diag_file
-     call fileptr%add_field_id(fieldptr%get_id())
+     call fileptr%add_field_and_yaml_id(fieldptr%get_id(), diag_field_indices(i))
      call fileptr%set_file_time_ops (fieldptr%diag_field(i), fieldptr%is_static())
     enddo
   endif

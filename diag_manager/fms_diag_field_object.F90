@@ -15,7 +15,7 @@ use diag_data_mod,  only: diag_null, diag_not_found, diag_not_registered, diag_r
                          &DIAG_FIELD_NOT_FOUND
 use mpp_mod, only: fatal, note, warning, mpp_error, mpp_pe, mpp_root_pe
 use fms_diag_yaml_mod, only:  diagYamlFilesVar_type, get_diag_fields_entries, get_diag_files_id, &
-  & find_diag_field, get_num_unique_fields
+  & find_diag_field, get_num_unique_fields, diag_yaml
 use fms_diag_axis_object_mod, only: diagDomain_t, get_domain_and_domain_type, fmsDiagAxis_type, &
   & fmsDiagAxisContainer_type
 use time_manager_mod, ONLY: time_type
@@ -130,7 +130,6 @@ type fmsDiagField_type
      procedure :: dump_field_obj
      procedure :: get_domain
      procedure :: get_type_of_domain
-     procedure :: get_field_yaml
      procedure :: set_file_ids
      procedure :: get_dimnames
      procedure :: get_var_skind
@@ -805,24 +804,6 @@ subroutine set_file_ids(this, file_ids)
   this%file_ids = file_ids
 end subroutine
 
-function get_field_yaml (this, file_id) &
-result(rslt)
-  class (fmsDiagField_type), target, intent(in) :: this  !< diag field
-  integer                          , intent(in) :: file_id
-
-  type (diagYamlFilesVar_type), pointer :: rslt
-
-  integer :: i !< For do loops
-
-  rslt => null()
-  do i = 1, size(this%file_ids)
-    if (this%file_ids(i) .eq. file_id) then
-      rslt => this%diag_field(i)
-      return
-    endif
-  enddo
-end function get_field_yaml
-
 function get_var_skind(this, field_yaml) &
 result(rslt)
   class (fmsDiagField_type), intent(in) :: this  !< diag field
@@ -888,10 +869,11 @@ subroutine get_dimnames(this, diag_axis, unlim_dimname, rslt, is_regional)
 
 end subroutine get_dimnames
 
-subroutine write_field_metadata(this, fileobj, file_id, diag_axis, unlim_dimname, is_regional)
+subroutine write_field_metadata(this, fileobj, file_id, yaml_id, diag_axis, unlim_dimname, is_regional)
   class (fmsDiagField_type), target, intent(inout) :: this  !< diag field
   class(FmsNetcdfFile_t),                    INTENT(INOUT) :: fileobj     !< Fms2_io fileobj to write the data to
   integer, intent(in) :: file_id
+  integer, intent(in) :: yaml_id
   class(fmsDiagAxisContainer_type), intent(in)            :: diag_axis(:)    !< Diag_axis object
   character(len=*), intent(in) :: unlim_dimname
   logical, intent(in) :: is_regional
@@ -903,7 +885,7 @@ subroutine write_field_metadata(this, fileobj, file_id, diag_axis, unlim_dimname
   character(len=120), allocatable :: dimnames(:)
   integer :: id
 
-  field_yaml => this%get_field_yaml(file_id)
+  field_yaml => diag_yaml%get_diag_field_from_id(yaml_id)
   var_name = field_yaml%get_var_outname()
 
   if (allocated(this%axis_ids)) then
