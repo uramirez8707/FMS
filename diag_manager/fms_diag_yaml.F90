@@ -298,14 +298,17 @@ result(diag_files)
   diag_files = diag_yaml%diag_files
 end function get_diag_files
 
+!> @brief Get the diag_field yaml corresponding to a yaml_id
+!! @return Pointer to the diag_field yaml entry
 function get_diag_field_from_id(diag_yaml, yaml_id) &
   result(diag_field)
-    class (diagYamlObject_type), target, intent(in) :: diag_yaml               !< The diag_yaml
-    integer, intent(in) :: yaml_id
+    class (diagYamlObject_type), target, intent(in) :: diag_yaml !< The diag_yaml
+    integer,                             intent(in) :: yaml_id   !< Yaml id
 
     type(diagYamlFilesVar_type), pointer :: diag_field !< Diag fields info
 
-    if (yaml_id .eq. DIAG_NOT_REGISTERED) call mpp_error(FATAL, "Something went wrong")
+    if (yaml_id .eq. DIAG_NOT_REGISTERED) call mpp_error(FATAL, &
+      "Diag_manager: The yaml id for this field is not is not set")
 
     diag_field => diag_yaml%diag_fields(variable_list%diag_field_indices(yaml_id))
 
@@ -1087,7 +1090,7 @@ result (res)
 end function get_var_kind
 !> @brief Inquiry for diag_yaml_files_var_obj%var_outname
 !! @return var_outname of a diag_yaml_files_var_obj
-function get_var_outname (diag_var_obj) &
+pure function get_var_outname (diag_var_obj) &
 result (res)
  class (diagYamlFilesVar_type), intent(in) :: diag_var_obj !< The object being inquiried
  character (len=:), allocatable :: res !< What is returned

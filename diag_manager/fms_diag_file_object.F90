@@ -251,11 +251,11 @@ logical function fms_diag_files_object_init (files_array)
   endif
 end function fms_diag_files_object_init
 
-!> \brief Adds a field ID to the file
+!> \brief Adds a field and yaml ID to the file
 subroutine add_field_and_yaml_id (this, new_field_id, yaml_id)
-  class(fmsDiagFile_type), intent(inout) :: this !< The file object
-  integer, intent(in) :: new_field_id !< The field ID to be added to field_ids
-  integer, intent(in) :: yaml_id !< The yaml_id
+  class(fmsDiagFile_type), intent(inout) :: this         !< The file object
+  integer,                 intent(in)    :: new_field_id !< The field ID to be added to field_ids
+  integer,                 intent(in)    :: yaml_id      !< The yaml_id
 
   this%num_registered_fields = this%num_registered_fields + 1
   if (this%num_registered_fields .le. size(this%field_ids)) then
@@ -732,8 +732,10 @@ subroutine dump_file_obj(this, unit_num)
 
 end subroutine
 
-logical function is_regional(this)
-  class(fmsDiagFileContainer_type), intent(inout), target :: this            !< The file object
+!> @brief Determine if a file is regional
+!! @return Flag indicating if the file is regional or not
+logical pure function is_regional(this)
+  class(fmsDiagFileContainer_type), intent(in) :: this            !< The file object
 
   select type (wut=>this%FMS_diag_file)
   type is (subRegionalFile_type)
@@ -742,7 +744,7 @@ logical function is_regional(this)
     is_regional = .false.
   end select
 
-end function
+end function is_regional
 
 !< @brief Opens the diag_file if it is time to do so
 subroutine open_diag_file(this, time_step, file_is_opened)
@@ -1133,9 +1135,9 @@ subroutine write_field_metadata(this, diag_field, diag_axis)
   class(FmsNetcdfFile_t),  pointer     :: fileobj        !< The fileobj to write to
   class(fmsDiagFile_type), pointer     :: diag_file      !< Diag_file object to open
 
-  integer :: i
-  integer :: j
-  logical :: is_regional
+  integer :: i           !< For do loops
+  integer :: j           !< For do loops
+  logical :: is_regional !< Flag indicating if the field is in a regional file
 
   is_regional = this%is_regional()
 

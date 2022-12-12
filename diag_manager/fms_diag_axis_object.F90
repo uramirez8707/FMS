@@ -144,7 +144,6 @@ module fms_diag_axis_object_mod
      PROCEDURE :: add_axis_attribute
      PROCEDURE :: register => register_diag_axis_obj
      PROCEDURE :: axis_length => get_axis_length
-     PROCEDURE :: get_full_axis_name
      PROCEDURE :: set_edges_name
      PROCEDURE :: set_axis_id
      PROCEDURE :: get_compute_domain
@@ -419,16 +418,6 @@ module fms_diag_axis_object_mod
 
   end function
 
-  !> @brief Get the name of the axis
-  !> @return axis name
-  pure function get_full_axis_name(this) &
-  result (axis_name)
-    class(fmsDiagFullAxis_type), intent(in)    :: this !< diag_axis obj
-    CHARACTER(len=:),   ALLOCATABLE            :: axis_name
-
-    axis_name = this%axis_name
-  end function get_full_axis_name
-
   !> @brief Set the axis_id
   subroutine set_axis_id(this, axis_id)
     class(fmsDiagFullAxis_type), intent(inout) :: this    !< diag_axis obj
@@ -643,11 +632,17 @@ module fms_diag_axis_object_mod
 
   end function fms_diag_axis_object_end
 
-  function get_axis_name(this, is_regional) &
+  !< @brief Determinet the axis name of an axis_object
+  !! @return The name of the axis
+  !! @note This function may be called from the field object (i.e. to determine the dimension names for io),
+  !! The field object only contains the parent axis ids, because the subregion is defined in a per file basis,
+  !! so the is_regional flag is needed so that the correct axis name can be used
+  pure function get_axis_name(this, is_regional) &
   result(axis_name)
-    class(fmsDiagAxis_type), intent(in) :: this
-    character(len=:), allocatable :: axis_name
-    logical, intent(in), optional :: is_regional
+    class(fmsDiagAxis_type), intent(in)           :: this        !< Axis object
+    logical,                 intent(in), optional :: is_regional !< Flag indicating if the axis is regional
+
+    character(len=:),       allocatable :: axis_name
 
     select type (this)
     type is (fmsDiagFullAxis_type)
@@ -660,7 +655,7 @@ module fms_diag_axis_object_mod
     type is (fmsDiagSubAxis_type)
       axis_name = this%subaxis_name
     end select
-  end function
+  end function get_axis_name
 
   !> @brief Check if a cart_name is valid and crashes if it isn't
   subroutine check_if_valid_cart_name(cart_name)

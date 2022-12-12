@@ -796,22 +796,25 @@ result(rslt)
   rslt = this%type_of_domain
 end function get_type_of_domain
 
+!> @brief Set the file ids of the files that the field belongs to
 subroutine set_file_ids(this, file_ids)
-  class (fmsDiagField_type), target, intent(inout) :: this  !< diag field
-  integer,                           intent(in) :: file_ids(:)
+  class (fmsDiagField_type), intent(inout) :: this        !< diag field
+  integer,                   intent(in)    :: file_ids(:) !< File_ids to add
 
   allocate(this%file_ids(size(file_ids)))
   this%file_ids = file_ids
-end subroutine
+end subroutine set_file_ids
 
-function get_var_skind(this, field_yaml) &
+!> @brief Get the kind of the variable based on the yaml
+!! @return A string indicating the kind of the variable (as it is used in fms2_io)
+pure function get_var_skind(this, field_yaml) &
 result(rslt)
-  class (fmsDiagField_type), intent(in) :: this  !< diag field
-  type(diagYamlFilesVar_type), intent(in) :: field_yaml
+  class (fmsDiagField_type),   intent(in) :: this       !< diag field
+  type(diagYamlFilesVar_type), intent(in) :: field_yaml !< The corresponding yaml of the field
 
   character(len=:), allocatable :: rslt
 
-  integer :: var_kind
+  integer :: var_kind !< The integer corresponding to the kind of the variable (i4, i8, r4, r8)
 
   var_kind = field_yaml%get_var_kind()
   select case (var_kind)
@@ -827,63 +830,69 @@ result(rslt)
 
 end function get_var_skind
 
-function get_longname_to_write(this, field_yaml) &
+!> @brief Determine the long name to write for the field
+!! @return Long name to write
+pure function get_longname_to_write(this, field_yaml) &
 result(rslt)
-  class (fmsDiagField_type), intent(in) :: this  !< diag field
-  type(diagYamlFilesVar_type), intent(in) :: field_yaml
+  class (fmsDiagField_type),   intent(in) :: this       !< diag field
+  type(diagYamlFilesVar_type), intent(in) :: field_yaml !< The corresponding yaml of the field
 
   character(len=:), allocatable :: rslt
 
-  rslt = field_yaml%get_var_longname()
-  if (rslt .eq. "") then
+  rslt = field_yaml%get_var_longname() !! This is the long name defined in the yaml
+  if (rslt .eq. "") then !! If the long name is not defined in the yaml, use the long name in the
+                         !! register_diag_field
     rslt = this%get_longname()
   endif
 end function get_longname_to_write
 
+!> @brief Determine the dimension names to use when registering the field to fms2_io
 subroutine get_dimnames(this, diag_axis, unlim_dimname, rslt, is_regional)
-
-  class (fmsDiagField_type), target, intent(inout) :: this  !< diag field
-  class(fmsDiagAxisContainer_type), intent(in)            :: diag_axis(:)    !< Diag_axis object
-  character(len=*), intent(in) :: unlim_dimname
-  logical, intent(in) :: is_regional
+  class (fmsDiagField_type), target, intent(inout) :: this          !< diag field
+  class(fmsDiagAxisContainer_type),  intent(in)    :: diag_axis(:)  !< Diag_axis object
+  character(len=*),                  intent(in)    :: unlim_dimname !< The name of unlimited dimension
+  logical,                           intent(in)    :: is_regional   !< Flag indicating if the field is regional
 
   character(len=120), intent(out), allocatable :: rslt(:)
 
-  integer :: i !< For do loops
-  integer :: j
-  integer :: naxis
+  integer :: i     !< For do loops
+  integer :: j     !< For do loops
+  integer :: naxis !< Number of axis for the field
 
+  !TODO there may be more stuff needed for the diurnal axis
   if (this%is_static()) then
     naxis = size(this%axis_ids)
   else
-    naxis = size(this%axis_ids) + 1
+    naxis = size(this%axis_ids) + 1 !< Adding 1 more dimension for the unlimited dimension
   endif
 
-  allocate(rslt(naxis)) !< Adding 1 for the unlimited dimension
+  allocate(rslt(naxis))
 
   do i = 1, size(this%axis_ids)
     j = this%axis_ids(i)
     rslt(i) = diag_axis(j)%axis%get_axis_name(is_regional)
   enddo
+
+  !< The last dimension is always the unlimited dimensions
   if (.not. this%is_static()) rslt(naxis) = unlim_dimname
 
 end subroutine get_dimnames
 
+!> @brief Write the field's metadata to the file
 subroutine write_field_metadata(this, fileobj, file_id, yaml_id, diag_axis, unlim_dimname, is_regional)
-  class (fmsDiagField_type), target, intent(inout) :: this  !< diag field
-  class(FmsNetcdfFile_t),                    INTENT(INOUT) :: fileobj     !< Fms2_io fileobj to write the data to
-  integer, intent(in) :: file_id
-  integer, intent(in) :: yaml_id
-  class(fmsDiagAxisContainer_type), intent(in)            :: diag_axis(:)    !< Diag_axis object
-  character(len=*), intent(in) :: unlim_dimname
-  logical, intent(in) :: is_regional
+  class (fmsDiagField_type), target, intent(inout) :: this          !< diag field
+  class(FmsNetcdfFile_t),            INTENT(INOUT) :: fileobj       !< Fms2_io fileobj to write to
+  integer,                           intent(in)    :: file_id       !< File id of the file to write to
+  integer,                           intent(in)    :: yaml_id       !< Yaml id of the yaml entry of this field
+  class(fmsDiagAxisContainer_type),  intent(in)    :: diag_axis(:)  !< Diag_axis object
+  character(len=*),                  intent(in)    :: unlim_dimname !< The name of the unlimited dimension
+  logical,                           intent(in)    :: is_regional   !< Flag indicating if the field is regional
 
-  type(diagYamlFilesVar_type), pointer :: field_yaml
-  character(len=:), allocatable :: var_name
-  character(len=:), allocatable :: long_name
-  character(len=:), allocatable :: units
-  character(len=120), allocatable :: dimnames(:)
-  integer :: id
+  type(diagYamlFilesVar_type), pointer     :: field_yaml  !< pointer to the yaml entry
+  character(len=:),            allocatable :: var_name    !< Variable name
+  character(len=:),            allocatable :: long_name   !< Longname to write
+  character(len=:),            allocatable :: units       !< Units of the field to write
+  character(len=120),          allocatable :: dimnames(:) !< Dimension names of the field
 
   field_yaml => diag_yaml%get_diag_field_from_id(yaml_id)
   var_name = field_yaml%get_var_outname()
