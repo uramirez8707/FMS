@@ -620,6 +620,7 @@ subroutine add_axes(this, axis_ids, diag_axis, naxis)
 
   integer :: i, j !< For do loops
   logical :: is_cube_sphere !< Flag indicating if the file's domain is a cubesphere
+  logical :: axis_found !< Flag indicating that the axis was already to the file obj
 
   is_cube_sphere = .false.
 
@@ -647,14 +648,20 @@ subroutine add_axes(this, axis_ids, diag_axis, naxis)
     return
   type is (fmsDiagFile_type)
     do i = 1, size(axis_ids)
+      axis_found = .false.
       do j = 1, this%number_of_axis
-        !> Check if the axis already exists, return
-        if (axis_ids(i) .eq. this%axis_ids(j)) return
+        !> Check if the axis already exists, move on
+        if (axis_ids(i) .eq. this%axis_ids(j)) then
+          axis_found = .true.
+          cycle
+        endif
       enddo
 
-      !> If the axis does not exist add it to the list
-      this%number_of_axis = this%number_of_axis + 1
-      this%axis_ids(this%number_of_axis) = axis_ids(i)
+      if (.not. axis_found) then
+        !> If the axis does not exist add it to the list
+        this%number_of_axis = this%number_of_axis + 1
+        this%axis_ids(this%number_of_axis) = axis_ids(i)
+      endif
     enddo
   end select
 end subroutine add_axes
