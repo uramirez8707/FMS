@@ -445,7 +445,7 @@ subroutine fms_diag_do_io(this, time_step, is_end_of_run)
   TYPE (time_type),                  INTENT(in)     :: time_step     !< The current model time
   logical,                 optional, intent(in)     :: is_end_of_run !< If .true. this is the end of the run,
                                                                      !! so force write
-
+#ifdef use_yaml
   integer :: i !< For do loops
   class(fmsDiagFileContainer_type), pointer :: diag_file !< Pointer to this%FMS_diag_files(i) (for convenience)
   logical :: file_is_opened_this_time_step !< True if the file was opened in this time_step
@@ -482,6 +482,7 @@ subroutine fms_diag_do_io(this, time_step, is_end_of_run)
       call diag_file%close_diag_file()
     endif
   enddo
+#endif
 end subroutine fms_diag_do_io
 
 !> @brief Add a attribute to the diag_obj using the diag_field_id
