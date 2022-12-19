@@ -70,6 +70,7 @@ private
     procedure :: fms_get_diag_field_id_from_name
     procedure :: fms_get_axis_name_from_id
     procedure :: fms_diag_send_complete
+    procedure :: fms_diag_do_io
 #ifdef use_yaml
     procedure :: get_diag_buffer
 #endif
@@ -119,19 +120,16 @@ end subroutine fms_diag_object_init
 !! Closes all files
 !! Deallocates all buffers, fields, and files
 !! Uninitializes the fms_diag_object
-subroutine fms_diag_object_end (this)
+subroutine fms_diag_object_end (this, time)
   class(fmsDiagObject_type) :: this
+  TYPE(time_type), INTENT(in) :: time
+
   integer                   :: i
 #ifdef use_yaml
   !TODO: loop through files and force write
   if (.not. this%initialized) return
 
-  do i = 1, size(this%FMS_diag_files)
-    !< Go away if the file is a subregional file and the current PE does not have any data for it
-    if (.not. this%FMS_diag_files(i)%writing_on_this_pe()) cycle
-
-    call this%FMS_diag_files(i)%close_diag_file()
-  enddo
+  call this%fms_diag_do_io(time, is_end_of_run=.true.)
   !TODO: Deallocate diag object arrays and clean up all memory
   do i=1, size(this%FMS_diag_buffers)
     if(allocated(this%FMS_diag_buffers(i)%diag_buffer_obj)) then
@@ -429,18 +427,33 @@ end function fms_diag_axis_init
 !> @brief Loops through all the files, open the file, writes out axis and
 !! variable metadata and data when necessary.
 subroutine fms_diag_send_complete(this, time_step)
-  class(fmsDiagObject_type), target, intent (inout) :: this !< The diag object
-  TYPE (time_type),                  INTENT(in)     :: time_step !< The current model time
-
-  integer :: i !< For do loops
+  class(fmsDiagObject_type), target, intent (inout) :: this          !< The diag object
+  TYPE (time_type),                  INTENT(in)     :: time_step     !< The current model time
 
 #ifndef use_yaml
 CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling with -Duse_yaml")
 #else
-  class(fmsDiagFileContainer_type), pointer :: diag_file !< Pointer to this%FMS_diag_files(i) (for convenience)
 
+  call this%fms_diag_do_io(time_step)
+
+#endif
+
+end subroutine fms_diag_send_complete
+
+subroutine fms_diag_do_io(this, time_step, is_end_of_run)
+  class(fmsDiagObject_type), target, intent (inout) :: this          !< The diag object
+  TYPE (time_type),                  INTENT(in)     :: time_step     !< The current model time
+  logical,                 optional, intent(in)     :: is_end_of_run !< If .true. this is the end of the run,
+                                                                     !! so force write
+
+  integer :: i !< For do loops
+  class(fmsDiagFileContainer_type), pointer :: diag_file !< Pointer to this%FMS_diag_files(i) (for convenience)
   logical :: file_is_opened_this_time_step !< True if the file was opened in this time_step
                                            !! If true the metadata will need to be written
+  logical :: force_write
+
+  force_write = .false.
+  if (present (is_end_of_run)) force_write = .true.
 
   do i = 1, size(this%FMS_diag_files)
     diag_file => this%FMS_diag_files(i)
@@ -462,12 +475,14 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
       !TODO call diag_file%add_variable_data()
       call diag_file%update_next_write(time_step)
       call diag_file%update_current_new_file_freq_index(time_step)
-      if (diag_file%is_time_to_close_file(time_step)) call diag_file%close_diag_file
+      if (diag_file%is_time_to_close_file(time_step)) call diag_file%close_diag_file()
+    else if (force_write) then
+      call diag_file%increase_unlimited_dimension()
+      call diag_file%write_time_data()
+      call diag_file%close_diag_file()
     endif
   enddo
-#endif
-
-end subroutine fms_diag_send_complete
+end subroutine fms_diag_do_io
 
 !> @brief Add a attribute to the diag_obj using the diag_field_id
 subroutine fms_diag_field_add_attribute(this, diag_field_id, att_name, att_value)
