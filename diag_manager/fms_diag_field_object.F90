@@ -819,9 +819,9 @@ result(rslt)
   var_kind = field_yaml%get_var_kind()
   select case (var_kind)
   case (r4)
-    rslt = "double"
-  case (r8)
     rslt = "float"
+  case (r8)
+    rslt = "double"
   case (i4)
     rslt = "int"
   case (i8)
