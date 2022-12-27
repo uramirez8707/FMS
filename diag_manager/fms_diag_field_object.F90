@@ -711,13 +711,13 @@ result(rslt)
      if (allocated(this%missing_value)) then
        select type (miss => this%missing_value)
          type is (integer(kind=i4_kind))
-             rslt = miss
+             rslt = int(miss, kind=i4_kind)
          type is (integer(kind=i8_kind))
-             rslt = miss
+             rslt = int(miss, kind=i8_kind)
          type is (real(kind=r4_kind))
-             rslt = miss
+             rslt = real(miss, kind=r4_kind)
          type is (real(kind=r8_kind))
-             rslt = miss
+             rslt = real(miss, kind=r8_kind)
          class default
              call mpp_error ("get_missing_value", &
                      "The missing value is not a r8, r4, i8, or i4",&
