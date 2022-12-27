@@ -704,10 +704,10 @@ result(rslt)
              allocate (integer(kind=i8_kind) :: rslt)
              rslt = miss
          type is (real(kind=r4_kind))
-             allocate (integer(kind=i4_kind) :: rslt)
+             allocate (real(kind=r4_kind) :: rslt)
              rslt = miss
          type is (real(kind=r8_kind))
-             allocate (integer(kind=i4_kind) :: rslt)
+             allocate (real(kind=r8_kind) :: rslt)
              rslt = miss
          class default
              call mpp_error ("get_missing_value", &
@@ -922,9 +922,20 @@ subroutine write_field_metadata(this, fileobj, file_id, yaml_id, diag_axis, unli
   if (units .ne. diag_null_string) &
     call register_variable_attribute(fileobj, var_name, "units", units, str_len=len_trim(units))
 
-  if (this%has_missing_value()) &
+  if (this%has_missing_value()) then
     call register_variable_attribute(fileobj, var_name, "missing_value", this%get_missing_value())
+    call register_variable_attribute(fileobj, var_name, "_FillValue", this%get_missing_value())
+  else
+    call register_variable_attribute(fileobj, var_name, "missing_value", &
+      get_default_missing_value(field_yaml%get_var_kind()))
+      call register_variable_attribute(fileobj, var_name, "_FillValue", &
+      get_default_missing_value(field_yaml%get_var_kind()))
+  endif
 
+  if (this%has_interp_method()) then
+    call register_variable_attribute(fileobj, var_name, "interp_method", this%get_interp_method(), &
+      str_len=len_trim(this%get_interp_method()))
+  endif
 end subroutine write_field_metadata
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!! Allocation checks
@@ -1089,6 +1100,22 @@ subroutine diag_field_add_attribute(this, att_name, att_value)
   call this%attributes(this%num_attributes)%add(att_name, att_value)
 end subroutine diag_field_add_attribute
 
+function get_default_missing_value(var_type) &
+  result(rslt)
+
+  integer, intent(in) :: var_type
+  class(*),allocatable :: rslt
+
+  select case(var_type)
+  case (r4)
+    allocate(integer(kind=r4_kind) :: rslt)
+    rslt = real(CMOR_MISSING_VALUE, kind=r4_kind)
+  case (r8)
+    allocate(integer(kind=r8_kind) :: rslt)
+    rslt = real(CMOR_MISSING_VALUE, kind=r8_kind)
+  case default
+  end select
+end function
 !> @brief Determines the diag_obj id corresponding to a module name and field_name
 !> @return diag_obj id
 PURE FUNCTION diag_field_id_from_name(this, module_name, field_name) &

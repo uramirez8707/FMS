@@ -292,15 +292,18 @@ module fms_diag_axis_object_mod
       type is (FmsNetcdfFile_t)
         !< Here the axis is not domain decomposed (i.e z_axis)
         call register_axis(fileobj, axis_name, axis_length)
+        call register_field(fileobj, axis_name, diag_axis%type_of_data, (/axis_name/))
       type is (FmsNetcdfDomainFile_t)
         select case (diag_axis%type_of_domain)
         case (NO_DOMAIN)
           !< Here the fileobj is domain decomposed, but the axis is not
           !! Domain decomposed fileobjs can have axis that are not domain decomposed (i.e "Z" axis)
           call register_axis(fileobj, axis_name, axis_length)
+          call register_field(fileobj, axis_name, diag_axis%type_of_data, (/axis_name/))
         case (TWO_D_DOMAIN)
           !< Here the axis is domain decomposed
           call register_axis(fileobj, axis_name, diag_axis%cart_name, domain_position=diag_axis%domain_position)
+          call register_field(fileobj, axis_name, diag_axis%type_of_data, (/axis_name/))
         end select
       type is (FmsNetcdfUnstructuredDomainFile_t)
         select case (diag_axis%type_of_domain)
@@ -308,14 +311,15 @@ module fms_diag_axis_object_mod
           !< Here the fileobj is in the unstructured domain, but the axis is not
           !< Unstructured domain fileobjs can have axis that are not domain decomposed (i.e "Z" axis)
           call register_axis(fileobj, axis_name, axis_length)
+          call register_field(fileobj, axis_name, diag_axis%type_of_data, (/axis_name/))
         case (UG_DOMAIN)
           !< Here the axis is in a unstructured domain
           call register_axis(fileobj, axis_name)
+          call register_field(fileobj, axis_name, diag_axis%type_of_data, (/axis_name/))
         end select
     end select
 
-    !< Add the axis as a variable and write its metada
-    call register_field(fileobj, axis_name, diag_axis%type_of_data, (/axis_name/))
+    !< Write its metadata
     call register_variable_attribute(fileobj, axis_name, "long_name", diag_axis%long_name, &
       str_len=len_trim(diag_axis%long_name))
 
