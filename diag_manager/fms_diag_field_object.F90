@@ -259,12 +259,6 @@ subroutine fms_register_diag_field_obj &
                      "The missing value passed to register a diagnostic is not a r8, r4, i8, or i4",&
                      FATAL)
     end select
-  else
-      allocate(real :: this%missing_value)
-      select type (miss => this%missing_value)
-       type is (real)
-        miss = real(CMOR_MISSING_VALUE)
-      end select
   endif
 
   if (present(varRANGE)) then
@@ -878,6 +872,22 @@ subroutine get_dimnames(this, diag_axis, unlim_dimname, rslt, is_regional)
 
 end subroutine get_dimnames
 
+subroutine register_field_wrap(fileobj, varname, vartype, dimensions)
+  class(FmsNetcdfFile_t),            INTENT(INOUT) :: fileobj       !< Fms2_io fileobj to write to
+  character(len=*),                  INTENT(IN)    :: varname
+  character(len=*),                  INTENT(IN)    :: vartype
+  character(len=*), optional,        INTENT(IN)    :: dimensions(:)
+
+  select type(fileobj)
+  type is (FmsNetcdfFile_t)
+    call register_field(fileobj, varname, vartype, dimensions)
+  type is (FmsNetcdfDomainFile_t)
+    call register_field(fileobj, varname, vartype, dimensions)
+  type is (FmsNetcdfUnstructuredDomainFile_t)
+    call register_field(fileobj, varname, vartype, dimensions)
+  end select
+
+end subroutine register_field_wrap
 !> @brief Write the field's metadata to the file
 subroutine write_field_metadata(this, fileobj, file_id, yaml_id, diag_axis, unlim_dimname, is_regional)
   class (fmsDiagField_type), target, intent(inout) :: this          !< diag field
@@ -899,9 +909,9 @@ subroutine write_field_metadata(this, fileobj, file_id, yaml_id, diag_axis, unli
 
   if (allocated(this%axis_ids)) then
     call this%get_dimnames(diag_axis, unlim_dimname, dimnames, is_regional)
-    call register_field(fileobj, var_name, this%get_var_skind(field_yaml), dimnames)
+    call register_field_wrap(fileobj, var_name, this%get_var_skind(field_yaml), dimnames)
   else
-    call register_field(fileobj, var_name, this%get_var_skind(field_yaml))
+    call register_field_wrap(fileobj, var_name, this%get_var_skind(field_yaml))
   endif
 
   !TODO Not sure what the old diag_manager did if long_name was never defined
@@ -911,6 +921,9 @@ subroutine write_field_metadata(this, fileobj, file_id, yaml_id, diag_axis, unli
   units = this%get_units()
   if (units .ne. diag_null_string) &
     call register_variable_attribute(fileobj, var_name, "units", units, str_len=len_trim(units))
+
+  if (this%has_missing_value()) &
+    call register_variable_attribute(fileobj, var_name, "missing_value", this%get_missing_value())
 
 end subroutine write_field_metadata
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

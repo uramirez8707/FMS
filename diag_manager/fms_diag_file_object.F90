@@ -148,6 +148,7 @@ type fmsDiagFileContainer_type
 
   contains
   procedure :: is_regional
+  procedure :: is_file_static
   procedure :: open_diag_file
   procedure :: write_time_metadata
   procedure :: write_axis_metadata
@@ -746,6 +747,18 @@ logical pure function is_regional(this)
 
 end function is_regional
 
+logical pure function is_file_static(this)
+class(fmsDiagFileContainer_type), intent(in) :: this            !< The file object
+
+is_file_static = .false.
+
+select type (wut=>this%FMS_diag_file)
+type is (fmsDiagFile_type)
+  is_file_static = wut%is_static
+end select
+
+end function is_file_static
+
 !< @brief Opens the diag_file if it is time to do so
 subroutine open_diag_file(this, time_step, file_is_opened)
   class(fmsDiagFileContainer_type), intent(inout), target :: this            !< The file object
@@ -938,7 +951,7 @@ subroutine write_time_metadata(this)
 
   if (diag_file%time_ops) then
     call register_variable_attribute(fileobj, time_var_name, "bounds", &
-      trim(time_var_name)//"_bounds", str_len=len_trim(time_var_name//"_bounds"))
+      trim(time_var_name)//"_bnds", str_len=len_trim(time_var_name//"_bnds"))
 
     !< Write out the "average_*" variables metadata
     call write_var_metadata(fileobj, avg_name//"_T1", dimensions(2:2), &
@@ -952,7 +965,7 @@ subroutine write_time_metadata(this)
     call register_axis(fileobj, "nv", 2) !< Time bounds need a vertex number
     call write_var_metadata(fileobj, "nv", dimensions(1:1), &
       "vertex number", no_units)
-    call write_var_metadata(fileobj, time_var_name//"_bounds", dimensions, &
+    call write_var_metadata(fileobj, time_var_name//"_bnds", dimensions, &
       trim(time_var_name)//" axis boundaries", time_units_str)
   endif
 
@@ -1035,7 +1048,7 @@ subroutine write_time_data(this)
     call write_data(fileobj, avg_name//"_T1", T1, unlim_dim_level=diag_file%unlimited_dimension)
     call write_data(fileobj, avg_name//"_T2", T2, unlim_dim_level=diag_file%unlimited_dimension)
     call write_data(fileobj, avg_name//"_DT", DT, unlim_dim_level=diag_file%unlimited_dimension)
-    call write_data(fileobj, trim(diag_file%get_file_unlimdim())//"_bounds", &
+    call write_data(fileobj, trim(diag_file%get_file_unlimdim())//"_bnds", &
                     (/T1, T2/), unlim_dim_level=diag_file%unlimited_dimension)
 
     if (diag_file%unlimited_dimension .eq. 1) then
