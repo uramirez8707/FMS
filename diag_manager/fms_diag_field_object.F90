@@ -693,40 +693,39 @@ end function get_volume
 !! @return copy of The missing value
 function get_missing_value (this, var_type) &
 result(rslt)
-     class (fmsDiagField_type), intent(in) :: this !< diag object
-     integer, intent(in) :: var_type
+  class (fmsDiagField_type), intent(in) :: this !< diag object
+  integer, intent(in) :: var_type
 
-     class(*),allocatable :: rslt
-     select case (var_type)
-     case (r4)
-      allocate (real(kind=r4_kind) :: rslt)
-     case (r8)
-      allocate (real(kind=r8_kind) :: rslt)
-     case (i4)
-      allocate (integer(kind=i4_kind) :: rslt)
-     case (i8)
-      allocate (integer(kind=i8_kind) :: rslt)
-     end select
+  class(*),allocatable :: rslt
 
-     if (allocated(this%missing_value)) then
-       select type (miss => this%missing_value)
-         type is (integer(kind=i4_kind))
-             rslt = int(miss, kind=i4_kind)
-         type is (integer(kind=i8_kind))
-             rslt = int(miss, kind=i8_kind)
-         type is (real(kind=r4_kind))
-             rslt = real(miss, kind=r4_kind)
-         type is (real(kind=r8_kind))
-             rslt = real(miss, kind=r8_kind)
-         class default
-             call mpp_error ("get_missing_value", &
-                     "The missing value is not a r8, r4, i8, or i4",&
-                     FATAL)
-         end select
-       else
-         call mpp_error ("get_missing_value", &
+  if (.not. allocated(this%missing_value)) then
+    call mpp_error ("get_missing_value", &
                  "The missing value is not allocated", FATAL)
-       endif
+  endif
+
+  select case (var_type)
+  case (r4)
+    allocate (real(kind=r4_kind) :: rslt)
+    select type (miss => this%missing_value)
+    type is (real(kind=r4_kind))
+      rslt = real(miss, kind=r4_kind)
+    type is (real(kind=r8_kind))
+      rslt = real(miss, kind=r4_kind)
+    end select
+  case (r8)
+    allocate (real(kind=r8_kind) :: rslt)
+    select type (miss => this%missing_value)
+    type is (real(kind=r4_kind))
+      rslt = real(miss, kind=r8_kind)
+    type is (real(kind=r8_kind))
+      rslt = real(miss, kind=r8_kind)
+    end select
+  case (i4)
+    allocate (integer(kind=i4_kind) :: rslt)
+  case (i8)
+    allocate (integer(kind=i8_kind) :: rslt)
+  end select
+
 end function get_missing_value
 
 !> @brief Gets data_range
