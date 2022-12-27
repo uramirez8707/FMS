@@ -691,23 +691,32 @@ end function get_volume
 
 !> @brief Gets missing_value
 !! @return copy of The missing value
-function get_missing_value (this) &
+function get_missing_value (this, var_type) &
 result(rslt)
      class (fmsDiagField_type), intent(in) :: this !< diag object
+     integer, intent(in) :: var_type
+
      class(*),allocatable :: rslt
+     select case (var_type)
+     case (r4)
+      allocate (real(kind=r4_kind) :: rslt)
+     case (r8)
+      allocate (real(kind=r8_kind) :: rslt)
+     case (i4)
+      allocate (integer(kind=i4_kind) :: rslt)
+     case (i8)
+      allocate (integer(kind=i8_kind) :: rslt)
+     end select
+
      if (allocated(this%missing_value)) then
        select type (miss => this%missing_value)
          type is (integer(kind=i4_kind))
-             allocate (integer(kind=i4_kind) :: rslt)
              rslt = miss
          type is (integer(kind=i8_kind))
-             allocate (integer(kind=i8_kind) :: rslt)
              rslt = miss
          type is (real(kind=r4_kind))
-             allocate (real(kind=r4_kind) :: rslt)
              rslt = miss
          type is (real(kind=r8_kind))
-             allocate (real(kind=r8_kind) :: rslt)
              rslt = miss
          class default
              call mpp_error ("get_missing_value", &
@@ -923,8 +932,10 @@ subroutine write_field_metadata(this, fileobj, file_id, yaml_id, diag_axis, unli
     call register_variable_attribute(fileobj, var_name, "units", units, str_len=len_trim(units))
 
   if (this%has_missing_value()) then
-    call register_variable_attribute(fileobj, var_name, "missing_value", this%get_missing_value())
-    call register_variable_attribute(fileobj, var_name, "_FillValue", this%get_missing_value())
+    call register_variable_attribute(fileobj, var_name, "missing_value", &
+      this%get_missing_value(field_yaml%get_var_kind()))
+    call register_variable_attribute(fileobj, var_name, "_FillValue", &
+      this%get_missing_value(field_yaml%get_var_kind()))
   else
     call register_variable_attribute(fileobj, var_name, "missing_value", &
       get_default_missing_value(field_yaml%get_var_kind()))
