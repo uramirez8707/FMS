@@ -249,10 +249,10 @@ subroutine fms_register_diag_field_obj &
              allocate(integer(kind=i8_kind) :: this%missing_value)
              this%missing_value = missing_value
      type is (real(kind=r4_kind))
-             allocate(integer(kind=r4_kind) :: this%missing_value)
+             allocate(real(kind=r4_kind) :: this%missing_value)
              this%missing_value = missing_value
      type is (real(kind=r8_kind))
-             allocate(integer(kind=r8_kind) :: this%missing_value)
+             allocate(real(kind=r8_kind) :: this%missing_value)
              this%missing_value = missing_value
      class default
              call mpp_error("fms_register_diag_field_obj", &
@@ -708,17 +708,29 @@ result(rslt)
     allocate (real(kind=r4_kind) :: rslt)
     select type (miss => this%missing_value)
     type is (real(kind=r4_kind))
-      rslt = real(miss, kind=r4_kind)
+      select type (rslt)
+      type is (real(kind=r4_kind))
+        rslt = real(miss, kind=r4_kind)
+      end select
     type is (real(kind=r8_kind))
-      rslt = real(miss, kind=r4_kind)
+      select type (rslt)
+      type is (real(kind=r4_kind))
+        rslt = real(miss, kind=r4_kind)
+      end select
     end select
   case (r8)
     allocate (real(kind=r8_kind) :: rslt)
     select type (miss => this%missing_value)
     type is (real(kind=r4_kind))
-      rslt = real(miss, kind=r8_kind)
+      select type (rslt)
+      type is (real(kind=r8_kind))
+        rslt = real(miss, kind=r8_kind)
+      end select
     type is (real(kind=r8_kind))
-      rslt = real(miss, kind=r8_kind)
+      select type (rslt)
+      type is (real(kind=r8_kind))
+        rslt = real(miss, kind=r8_kind)
+      end select
     end select
   case (i4)
     allocate (integer(kind=i4_kind) :: rslt)
