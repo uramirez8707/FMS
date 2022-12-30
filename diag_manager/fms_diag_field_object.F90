@@ -230,6 +230,7 @@ subroutine fms_register_diag_field_obj &
   if (present(units))         this%units         = trim(units)
   if (present(realm))         this%realm         = trim(realm)
   if (present(interp_method)) this%interp_method = trim(interp_method)
+
   if (present(tile_count)) then
     allocate(this%tile_count)
     this%tile_count = tile_count

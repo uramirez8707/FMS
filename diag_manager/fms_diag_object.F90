@@ -206,8 +206,10 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
   fieldptr => this%FMS_diag_fields(this%registered_variables)
 !> Register the data for the field
   call fieldptr%register(modname, varname, diag_field_indices, fms_diag_object%diag_axis, &
-       axes, longname, units, missing_value, varRange, mask_variant, standname, &
-       do_not_log, err_msg, interp_method, tile_count, area, volume, realm, static)
+       axes=axes, longname=longname, units=units, missing_value=missing_value, varRange= varRange, &
+       mask_variant= mask_variant, standname=standname, do_not_log=do_not_log, err_msg=err_msg, &
+       interp_method=interp_method, tile_count=tile_count, area=area, volume=volume, realm=realm, &
+       static=static)
 !> Get the file IDs from the field indicies from the yaml
   file_ids = get_diag_files_id(diag_field_indices)
   call fieldptr%set_file_ids(file_ids)
@@ -358,7 +360,8 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
   fms_register_static_field = this%register( &
       & module_name, field_name, axes=axes, &
       & longname=long_name, units=units, missing_value=missing_value, varrange=range, &
-      & standname=standard_name, do_not_log=do_not_log, area=area, volume=volume, realm=realm, &
+      & mask_variant=mask_variant, do_not_log=do_not_log, interp_method=interp_method, tile_count=tile_count, &
+      & standname=standard_name, area=area, volume=volume, realm=realm, &
       & static=.true.)
 #endif
 end function fms_register_static_field
