@@ -1151,6 +1151,7 @@ subroutine write_field_metadata(this, diag_field, diag_axis)
   integer :: i           !< For do loops
   integer :: j           !< For do loops
   logical :: is_regional !< Flag indicating if the field is in a regional file
+  character(len=255) :: cell_measures
 
   is_regional = this%is_regional()
 
@@ -1161,8 +1162,17 @@ subroutine write_field_metadata(this, diag_field, diag_axis)
     j = diag_file%field_ids(i)
     if (.not. diag_file%field_registered(i)) cycle !TODO do something else here
 
+    cell_measures = ""
+    if (diag_field(j)%has_area()) then
+      cell_measures = "area:"//diag_field(diag_field(j)%get_area())%get_varname()
+    endif
+
+    if (diag_field(j)%has_volume()) then
+      cell_measures = trim(cell_measures)//" volume:"//diag_field(diag_field(j)%get_volume())%get_varname()
+    endif
+
     call diag_field(j)%write_field_metadata(fileobj, diag_file%id, diag_file%yaml_ids(i), diag_axis, &
-      this%FMS_diag_file%get_file_unlimdim(), is_regional)
+      this%FMS_diag_file%get_file_unlimdim(), is_regional, cell_measures)
   enddo
 
 end subroutine write_field_metadata

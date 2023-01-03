@@ -12,7 +12,9 @@ use diag_data_mod,  only: diag_null, CMOR_MISSING_VALUE, diag_null_string
 use diag_data_mod,  only: r8, r4, i8, i4, string, null_type_int, NO_DOMAIN
 use diag_data_mod,  only: max_field_attributes, fmsDiagAttribute_type
 use diag_data_mod,  only: diag_null, diag_not_found, diag_not_registered, diag_registered_id, &
-                         &DIAG_FIELD_NOT_FOUND
+                         &DIAG_FIELD_NOT_FOUND, avg_name, time_average, time_min, time_max, &
+                         &time_none, time_diurnal, time_power, time_rms, time_sum
+use fms_string_utils_mod, only: int2str=>string
 use mpp_mod, only: fatal, note, warning, mpp_error, mpp_pe, mpp_root_pe
 use fms_diag_yaml_mod, only:  diagYamlFilesVar_type, get_diag_fields_entries, get_diag_files_id, &
   & find_diag_field, get_num_unique_fields, diag_yaml
@@ -281,12 +283,6 @@ subroutine fms_register_diag_field_obj &
                      "The varRange passed to register a diagnostic is not a r8, r4, i8, or i4",&
                      FATAL)
     end select
-  else
-      allocate(real :: this%data_RANGE(2))
-      select type (varRANGE => this%data_RANGE)
-       type is (real)
-        varRANGE = real(CMOR_MISSING_VALUE)
-      end select
   endif
 
   if (present(area)) then
@@ -743,33 +739,45 @@ end function get_missing_value
 
 !> @brief Gets data_range
 !! @return copy of the data range
-function get_data_RANGE (this) &
+function get_data_RANGE (this, var_type) &
 result(rslt)
-     class (fmsDiagField_type), intent(in) :: this !< diag object
-     class(*),allocatable :: rslt(:)
-     if (allocated(this%data_RANGE)) then
-       select type (r => this%data_RANGE)
-         type is (integer(kind=i4_kind))
-             allocate (integer(kind=i4_kind) :: rslt(2))
-             rslt = r
-         type is (integer(kind=i8_kind))
-             allocate (integer(kind=i8_kind) :: rslt(2))
-             rslt = r
-         type is (real(kind=r4_kind))
-             allocate (integer(kind=i4_kind) :: rslt(2))
-             rslt = r
-         type is (real(kind=r8_kind))
-             allocate (integer(kind=i4_kind) :: rslt(2))
-             rslt = r
-         class default
-             call mpp_error ("get_data_RANGE", &
-                     "The data_RANGE value is not a r8, r4, i8, or i4",&
-                     FATAL)
-         end select
-       else
-         call mpp_error ("get_data_RANGE", &
-                 "The data_RANGE value is not allocated", FATAL)
-       endif
+  class (fmsDiagField_type), intent(in) :: this !< diag object
+  class(*),allocatable :: rslt(:)
+  integer, intent(in) :: var_type
+
+  if ( .not. allocated(this%data_RANGE)) call mpp_error ("get_data_RANGE", &
+    "The data_RANGE value is not allocated", FATAL)
+  
+  select case (var_type)
+  case (r4)
+    allocate (real(kind=r4_kind) :: rslt(2))
+    select type (r => this%data_RANGE)
+    type is (real(kind=r4_kind))
+      select type (rslt)
+      type is (real(kind=r4_kind))
+        rslt = real(r, kind=r4_kind)
+      end select
+    type is (real(kind=r8_kind))
+      select type (rslt)
+      type is (real(kind=r4_kind))
+        rslt = real(r, kind=r4_kind)
+      end select
+    end select
+  case (r8)
+    allocate (real(kind=r8_kind) :: rslt(2))
+    select type (r => this%data_RANGE)
+    type is (real(kind=r4_kind))
+      select type (rslt)
+      type is (real(kind=r8_kind))
+        rslt = real(r, kind=r8_kind)
+      end select
+    type is (real(kind=r8_kind))
+      select type (rslt)
+      type is (real(kind=r8_kind))
+        rslt = real(r, kind=r8_kind)
+      end select
+    end select
+  end select
 end function get_data_RANGE
 
 !> @brief Gets axis_ids
@@ -910,7 +918,8 @@ subroutine register_field_wrap(fileobj, varname, vartype, dimensions)
 
 end subroutine register_field_wrap
 !> @brief Write the field's metadata to the file
-subroutine write_field_metadata(this, fileobj, file_id, yaml_id, diag_axis, unlim_dimname, is_regional)
+subroutine write_field_metadata(this, fileobj, file_id, yaml_id, diag_axis, unlim_dimname, is_regional, &
+                                cell_measures)
   class (fmsDiagField_type), target, intent(inout) :: this          !< diag field
   class(FmsNetcdfFile_t),            INTENT(INOUT) :: fileobj       !< Fms2_io fileobj to write to
   integer,                           intent(in)    :: file_id       !< File id of the file to write to
@@ -918,6 +927,7 @@ subroutine write_field_metadata(this, fileobj, file_id, yaml_id, diag_axis, unli
   class(fmsDiagAxisContainer_type),  intent(in)    :: diag_axis(:)  !< Diag_axis object
   character(len=*),                  intent(in)    :: unlim_dimname !< The name of the unlimited dimension
   logical,                           intent(in)    :: is_regional   !< Flag indicating if the field is regional
+  character(len=*),                  intent(inout) :: cell_measures
 
   type(diagYamlFilesVar_type), pointer     :: field_yaml  !< pointer to the yaml entry
   character(len=:),            allocatable :: var_name    !< Variable name
@@ -955,10 +965,28 @@ subroutine write_field_metadata(this, fileobj, file_id, yaml_id, diag_axis, unli
       get_default_missing_value(field_yaml%get_var_kind()))
   endif
 
+  if (this%has_data_RANGE()) then
+    call register_variable_attribute(fileobj, var_name, "valid_range", &
+      this%get_data_range(field_yaml%get_var_kind()))
+  endif
+
   if (this%has_interp_method()) then
     call register_variable_attribute(fileobj, var_name, "interp_method", this%get_interp_method(), &
       str_len=len_trim(this%get_interp_method()))
   endif
+
+  select case (field_yaml%get_var_reduction())
+  case (time_average, time_max, time_min)
+    call register_variable_attribute(fileobj, var_name, "time_avg_info", &
+      trim(avg_name)//'_T1,'//trim(avg_name)//'_T2,'//trim(avg_name)//'_DT', &
+      str_len=len(trim(avg_name)//'_T1,'//trim(avg_name)//'_T2,'//trim(avg_name)//'_DT'))
+  end select
+
+  call append_time_cell_measure(cell_measures, field_yaml)
+  if (trim(cell_measures) .ne. "") &
+    call register_variable_attribute(fileobj, var_name, "cell_methods", &
+      trim(cell_measures), str_len=len_trim(cell_measures))
+
 end subroutine write_field_metadata
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!! Allocation checks
@@ -1156,6 +1184,29 @@ PURE FUNCTION diag_field_id_from_name(this, module_name, field_name) &
   endif
 end function diag_field_id_from_name
 
+subroutine append_time_cell_measure(cell_measures, field_yaml)
+  character(len=*), intent(inout) :: cell_measures
+  type(diagYamlFilesVar_type), intent(in) :: field_yaml
+
+  select case (field_yaml%get_var_reduction())
+  case (time_none)
+    cell_measures = trim(cell_measures)//" time: point "
+  case (time_diurnal)
+    cell_measures = trim(cell_measures)//" time: mean"
+  case (time_power)
+    cell_measures = trim(cell_measures)//" time: mean_pow"//int2str(field_yaml%get_pow_value())
+  case (time_rms)
+    cell_measures = trim(cell_measures)//" time: root_mean_square"
+  case (time_max)
+    cell_measures = trim(cell_measures)//" time: max"
+  case (time_min)
+    cell_measures = trim(cell_measures)//" time: min"
+  case (time_average)
+    cell_measures = trim(cell_measures)//" time: mean"
+  case (time_sum)
+    cell_measures = trim(cell_measures)//" time: sum"
+  end select
+end subroutine append_time_cell_measure
 !> Dumps any data from a given fmsDiagField_type object
 subroutine dump_field_obj (this, unit_num)
   class(fmsDiagField_type), intent(in) :: this
