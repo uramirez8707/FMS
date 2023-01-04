@@ -229,7 +229,9 @@ subroutine fms_register_diag_field_obj &
 !> get the optional arguments if included and the diagnostic is in the diag table
   if (present(longname))      this%longname      = trim(longname)
   if (present(standname))     this%standname     = trim(standname)
-  if (present(units))         this%units         = trim(units)
+  if (present(units)) then
+    if (trim(units) .ne. "none") this%units = trim(units)
+  endif
   if (present(realm))         this%realm         = trim(realm)
   if (present(interp_method)) this%interp_method = trim(interp_method)
 
@@ -985,7 +987,7 @@ subroutine write_field_metadata(this, fileobj, file_id, yaml_id, diag_axis, unli
   call append_time_cell_measure(cell_measures, field_yaml)
   if (trim(cell_measures) .ne. "") &
     call register_variable_attribute(fileobj, var_name, "cell_methods", &
-      trim(cell_measures), str_len=len_trim(cell_measures))
+      trim(adjustl(cell_measures)), str_len=len_trim(adjustl(cell_measures)))
 
 end subroutine write_field_metadata
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
