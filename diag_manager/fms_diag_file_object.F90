@@ -959,7 +959,7 @@ subroutine write_time_metadata(this)
     call write_var_metadata(fileobj, avg_name//"_T2", dimensions(2:2), &
       "End time for average period", time_units_str)
     call write_var_metadata(fileobj, avg_name//"_DT", dimensions(2:2), &
-      "Length of average period", diag_file%get_file_timeunit())
+      "Length of average period", time_unit_list(diag_file%get_file_timeunit()))
 
     !< Write out the *_bounds variable metadata
     call register_axis(fileobj, "nv", 2) !< Time bounds need a vertex number
