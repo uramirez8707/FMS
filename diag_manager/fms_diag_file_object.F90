@@ -40,7 +40,8 @@ use fms_diag_time_utils_mod, only: diag_time_inc, get_time_string, get_date_dif
 use fms_diag_yaml_mod, only: diag_yaml, diagYamlObject_type, diagYamlFiles_type, subRegion_type, diagYamlFilesVar_type
 use fms_diag_axis_object_mod, only: diagDomain_t, get_domain_and_domain_type, fmsDiagAxis_type, &
                                     fmsDiagAxisContainer_type, DIAGDOMAIN2D_T, DIAGDOMAINUG_T, &
-                                    fmsDiagFullAxis_type, define_subaxis
+                                    fmsDiagFullAxis_type, define_subaxis, fmsDiagDiurnalAxis_type, &
+                                    define_diurnal_axis
 use fms_diag_field_object_mod, only: fmsDiagField_type
 use mpp_mod, only: mpp_get_current_pelist, mpp_npes, mpp_root_pe, mpp_pe, mpp_error, FATAL, stdout, &
                    uppercase, lowercase
@@ -92,6 +93,7 @@ type :: fmsDiagFile_type
 
  contains
   procedure, public :: add_field_and_yaml_id
+  procedure, public :: init_diurnal_axis
   procedure, public :: has_file_metadata_from_model
   procedure, public :: has_fileobj
   procedure, public :: has_diag_yaml_file
@@ -268,6 +270,40 @@ subroutine add_field_and_yaml_id (this, new_field_id, yaml_id)
                  "number of fields.")
   endif
 end subroutine add_field_and_yaml_id
+
+subroutine init_diurnal_axis(this, diag_axis, naxis, yaml_id)
+  class(fmsDiagFile_type),      intent(inout) :: this      !< The file object
+  class(fmsDiagAxisContainer_type), intent(inout)       :: diag_axis(:)  !< Diag_axis object
+  integer,                      intent(inout)    :: naxis
+  integer,                      intent(in)    :: yaml_id
+
+  integer :: i
+  type(diagYamlFilesVar_type), pointer     :: field_yaml  !< pointer to the yaml entry
+
+  field_yaml => diag_yaml%get_diag_field_from_id(yaml_id)
+  !< Go away if the file does not need a diurnal axis
+  if (.not. field_yaml%has_n_diurnal()) return
+
+  !< Check if the diurnal axis is already defined for this number of diurnal samples
+  do i = 1, this%number_of_axis
+    select type(axis=>diag_axis(this%axis_ids(i))%axis)
+    type is (fmsDiagDiurnalAxis_type)
+      if(field_yaml%get_n_diurnal() .eq. axis%get_diurnal_axis_samples()) return
+    end select
+  end do
+
+  !< If it is not already defined, define it
+  call define_diurnal_axis(diag_axis, naxis, field_yaml%get_n_diurnal(), .true.)
+  call define_diurnal_axis(diag_axis, naxis, field_yaml%get_n_diurnal(), .False.)
+
+  !< Add it to the list of axis for the file
+  this%number_of_axis = this%number_of_axis + 1
+  this%axis_ids(this%number_of_axis) = naxis !< This is the diurnal axis edges
+
+  this%number_of_axis = this%number_of_axis + 1
+  this%axis_ids(this%number_of_axis) = naxis - 1 !< This the diurnal axis
+
+end subroutine init_diurnal_axis
 
 !> \brief Set the time_ops variable in the diag_file object
 subroutine set_file_time_ops(this, VarYaml, is_static)

@@ -882,9 +882,10 @@ result(rslt)
 end function get_longname_to_write
 
 !> @brief Determine the dimension names to use when registering the field to fms2_io
-subroutine get_dimnames(this, diag_axis, unlim_dimname, rslt, is_regional)
+subroutine get_dimnames(this, diag_axis, field_yaml, unlim_dimname, rslt, is_regional)
   class (fmsDiagField_type), target, intent(inout) :: this          !< diag field
   class(fmsDiagAxisContainer_type),  intent(in)    :: diag_axis(:)  !< Diag_axis object
+  type(diagYamlFilesVar_type),       intent(in)    :: field_yaml
   character(len=*),                  intent(in)    :: unlim_dimname !< The name of unlimited dimension
   logical,                           intent(in)    :: is_regional   !< Flag indicating if the field is regional
 
@@ -901,12 +902,20 @@ subroutine get_dimnames(this, diag_axis, unlim_dimname, rslt, is_regional)
     naxis = size(this%axis_ids) + 1 !< Adding 1 more dimension for the unlimited dimension
   endif
 
+  if (field_yaml%has_n_diurnal()) then
+    naxis = naxis + 1 !< Adding 1 more dimension for the diurnal axis
+  endif
+
   allocate(rslt(naxis))
 
   do i = 1, size(this%axis_ids)
     j = this%axis_ids(i)
     rslt(i) = diag_axis(j)%axis%get_axis_name(is_regional)
   enddo
+
+  if (field_yaml%has_n_diurnal()) then
+    rslt(naxis - 1) = 'time_of_day_edges_'//int2str(field_yaml%get_n_diurnal())
+  endif
 
   !< The last dimension is always the unlimited dimensions
   if (.not. this%is_static()) rslt(naxis) = unlim_dimname
@@ -953,7 +962,7 @@ subroutine write_field_metadata(this, fileobj, file_id, yaml_id, diag_axis, unli
   var_name = field_yaml%get_var_outname()
 
   if (allocated(this%axis_ids)) then
-    call this%get_dimnames(diag_axis, unlim_dimname, dimnames, is_regional)
+    call this%get_dimnames(diag_axis, field_yaml, unlim_dimname, dimnames, is_regional)
     call register_field_wrap(fileobj, var_name, this%get_var_skind(field_yaml), dimnames)
   else
     call register_field_wrap(fileobj, var_name, this%get_var_skind(field_yaml))
