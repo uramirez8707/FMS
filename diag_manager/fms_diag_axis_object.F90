@@ -974,6 +974,8 @@ module fms_diag_axis_object_mod
     select type (this)
     type is (fmsDiagFullAxis_type)
       parent_axis_id = diag_null
+    type is (fmsDiagDiurnalAxis_type)
+      parent_axis_id = diag_null
     type is (fmsDiagSubAxis_type)
       parent_axis_id = this%parent_axis_id
     end select
