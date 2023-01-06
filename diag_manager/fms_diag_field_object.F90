@@ -914,7 +914,7 @@ subroutine get_dimnames(this, diag_axis, field_yaml, unlim_dimname, rslt, is_reg
   enddo
 
   if (field_yaml%has_n_diurnal()) then
-    rslt(naxis - 1) = 'time_of_day_edges_'//int2str(field_yaml%get_n_diurnal())
+    rslt(naxis - 1) = 'time_of_day_'//int2str(field_yaml%get_n_diurnal())
   endif
 
   !< The last dimension is always the unlimited dimensions

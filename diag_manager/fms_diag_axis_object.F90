@@ -1030,6 +1030,7 @@ module fms_diag_axis_object_mod
     logical,                      intent(in)    :: is_edges
 
     CHARACTER(32)  :: name  !< name of the axis
+    CHARACTER(32)  :: long_name  !< name of the axi
     CHARACTER(32)  :: edges_name  !< name of the axis
     CHARACTER(128) :: units !< units of time
     real(kind=r8_kind), allocatable :: diurnal_data(:)
@@ -1039,8 +1040,10 @@ module fms_diag_axis_object_mod
     naxis = naxis + 1
 
     name = ''
+    edges_name = ''
     if (is_edges) then
       WRITE (name,'(a,i2.2)') 'time_of_day_edges_', n_diurnal_samples
+      long_name = "time of day edges"
       allocate(diurnal_data(n_diurnal_samples + 1))
       diurnal_data(1) = 0.0
       edges_id = diag_null
@@ -1049,6 +1052,7 @@ module fms_diag_axis_object_mod
       enddo
     else
       WRITE (name,'(a,i2.2)') 'time_of_day_', n_diurnal_samples
+      long_name = "time of day"
       allocate(diurnal_data(n_diurnal_samples))
       edges_id = naxis -1 !< The diurnal edges is the last defined axis
       do i = 1, n_diurnal_samples
@@ -1067,6 +1071,7 @@ module fms_diag_axis_object_mod
       diurnal_axis%ndiurnal_samples = n_diurnal_samples
       diurnal_axis%axis_name = trim(name)
       diurnal_axis%units = trim(units)
+      diurnal_axis%long_name = trim(long_name)
       diurnal_axis%diurnal_data = diurnal_data
       diurnal_axis%edges_id = edges_id
       if (is_edges) &
