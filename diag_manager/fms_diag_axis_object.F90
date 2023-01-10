@@ -37,7 +37,7 @@ module fms_diag_axis_object_mod
                               direction_down, direction_up, fmsDiagAttribute_type, max_axis_attributes, &
                               MAX_SUBAXES, DIAG_NULL, index_gridtype, latlon_gridtype, &
                               get_base_year, get_base_month, get_base_day, get_base_hour, get_base_minute,&
-                              get_base_second
+                              get_base_second, diag_type_str
   use mpp_mod,         only:  FATAL, mpp_error, uppercase, mpp_pe, mpp_root_pe, stdout
   use fms2_io_mod,     only:  FmsNetcdfFile_t, FmsNetcdfDomainFile_t, FmsNetcdfUnstructuredDomainFile_t, &
                             & register_axis, register_field, register_variable_attribute, write_data
@@ -1014,9 +1014,9 @@ module fms_diag_axis_object_mod
     character(len=50) :: dim_name(1)
 
     call register_axis(fileobj, this%axis_name, size(this%diurnal_data))
-    !TODO hardcodded double
     dim_name(1) = this%axis_name
-    call register_field(fileobj, this%axis_name, "double", dim_name)
+
+    call register_field(fileobj, this%axis_name, diag_type_str, dim_name)
     call register_variable_attribute(fileobj, this%axis_name, "units", &
       trim(this%units), str_len=len_trim(this%units))
     call register_variable_attribute(fileobj, this%axis_name, "long_name", &

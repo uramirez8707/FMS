@@ -393,6 +393,7 @@ use platform_mod
 #endif
 
   INTEGER :: pack_size = 1 !< 1 for double and 2 for float
+  CHARACTER(len=10) :: diag_type_str="double" !< pack size as a string to be used in fms2_io register_axis
 
   ! <!-- REAL public variables -->
   REAL :: EMPTY = 0.0
