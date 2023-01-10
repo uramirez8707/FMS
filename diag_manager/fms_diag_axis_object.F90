@@ -1074,7 +1074,7 @@ module fms_diag_axis_object_mod
       diurnal_axis%long_name = trim(long_name)
       diurnal_axis%diurnal_data = diurnal_data
       diurnal_axis%edges_id = edges_id
-      if (is_edges) &
+      if (.not. is_edges) &
         WRITE (edges_name,'(a,i2.2)') 'time_of_day_edges_', n_diurnal_samples
         diurnal_axis%edges_name = trim(edges_name)
     end select
