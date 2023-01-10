@@ -273,14 +273,15 @@ subroutine add_field_and_yaml_id (this, new_field_id, yaml_id)
   endif
 end subroutine add_field_and_yaml_id
 
+!> @brief Initialize the diurnal axis for a diag_file object
 subroutine init_diurnal_axis(this, diag_axis, naxis, yaml_id)
-  class(fmsDiagFile_type),      intent(inout) :: this      !< The file object
-  class(fmsDiagAxisContainer_type), intent(inout)       :: diag_axis(:)  !< Diag_axis object
-  integer,                      intent(inout)    :: naxis
-  integer,                      intent(in)    :: yaml_id
+  class(fmsDiagFile_type),          intent(inout) :: this         !< The file object
+  class(fmsDiagAxisContainer_type), intent(inout) :: diag_axis(:) !< Diag_axis object
+  integer,                          intent(inout) :: naxis        !< The number of axis that have been defined
+  integer,                          intent(in)    :: yaml_id      !< The yaml id of the field's yaml
 
-  integer :: i
-  type(diagYamlFilesVar_type), pointer     :: field_yaml  !< pointer to the yaml entry
+  integer                              :: i           !< For do loops
+  type(diagYamlFilesVar_type), pointer :: field_yaml  !< pointer to the yaml entry
 
   field_yaml => diag_yaml%get_diag_field_from_id(yaml_id)
   !< Go away if the file does not need a diurnal axis
@@ -296,7 +297,7 @@ subroutine init_diurnal_axis(this, diag_axis, naxis, yaml_id)
 
   !< If it is not already defined, define it
   call define_diurnal_axis(diag_axis, naxis, field_yaml%get_n_diurnal(), .true.)
-  call define_diurnal_axis(diag_axis, naxis, field_yaml%get_n_diurnal(), .False.)
+  call define_diurnal_axis(diag_axis, naxis, field_yaml%get_n_diurnal(), .false.)
 
   !< Add it to the list of axis for the file
   this%number_of_axis = this%number_of_axis + 1
@@ -881,7 +882,7 @@ subroutine open_diag_file(this, time_step, file_is_opened)
     !< If using a wildcard file name (i.e ocn%4yr%2mo%2dy%2hr), get the basename (i.e ocn)
     pos = INDEX(diag_file_name, '%')
     if (pos > 0) base_name = diag_file_name(1:pos-1)
-    suffix = get_time_string(diag_file_name, diag_file%get_filename_time()) !TODO fname_time?
+    suffix = get_time_string(diag_file_name, diag_file%get_filename_time())
     base_name = trim(base_name)//trim(suffix)
   else
     base_name = trim(diag_file_name)

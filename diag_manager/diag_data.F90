@@ -123,9 +123,9 @@ use platform_mod
   INTEGER, PARAMETER :: time_power   = 7 !< The reduction method is power
   CHARACTER(len=7)   :: avg_name = 'average' !< Name of the average fields
   CHARACTER(len=8)   :: no_units = "NO UNITS"!< String indicating that the variable has no units
-  INTEGER, PARAMETER :: begin_time  = 1 !< Use the begining of the time average bounds
-  INTEGER, PARAMETER :: middle_time = 2 !< Use the middle of the time average bounds
-  INTEGER, PARAMETER :: end_time    = 3 !< Use the end of the time average bounds
+  INTEGER, PARAMETER :: begin_time  = 1 !< Use the begining of the time average bounds when setting the filename
+  INTEGER, PARAMETER :: middle_time = 2 !< Use the middle of the time average bounds when setting the filename
+  INTEGER, PARAMETER :: end_time    = 3 !< Use the end of the time average bounds when setting the filename
   !> @}
 
   !> @brief Contains the coordinates of the local domain to output.
@@ -395,7 +395,8 @@ use platform_mod
   REAL :: FILL_VALUE = 9.9692099683868690e+36
 #endif
 
-  INTEGER :: pack_size = 1 !< 1 for double and 2 for float
+  INTEGER :: pack_size = 1 !< The packsize is how many bytes a real value has (how is was compiled)
+                           !! 1 for double and 2 for float. This is set in diag_manager_init
   CHARACTER(len=10) :: diag_type_str="double" !< pack size as a string to be used in fms2_io register_axis
 
   ! <!-- REAL public variables -->

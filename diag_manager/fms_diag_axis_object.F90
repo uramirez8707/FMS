@@ -101,7 +101,7 @@ module fms_diag_axis_object_mod
        procedure :: write_axis_data
   END TYPE fmsDiagAxis_type
 
-  !> @brief Type to hold the subaxis
+  !> @brief Type to hold the diurnal axis
   !> @ingroup diag_axis_object_mod
   TYPE, extends(fmsDiagAxis_type) :: fmsDiagDiurnalAxis_type
     INTEGER                      , private :: ndiurnal_samples !< The number of diurnal samples
@@ -109,12 +109,13 @@ module fms_diag_axis_object_mod
     CHARACTER(len=:), ALLOCATABLE, private :: long_name        !< The longname of the diurnal axis
     CHARACTER(len=:), ALLOCATABLE, private :: units            !< The units
     INTEGER                      , private :: edges_id         !< The id of the diurnal edges
-    CHARACTER(len=:), ALLOCATABLE, private :: edges_name
+                                                               !! set to diag_null if there isn't one
+    CHARACTER(len=:), ALLOCATABLE, private :: edges_name       !< The name of the diurnal edges axis
     CLASS(*),         ALLOCATABLE, private :: diurnal_data(:)  !< The diurnal data
 
     contains
       procedure :: get_diurnal_axis_samples
-      procedure :: get_diurnal_metadata
+      procedure :: write_diurnal_metadata
   END TYPE fmsDiagDiurnalAxis_type
 
   !> @brief Type to hold the subaxis
@@ -305,7 +306,7 @@ module fms_diag_axis_object_mod
         end select
       endif
     type is (fmsDiagDiurnalAxis_type)
-      call this%get_diurnal_metadata(fileobj)
+      call this%write_diurnal_metadata(fileobj)
       return
     end select
 
@@ -998,20 +999,23 @@ module fms_diag_axis_object_mod
 
   end function
 
+  !> @brief gets the number of diurnal samples in an axis
+  !! @return a copy of the number of diurnal samples
   pure function get_diurnal_axis_samples(this) &
   result(n_diurnal_samples)
 
-    class(fmsDiagDiurnalAxis_type), intent(in) :: this !< Axis Object
+    class(fmsDiagDiurnalAxis_type), intent(in) :: this !< Diurnal axis Object
     integer :: n_diurnal_samples
 
     n_diurnal_samples = this%ndiurnal_samples
   end function get_diurnal_axis_samples
 
-  subroutine get_diurnal_metadata(this, fileobj)
-    class(fmsDiagDiurnalAxis_type), intent(in) :: this !< Axis Object
-    class(FmsNetcdfFile_t),                    INTENT(INOUT) :: fileobj     !< Fms2_io fileobj to write the data to
+  !> @brief Writes the diurnal axis metadata to a fileobj
+  subroutine write_diurnal_metadata(this, fileobj)
+    class(fmsDiagDiurnalAxis_type), intent(in)    :: this    !< Diurnal axis Object
+    class(FmsNetcdfFile_t),         intent(inout) :: fileobj !< Fms2_io fileobj to write the data to
 
-    character(len=50) :: dim_name(1)
+    character(len=50) :: dim_name(1) !< The dimension names
 
     call register_axis(fileobj, this%axis_name, size(this%diurnal_data))
     dim_name(1) = this%axis_name
@@ -1024,21 +1028,24 @@ module fms_diag_axis_object_mod
     if (this%edges_id .ne. diag_null) &
       call register_variable_attribute(fileobj, this%axis_name, "edges", &
       trim(this%edges_name), str_len=len_trim(this%edges_name))
-  end subroutine get_diurnal_metadata
+  end subroutine write_diurnal_metadata
 
+  !> @brief Define a diurnal axis object
   subroutine define_diurnal_axis(diag_axis, naxis, n_diurnal_samples, is_edges)
-    class(fmsDiagAxisContainer_type), target, intent(inout) :: diag_axis(:)
-    integer,                      intent(inout)    :: naxis
-    integer,                      intent(in)    :: n_diurnal_samples
-    logical,                      intent(in)    :: is_edges
+    class(fmsDiagAxisContainer_type), target, intent(inout) :: diag_axis(:)       !< the diag_axis container
+    integer,                                  intent(inout) :: naxis              !< The number of axis that have
+                                                                                  !! been defined
+    integer,                                  intent(in)    :: n_diurnal_samples  !< The number of diurnal samples
+    logical,                                  intent(in)    :: is_edges           !< Flag indicating if this is an
+                                                                                  !! edge diurnal axis
 
-    CHARACTER(32)  :: name  !< name of the axis
-    CHARACTER(32)  :: long_name  !< name of the axi
-    CHARACTER(32)  :: edges_name  !< name of the axis
-    CHARACTER(128) :: units !< units of time
-    real(kind=r8_kind), allocatable :: diurnal_data(:)
-    integer :: edges_id
-    integer :: i
+    CHARACTER(32)                   :: name            !< name of the diurnal axis
+    CHARACTER(32)                   :: long_name       !< name of the diurnal axis
+    CHARACTER(32)                   :: edges_name      !< name of the diurnal axis
+    CHARACTER(128)                  :: units           !< units of the diurnal axis
+    real(kind=r8_kind), allocatable :: diurnal_data(:) !< The diurnal data
+    integer                         :: edges_id        !< The axis id of the edges diurnal axis
+    integer                         :: i               !< For do loops
 
     naxis = naxis + 1
 
@@ -1079,7 +1086,7 @@ module fms_diag_axis_object_mod
       diurnal_axis%edges_id = edges_id
       if (.not. is_edges) &
         WRITE (edges_name,'(a,i2.2)') 'time_of_day_edges_', n_diurnal_samples
-        diurnal_axis%edges_name = trim(edges_name)
+      diurnal_axis%edges_name = trim(edges_name)
     end select
   end subroutine define_diurnal_axis
 

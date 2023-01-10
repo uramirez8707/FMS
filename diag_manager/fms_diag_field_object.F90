@@ -885,17 +885,15 @@ end function get_longname_to_write
 subroutine get_dimnames(this, diag_axis, field_yaml, unlim_dimname, rslt, is_regional)
   class (fmsDiagField_type), target, intent(inout) :: this          !< diag field
   class(fmsDiagAxisContainer_type),  intent(in)    :: diag_axis(:)  !< Diag_axis object
-  type(diagYamlFilesVar_type),       intent(in)    :: field_yaml
+  type(diagYamlFilesVar_type),       intent(in)    :: field_yaml    !< The field section of the yaml
   character(len=*),                  intent(in)    :: unlim_dimname !< The name of unlimited dimension
+  character(len=120), allocatable,   intent(out)   :: rslt(:)       !< Array of dimension names
   logical,                           intent(in)    :: is_regional   !< Flag indicating if the field is regional
-
-  character(len=120), intent(out), allocatable :: rslt(:)
 
   integer :: i     !< For do loops
   integer :: j     !< For do loops
   integer :: naxis !< Number of axis for the field
 
-  !TODO there may be more stuff needed for the diurnal axis
   if (this%is_static()) then
     naxis = size(this%axis_ids)
   else
