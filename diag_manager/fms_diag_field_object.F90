@@ -956,6 +956,7 @@ subroutine write_field_metadata(this, fileobj, file_id, yaml_id, diag_axis, unli
   character(len=:),            allocatable :: long_name   !< Longname to write
   character(len=:),            allocatable :: units       !< Units of the field to write
   character(len=120),          allocatable :: dimnames(:) !< Dimension names of the field
+  integer :: i
 
   field_yaml => diag_yaml%get_diag_field_from_id(yaml_id)
   var_name = field_yaml%get_var_outname()
@@ -998,7 +999,7 @@ subroutine write_field_metadata(this, fileobj, file_id, yaml_id, diag_axis, unli
   endif
 
   select case (field_yaml%get_var_reduction())
-  case (time_average, time_max, time_min)
+  case (time_average, time_max, time_min, time_diurnal, time_power, time_rms, time_sum)
     call register_variable_attribute(fileobj, var_name, "time_avg_info", &
       trim(avg_name)//'_T1,'//trim(avg_name)//'_T2,'//trim(avg_name)//'_DT', &
       str_len=len(trim(avg_name)//'_T1,'//trim(avg_name)//'_T2,'//trim(avg_name)//'_DT'))
@@ -1009,7 +1010,11 @@ subroutine write_field_metadata(this, fileobj, file_id, yaml_id, diag_axis, unli
     call register_variable_attribute(fileobj, var_name, "cell_methods", &
       trim(adjustl(cell_measures)), str_len=len_trim(adjustl(cell_measures)))
 
-  call this%write_coordinate_attribute(fileobj, diag_axis)
+  call this%write_coordinate_attribute(fileobj, var_name, diag_axis)
+
+  do i = 1, this%num_attributes
+    call this%attributes(i)%write_metadata(fileobj, var_name)
+  enddo
 end subroutine write_field_metadata
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!! Allocation checks
@@ -1210,13 +1215,14 @@ PURE FUNCTION diag_field_id_from_name(this, module_name, field_name) &
   endif
 end function diag_field_id_from_name
 
-subroutine write_coordinate_attribute (this, fileobj, diag_axis)
+subroutine write_coordinate_attribute (this, fileobj, var_name, diag_axis)
   CLASS(fmsDiagField_type),          intent(in) :: this !< The field object
   class(FmsNetcdfFile_t),            INTENT(INOUT) :: fileobj       !< Fms2_io fileobj to write to
+  character(len=*),                  intent(in) :: var_name
   class(fmsDiagAxisContainer_type),  intent(in) :: diag_axis(:)  !< Diag_axis object
 
   integer :: i !< For do loops
-  character(len = 252) :: aux_coord
+  character(len=252) :: aux_coord
 
   !> Determine if any of the field's axis has an auxiliary axis and the
   !! axis_names as a variable attribute
@@ -1232,10 +1238,11 @@ subroutine write_coordinate_attribute (this, fileobj, diag_axis)
 
   if (trim(aux_coord) .eq. "") return
 
-  call register_variable_attribute(fileobj, this%varname, "coordinates", &
+  call register_variable_attribute(fileobj, var_name, "coordinates", &
     trim(adjustl(aux_coord)), str_len=len_trim(adjustl(aux_coord)))
 
 end subroutine write_coordinate_attribute
+
 !> @brief Append the time cell measured based on the variable's reduction
 subroutine append_time_cell_measure(cell_measures, field_yaml)
   character(len=*),            intent(inout) :: cell_measures !< The cell measures to append to

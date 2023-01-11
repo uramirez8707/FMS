@@ -331,6 +331,7 @@ use platform_mod
     character(len=:), allocatable :: att_name     !< Name of the attribute
     contains
       procedure :: add => fms_add_attribute
+      procedure :: write_metadata
   end type fmsDiagAttribute_type
 ! Include variable "version" to be written to log file.
 #include<file_version.h>
@@ -577,6 +578,21 @@ CONTAINS
       this%att_value = att_value
     end select
   end subroutine fms_add_attribute
+
+  subroutine write_metadata(this, fileobj, var_name)
+    class(fmsDiagAttribute_type), intent(inout) :: this          !< Diag attribute type
+    class(FmsNetcdfFile_t),            INTENT(INOUT) :: fileobj       !< Fms2_io fileobj to write to
+    character(len=*),                  intent(in) :: var_name
+
+    select type (att_value =>this%att_value)
+    type is (character(len=*))
+      call register_variable_attribute(fileobj, var_name, this%att_name, trim(att_value(1)), &
+                                      str_len=len_trim(att_value(1)))
+    class default
+      call register_variable_attribute(fileobj, var_name, this%att_name, att_value)
+    end select
+
+  end subroutine write_metadata
 END MODULE diag_data_mod
 !> @}
 ! close documentation grouping
