@@ -19,7 +19,7 @@ use mpp_mod, only: fatal, note, warning, mpp_error, mpp_pe, mpp_root_pe
 use fms_diag_yaml_mod, only:  diagYamlFilesVar_type, get_diag_fields_entries, get_diag_files_id, &
   & find_diag_field, get_num_unique_fields, diag_yaml
 use fms_diag_axis_object_mod, only: diagDomain_t, get_domain_and_domain_type, fmsDiagAxis_type, &
-  & fmsDiagAxisContainer_type
+  & fmsDiagAxisContainer_type, fmsDiagFullAxis_type
 use time_manager_mod, ONLY: time_type
 use fms2_io_mod, only: FmsNetcdfFile_t, FmsNetcdfDomainFile_t, FmsNetcdfUnstructuredDomainFile_t, register_field, &
                        register_variable_attribute
@@ -137,6 +137,7 @@ type fmsDiagField_type
      procedure :: get_var_skind
      procedure :: get_longname_to_write
      procedure :: write_field_metadata
+     procedure :: write_coordinate_attribute
 end type fmsDiagField_type
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! variables !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 type(fmsDiagField_type) :: null_ob
@@ -1008,6 +1009,7 @@ subroutine write_field_metadata(this, fileobj, file_id, yaml_id, diag_axis, unli
     call register_variable_attribute(fileobj, var_name, "cell_methods", &
       trim(adjustl(cell_measures)), str_len=len_trim(adjustl(cell_measures)))
 
+  call this%write_coordinate_attribute(fileobj, diag_axis)
 end subroutine write_field_metadata
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!! Allocation checks
@@ -1208,6 +1210,32 @@ PURE FUNCTION diag_field_id_from_name(this, module_name, field_name) &
   endif
 end function diag_field_id_from_name
 
+subroutine write_coordinate_attribute (this, fileobj, diag_axis)
+  CLASS(fmsDiagField_type),          intent(in) :: this !< The field object
+  class(FmsNetcdfFile_t),            INTENT(INOUT) :: fileobj       !< Fms2_io fileobj to write to
+  class(fmsDiagAxisContainer_type),  intent(in) :: diag_axis(:)  !< Diag_axis object
+
+  integer :: i !< For do loops
+  character(len = 252) :: aux_coord
+
+  !> Determine if any of the field's axis has an auxiliary axis and the
+  !! axis_names as a variable attribute
+  aux_coord = ""
+  do i = 1, size(this%axis_ids)
+    select type (obj => diag_axis(this%axis_ids(i))%axis)
+    type is (fmsDiagFullAxis_type)
+      if (obj%has_aux()) then
+        aux_coord = trim(aux_coord)//" "//obj%get_aux()
+      endif
+    end select
+  enddo
+
+  if (trim(aux_coord) .eq. "") return
+
+  call register_variable_attribute(fileobj, this%varname, "coordinates", &
+    trim(adjustl(aux_coord)), str_len=len_trim(adjustl(aux_coord)))
+
+end subroutine write_coordinate_attribute
 !> @brief Append the time cell measured based on the variable's reduction
 subroutine append_time_cell_measure(cell_measures, field_yaml)
   character(len=*),            intent(inout) :: cell_measures !< The cell measures to append to

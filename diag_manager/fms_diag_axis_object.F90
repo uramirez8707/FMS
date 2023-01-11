@@ -151,7 +151,7 @@ module fms_diag_axis_object_mod
      INTEGER                        , private :: direction       !< Direction of the axis 0, 1, -1
      CHARACTER(len=:),   ALLOCATABLE, private :: edges_name      !< Name for the previously defined "edges axis"
                                                                  !! This will be written as an attribute
-     CHARACTER(len=128)             , private :: aux             !< Auxiliary name, can only be <TT>geolon_t</TT>
+     CHARACTER(len=:),   ALLOCATABLE, private :: aux             !< Auxiliary name, can only be <TT>geolon_t</TT>
                                                                  !! or <TT>geolat_t</TT>
      CHARACTER(len=128)             , private :: req             !< Required field names.
      INTEGER                        , private :: tile_count      !< The number of tiles
@@ -169,6 +169,8 @@ module fms_diag_axis_object_mod
      PROCEDURE :: get_compute_domain
      PROCEDURE :: get_indices
      PROCEDURE :: get_global_io_domain
+     PROCEDURE :: get_aux
+     PROCEDURE :: has_aux
      ! TO DO:
      ! Get/has/is subroutines as needed
   END TYPE fmsDiagFullAxis_type
@@ -407,6 +409,23 @@ module fms_diag_axis_object_mod
       call write_data(fileobj, this%axis_name, this%diurnal_data)
     end select
   end subroutine write_axis_data
+
+  function has_aux(this) &
+  result(rslt)
+    class(fmsDiagFullAxis_type), intent(in)  :: this               !< diag_axis obj
+    logical :: rslt
+
+    rslt = .false.
+    if (allocated(this%aux)) rslt = trim(this%aux) .ne. ""
+  end function has_aux
+
+  function get_aux(this) &
+  result(rslt)
+    class(fmsDiagFullAxis_type), intent(in)  :: this               !< diag_axis obj
+    character(len=:), allocatable :: rslt
+
+    rslt = this%aux
+  end function get_aux
 
   !> @brief Get the starting and ending indices of the global io domain of the axis
   subroutine get_global_io_domain(this, global_io_index)
