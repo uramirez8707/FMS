@@ -1023,9 +1023,9 @@ subroutine write_field_metadata(this, fileobj, file_id, yaml_id, diag_axis, unli
 
   call this%write_coordinate_attribute(fileobj, var_name, diag_axis)
 
-  if (field_yaml%has_standname()) &
+  if (this%has_standname()) &
     call register_variable_attribute(fileobj, var_name, "standard_name", &
-      trim(field_yaml%get_standname()), str_len=len_trim(field_yaml%get_standname()))
+      trim(this%get_standname()), str_len=len_trim(this%get_standname()))
 
 end subroutine write_field_metadata
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
