@@ -1023,6 +1023,10 @@ subroutine write_field_metadata(this, fileobj, file_id, yaml_id, diag_axis, unli
 
   call this%write_coordinate_attribute(fileobj, var_name, diag_axis)
 
+  if (field_yaml%has_standname()) &
+    call register_variable_attribute(fileobj, var_name, "standard_name", &
+      trim(field_yaml%get_standname()), str_len=len_trim(field_yaml%get_standname()))
+
 end subroutine write_field_metadata
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!! Allocation checks
@@ -1100,7 +1104,9 @@ end function has_longname
 !! @return true if obj%standname is allocated
 pure logical function has_standname (this)
   class (fmsDiagField_type), intent(in) :: this !< diag object
-  has_standname = allocated(this%standname)
+  has_standname = .false.
+
+  if (allocated(this%standname)) has_standname = trim(this%standname) .ne. ""
 end function has_standname
 
 !> @brief Checks if obj%units is allocated
