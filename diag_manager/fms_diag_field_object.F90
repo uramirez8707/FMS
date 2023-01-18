@@ -1007,6 +1007,11 @@ subroutine write_field_metadata(this, fileobj, file_id, yaml_id, diag_axis, unli
   end select
 
   cell_methods = ""
+  do i = 1, this%num_attributes
+    call this%attributes(i)%write_metadata(fileobj, var_name, &
+      cell_methods=cell_methods)
+  enddo
+
   call append_time_cell_methods(cell_methods, field_yaml)
   if (trim(cell_methods) .ne. "") &
     call register_variable_attribute(fileobj, var_name, "cell_methods", &
@@ -1018,9 +1023,6 @@ subroutine write_field_metadata(this, fileobj, file_id, yaml_id, diag_axis, unli
 
   call this%write_coordinate_attribute(fileobj, var_name, diag_axis)
 
-  do i = 1, this%num_attributes
-    call this%attributes(i)%write_metadata(fileobj, var_name)
-  enddo
 end subroutine write_field_metadata
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!! Allocation checks

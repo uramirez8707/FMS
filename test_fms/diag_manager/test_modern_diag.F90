@@ -150,6 +150,7 @@ call diag_field_add_attribute (id_var1, "1d_integer", (/10, 10/))
 call diag_field_add_attribute (id_var1, "real", 10.)
 call diag_field_add_attribute (id_var2, '1d_real', (/10./))
 call diag_field_add_attribute (id_var2, 'formula', 'p(n,k,j,i) = ap(k) + b(k)*ps(n,j,i)')
+call diag_field_add_attribute (id_var2, 'cell_methods', 'area: mullions')
 
 !! test dump routines
 !! prints fields from objects for debugging to log if name is provided, othwerise goes to stdout

@@ -579,15 +579,23 @@ CONTAINS
     end select
   end subroutine fms_add_attribute
 
-  subroutine write_metadata(this, fileobj, var_name)
+  subroutine write_metadata(this, fileobj, var_name, cell_methods)
     class(fmsDiagAttribute_type), intent(inout) :: this          !< Diag attribute type
     class(FmsNetcdfFile_t),            INTENT(INOUT) :: fileobj       !< Fms2_io fileobj to write to
-    character(len=*),                  intent(in) :: var_name
+    character(len=*),                  intent(in)    :: var_name
+    character(len=*),        optional, intent(inout) :: cell_methods
 
     select type (att_value =>this%att_value)
     type is (character(len=*))
+      if (present(cell_methods)) then
+        if (trim(this%att_name) .eq. "cell_methods") then
+          cell_methods = trim(cell_methods)//" "//trim(att_value(1))
+          return
+        endif
+      endif
+
       call register_variable_attribute(fileobj, var_name, this%att_name, trim(att_value(1)), &
-                                      str_len=len_trim(att_value(1)))
+                                       str_len=len_trim(att_value(1)))
     class default
       call register_variable_attribute(fileobj, var_name, this%att_name, att_value)
     end select
