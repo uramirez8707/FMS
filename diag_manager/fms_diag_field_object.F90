@@ -949,13 +949,14 @@ subroutine write_field_metadata(this, fileobj, file_id, yaml_id, diag_axis, unli
   class(fmsDiagAxisContainer_type),  intent(in)    :: diag_axis(:)  !< Diag_axis object
   character(len=*),                  intent(in)    :: unlim_dimname !< The name of the unlimited dimension
   logical,                           intent(in)    :: is_regional   !< Flag indicating if the field is regional
-  character(len=*),                  intent(inout) :: cell_measures
+  character(len=*),                  intent(in) :: cell_measures
 
   type(diagYamlFilesVar_type), pointer     :: field_yaml  !< pointer to the yaml entry
   character(len=:),            allocatable :: var_name    !< Variable name
   character(len=:),            allocatable :: long_name   !< Longname to write
   character(len=:),            allocatable :: units       !< Units of the field to write
   character(len=120),          allocatable :: dimnames(:) !< Dimension names of the field
+  character(len=120)                       :: cell_methods
   integer :: i
 
   field_yaml => diag_yaml%get_diag_field_from_id(yaml_id)
@@ -1005,9 +1006,14 @@ subroutine write_field_metadata(this, fileobj, file_id, yaml_id, diag_axis, unli
       str_len=len(trim(avg_name)//'_T1,'//trim(avg_name)//'_T2,'//trim(avg_name)//'_DT'))
   end select
 
-  call append_time_cell_measure(cell_measures, field_yaml)
-  if (trim(cell_measures) .ne. "") &
+  cell_methods = ""
+  call append_time_cell_methods(cell_methods, field_yaml)
+  if (trim(cell_methods) .ne. "") &
     call register_variable_attribute(fileobj, var_name, "cell_methods", &
+      trim(adjustl(cell_methods)), str_len=len_trim(adjustl(cell_methods)))
+
+  if (trim(cell_measures) .ne. "") &
+    call register_variable_attribute(fileobj, var_name, "cell_measures", &
       trim(adjustl(cell_measures)), str_len=len_trim(adjustl(cell_measures)))
 
   call this%write_coordinate_attribute(fileobj, var_name, diag_axis)
@@ -1244,29 +1250,29 @@ subroutine write_coordinate_attribute (this, fileobj, var_name, diag_axis)
 end subroutine write_coordinate_attribute
 
 !> @brief Append the time cell measured based on the variable's reduction
-subroutine append_time_cell_measure(cell_measures, field_yaml)
-  character(len=*),            intent(inout) :: cell_measures !< The cell measures to append to
+subroutine append_time_cell_methods(cell_methods, field_yaml)
+  character(len=*),            intent(inout) :: cell_methods !< The cell measures to append to
   type(diagYamlFilesVar_type), intent(in)    :: field_yaml    !< The field's yaml
 
   select case (field_yaml%get_var_reduction())
   case (time_none)
-    cell_measures = trim(cell_measures)//" time: point "
+    cell_methods = trim(cell_methods)//" time: point "
   case (time_diurnal)
-    cell_measures = trim(cell_measures)//" time: mean"
+    cell_methods = trim(cell_methods)//" time: mean"
   case (time_power)
-    cell_measures = trim(cell_measures)//" time: mean_pow"//int2str(field_yaml%get_pow_value())
+    cell_methods = trim(cell_methods)//" time: mean_pow"//int2str(field_yaml%get_pow_value())
   case (time_rms)
-    cell_measures = trim(cell_measures)//" time: root_mean_square"
+    cell_methods = trim(cell_methods)//" time: root_mean_square"
   case (time_max)
-    cell_measures = trim(cell_measures)//" time: max"
+    cell_methods = trim(cell_methods)//" time: max"
   case (time_min)
-    cell_measures = trim(cell_measures)//" time: min"
+    cell_methods = trim(cell_methods)//" time: min"
   case (time_average)
-    cell_measures = trim(cell_measures)//" time: mean"
+    cell_methods = trim(cell_methods)//" time: mean"
   case (time_sum)
-    cell_measures = trim(cell_measures)//" time: sum"
+    cell_methods = trim(cell_methods)//" time: sum"
   end select
-end subroutine append_time_cell_measure
+end subroutine append_time_cell_methods
 !> Dumps any data from a given fmsDiagField_type object
 subroutine dump_field_obj (this, unit_num)
   class(fmsDiagField_type), intent(in) :: this
