@@ -1233,12 +1233,12 @@ subroutine write_field_metadata(this, diag_field, diag_axis)
     cell_measures = ""
     if (diag_field(j)%has_area()) then
       id = diag_field(j)%get_area()
-      cell_measures = "area: "//diag_field(id)%get_varname()
+      cell_measures = "area: "//diag_field(id)%get_varname(to_write=.true.)
     endif
 
     if (diag_field(j)%has_volume()) then
       id = diag_field(j)%get_volume()
-      cell_measures = trim(cell_measures)//" volume: "//diag_field(id)%get_varname()
+      cell_measures = trim(cell_measures)//" volume: "//diag_field(id)%get_varname(to_write=.true.)
     endif
 
     call diag_field(j)%write_field_metadata(fileobj, diag_file%id, diag_file%yaml_ids(i), diag_axis, &
