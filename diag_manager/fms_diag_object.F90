@@ -520,8 +520,11 @@ subroutine fms_diag_field_add_cell_measures(this, diag_field_id, area, volume)
   INTEGER, INTENT(in), OPTIONAL :: area !< diag ids of area
   INTEGER, INTENT(in), OPTIONAL :: volume !< diag ids of volume
 
+#ifndef use_yaml
+  CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling with -Duse_yaml")
+#else
   call this%FMS_diag_fields(diag_field_id)%add_area_volume(area, volume)
-
+#endif
 end subroutine fms_diag_field_add_cell_measures
 !> @brief Add an attribute to an axis
 subroutine fms_diag_axis_add_attribute(this, axis_id, att_name, att_value)

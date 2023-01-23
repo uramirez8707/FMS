@@ -1217,6 +1217,7 @@ subroutine write_field_metadata(this, diag_field, diag_axis)
   integer :: j           !< For do loops
   logical :: is_regional !< Flag indicating if the field is in a regional file
   character(len=255) :: cell_measures
+  integer :: id
 
   is_regional = this%is_regional()
 
@@ -1231,11 +1232,13 @@ subroutine write_field_metadata(this, diag_field, diag_axis)
     !the file that the fields are in needs to be added
     cell_measures = ""
     if (diag_field(j)%has_area()) then
-      cell_measures = "area: "//diag_field(diag_field(j)%get_area())%get_varname()
+      id = diag_field(j)%get_area()
+      cell_measures = "area: "//diag_field(id)%get_varname()
     endif
 
     if (diag_field(j)%has_volume()) then
-      cell_measures = trim(cell_measures)//" volume: "//diag_field(diag_field(j)%get_volume())%get_varname()
+      id = diag_field(j)%get_volume()
+      cell_measures = trim(cell_measures)//" volume: "//diag_field(id)%get_varname()
     endif
 
     call diag_field(j)%write_field_metadata(fileobj, diag_file%id, diag_file%yaml_ids(i), diag_axis, &

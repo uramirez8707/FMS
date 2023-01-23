@@ -553,11 +553,19 @@ end function get_vartype
 
 !> @brief Gets varname
 !! @return copy of the variable name
-pure function get_varname (this) &
+pure function get_varname (this, to_write) &
 result(rslt)
      class (fmsDiagField_type), intent(in) :: this !< diag object
+     logical, intent(in), optional :: to_write
+
      character(len=:), allocatable :: rslt
      rslt = this%varname
+
+     if (present(to_write)) then
+       if (to_write) then
+        rslt = this%diag_field(1)%get_var_outname()
+       endif
+     endif
 end function get_varname
 
 !> @brief Gets longname
