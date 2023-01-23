@@ -72,6 +72,7 @@ private
     procedure :: fms_get_axis_name_from_id
     procedure :: fms_diag_send_complete
     procedure :: fms_diag_do_io
+    procedure :: fms_diag_field_add_cell_measures
 #ifdef use_yaml
     procedure :: get_diag_buffer
 #endif
@@ -513,6 +514,15 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
 #endif
 end subroutine fms_diag_field_add_attribute
 
+subroutine fms_diag_field_add_cell_measures(this, diag_field_id, area, volume)
+  class(fmsDiagObject_type), intent (inout) :: this !< The diag object
+  integer, intent(in)           :: diag_field_id
+  INTEGER, INTENT(in), OPTIONAL :: area !< diag ids of area
+  INTEGER, INTENT(in), OPTIONAL :: volume !< diag ids of volume
+
+  call this%FMS_diag_fields(diag_field_id)%add_area_volume(area, volume)
+
+end subroutine fms_diag_field_add_cell_measures
 !> @brief Add an attribute to an axis
 subroutine fms_diag_axis_add_attribute(this, axis_id, att_name, att_value)
   class(fmsDiagObject_type), intent (inout) :: this !< The diag object

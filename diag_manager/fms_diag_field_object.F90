@@ -138,6 +138,7 @@ type fmsDiagField_type
      procedure :: get_longname_to_write
      procedure :: write_field_metadata
      procedure :: write_coordinate_attribute
+     procedure :: add_area_volume
 end type fmsDiagField_type
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! variables !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 type(fmsDiagField_type) :: null_ob
@@ -1228,6 +1229,34 @@ PURE FUNCTION diag_field_id_from_name(this, module_name, field_name) &
         diag_field_id = this%get_id()
   endif
 end function diag_field_id_from_name
+
+subroutine add_area_volume(this, area, volume)
+  CLASS(fmsDiagField_type),          intent(inout) :: this !< The field object
+  INTEGER, INTENT(in), OPTIONAL :: area !< diag ids of area
+  INTEGER, INTENT(in), OPTIONAL :: volume !< diag ids of volume
+
+  if (present(area)) then
+    if (area > 0) then
+      this%area = area
+    else
+      call mpp_error(FATAL, "diag_field_add_cell_measures: the area id is not valid. "&
+                           &"Verify that the area_id passed in to the field:"//this%varname//&
+                           &" is valid and that the field is registered and in the diag_table.yaml")
+    endif
+  endif
+
+  if (present(volume)) then
+    if (volume > 0) then
+      this%volume = volume
+    else
+      call mpp_error(FATAL, "diag_field_add_cell_measures: the volume id is not valid. "&
+                           &"Verify that the volume_id passed in to the field:"//this%varname//&
+                           &" is valid and that the field is registered and in the diag_table.yaml")
+    endif
+  endif
+
+end subroutine add_area_volume
+
 
 subroutine write_coordinate_attribute (this, fileobj, var_name, diag_axis)
   CLASS(fmsDiagField_type),          intent(in) :: this !< The field object
