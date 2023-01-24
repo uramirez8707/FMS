@@ -274,6 +274,7 @@ contains
     character(len=40)                 :: method
     !-----------------------------------------------------------------------
     call horiz_interp_init
+    call horiz_interp_del ( Interp )
 
     method = 'conservative'
     if(present(interp_method)) method = interp_method
@@ -406,6 +407,7 @@ contains
    logical                           :: dst_is_latlon
    !-----------------------------------------------------------------------
    call horiz_interp_init
+   call horiz_interp_del ( Interp )
 
    method = 'conservative'
    if(present(interp_method)) method = interp_method
@@ -514,6 +516,7 @@ contains
  character(len=40) :: method
 !-----------------------------------------------------------------------
    call horiz_interp_init
+   call horiz_interp_del ( Interp )
 
    method = 'bilinear'
    if(present(interp_method)) method = interp_method
@@ -590,6 +593,7 @@ contains
    logical                           :: src_is_latlon
    !-----------------------------------------------------------------------
    call horiz_interp_init
+   call horiz_interp_del ( Interp )
 
    method = 'bilinear'
    if(present(interp_method)) method = interp_method
