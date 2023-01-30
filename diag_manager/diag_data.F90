@@ -596,8 +596,14 @@ CONTAINS
 
       call register_variable_attribute(fileobj, var_name, this%att_name, trim(att_value(1)), &
                                        str_len=len_trim(att_value(1)))
-    class default
-      call register_variable_attribute(fileobj, var_name, this%att_name, att_value)
+    type is (real(kind=r8_kind))
+      call register_variable_attribute(fileobj, var_name, this%att_name, real(att_value, kind=r8_kind))
+    type is (real(kind=r4_kind))
+      call register_variable_attribute(fileobj, var_name, this%att_name, real(att_value, kind=r4_kind))
+    type is (integer(kind=i4_kind))
+      call register_variable_attribute(fileobj, var_name, this%att_name, int(att_value, kind=i4_kind))
+    type is (integer(kind=i8_kind))
+      call register_variable_attribute(fileobj, var_name, this%att_name, int(att_value, kind=i8_kind))
     end select
 
   end subroutine write_metadata
