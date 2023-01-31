@@ -1243,11 +1243,11 @@ subroutine write_field_metadata(this, diag_field, diag_axis)
     !the file that the fields are in needs to be added
     cell_measures = ""
     if (field_ptr%has_area()) then
-      cell_measures = "area:"//diag_field(field_ptr%get_area())%get_varname(to_write=.true.)
+      cell_measures = "area: "//diag_field(field_ptr%get_area())%get_varname(to_write=.true.)
     endif
 
     if (field_ptr%has_volume()) then
-      cell_measures = trim(cell_measures)//" volume:"//diag_field(field_ptr%get_volume())%get_varname(to_write=.true.)
+      cell_measures = trim(cell_measures)//" volume: "//diag_field(field_ptr%get_volume())%get_varname(to_write=.true.)
     endif
 
     call field_ptr%write_field_metadata(fileobj, diag_file%id, diag_file%yaml_ids(i), diag_axis, &
