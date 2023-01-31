@@ -26,7 +26,7 @@ use   mpp_domains_mod,  only: domain2d, mpp_domains_set_stack_size, mpp_define_d
                               mpp_get_UG_compute_domain
 use   diag_manager_mod, only: diag_manager_init, diag_manager_end, diag_axis_init, register_diag_field, &
                               diag_axis_add_attribute, diag_field_add_attribute, diag_send_complete, &
-                              diag_manager_set_time_end
+                              diag_manager_set_time_end, register_static_field
 use   fms_mod,          only: fms_init, fms_end
 use   mpp_mod,          only: FATAL, mpp_error, mpp_npes, mpp_pe, mpp_root_pe, mpp_broadcast
 use   time_manager_mod, only: time_type, set_calendar_type, set_date, JULIAN, set_time
@@ -55,6 +55,7 @@ integer                           :: id_y             !< axis id for the y dimen
 integer                           :: id_y3            !< axis id for the y dimension in the cube sphere domain
 integer                           :: id_UG            !< axis id for the unstructured dimension
 integer                           :: id_z             !< axis id for the z dimention
+integer                           :: id_zhalf         !< axis id for a edge z axis
 integer                           :: id_var1          !< diag_field id for var in lon/lat grid
 integer                           :: id_var2          !< diag_field id for var in lat/lon grid
 integer                           :: id_var3          !< diag_field id for var in cube sphere grid
@@ -62,6 +63,7 @@ integer                           :: id_var4          !< diag_field id for 3d va
 integer                           :: id_var5          !< diag_field id for var in UG grid
 integer                           :: id_var6          !< diag_field id for var that is not domain decomposed
 integer                           :: id_var7          !< Scalar var
+integer                           :: id_var8          !< Static variable
 
 call fms_init
 call set_calendar_type(JULIAN)
@@ -108,7 +110,8 @@ id_y3 = diag_axis_init('y3', y, 'point_E', 'y', Domain2=Domain_cube_sph)
 id_ug = diag_axis_init("grid_index",  real(ug_dim_data), "none", "U", long_name="grid indices", &
                          set_name="land", DomainU=land_domain, aux="geolon_t geolat_t")
 
-id_z  = diag_axis_init('z',  z,  'point_Z', 'z', long_name='point_Z')
+id_zhalf  = diag_axis_init('zhalf',  z,  'point_Z', 'z', long_name='point_Z')
+id_z  = diag_axis_init('z',  z,  'point_Z', 'z', long_name='point_Z', edges=id_zhalf)
 call diag_axis_add_attribute (id_z, 'formula', 'p(n,k,j,i) = ap(k) + b(k)*ps(n,j,i)')
 call diag_axis_add_attribute (id_z, 'integer', 10)
 call diag_axis_add_attribute (id_z, '1d integer', (/10, 10/))
@@ -121,7 +124,7 @@ if (id_y  .ne. 2) call mpp_error(FATAL, "The y axis does not have the expected i
 if (id_x3 .ne. 3) call mpp_error(FATAL, "The x3 axis does not have the expected id")
 if (id_y3 .ne. 4) call mpp_error(FATAL, "The y3 axis does not have the expected id")
 if (id_ug .ne. 5) call mpp_error(FATAL, "The ug axis does not have the expected id")
-if (id_z  .ne. 6) call mpp_error(FATAL, "The z axis does not have the expected id")
+if (id_z  .ne. 7) call mpp_error(FATAL, "The z axis does not have the expected id")
 
 ! Register the variables
 id_var1 = register_diag_field  ('ocn_mod', 'var1', (/id_x, id_y/), Time, 'Var in a lon/lat domain', 'mullions')
@@ -136,6 +139,7 @@ id_var6 = register_diag_field  ('atm_mod', 'var6', (/id_z/), Time, 'Var not doma
 !< This has the same name as var1, but it should have a different id because the module is different
 !! so it should have its own diag_obj
 id_var7 = register_diag_field  ('lnd_mod', 'var1', Time, 'Some scalar var', 'mullions')
+id_var8 = register_static_field('ocn_mod', 'pizza_coefficient', (/id_z/))
 
 if (id_var1  .ne. 1) call mpp_error(FATAL, "var1 does not have the expected id")
 if (id_var2  .ne. 2) call mpp_error(FATAL, "var2 does not have the expected id")

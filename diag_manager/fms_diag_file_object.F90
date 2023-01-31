@@ -675,13 +675,14 @@ subroutine add_axes(this, axis_ids, diag_axis, naxis, yaml_id)
   class(fmsDiagAxisContainer_type), intent(inout)       :: diag_axis(:)  !< Diag_axis object
   integer,                          intent(inout)       :: naxis         !< Number of axis that have been registered
   integer,                          intent(in)          :: yaml_id       !< Yaml id of the yaml section for this var
- 
+
   type(diagYamlFilesVar_type), pointer     :: field_yaml  !< pointer to the yaml entry
 
   integer :: i, j !< For do loops
   logical :: is_cube_sphere !< Flag indicating if the file's domain is a cubesphere
   logical :: axis_found !< Flag indicating that the axis was already to the file obj
   integer, allocatable :: var_axis_ids(:)
+  integer :: edges_id
 
   is_cube_sphere = .false.
 
@@ -730,6 +731,13 @@ subroutine add_axes(this, axis_ids, diag_axis, naxis, yaml_id)
         !> If the axis does not exist add it to the list
         this%number_of_axis = this%number_of_axis + 1
         this%axis_ids(this%number_of_axis) = var_axis_ids(i)
+
+        !> If the axis has an edge axis add to the list too
+        edges_id = diag_axis(var_axis_ids(i))%axis%get_edges_id()
+        if (edges_id .ne. diag_null) then
+          this%number_of_axis = this%number_of_axis + 1
+          this%axis_ids(this%number_of_axis) = edges_id
+        endif
       endif
     enddo
   end select
@@ -1047,6 +1055,8 @@ logical function is_time_to_close_file (this, time_step)
   TYPE(time_type),                  intent(in)           :: time_step       !< Current model step time
 
   if (time_step >= this%FMS_diag_file%next_close) then
+    is_time_to_close_file = .true.
+  elseif (this%FMS_diag_file%is_static) then
     is_time_to_close_file = .true.
   else
     is_time_to_close_file = .false.

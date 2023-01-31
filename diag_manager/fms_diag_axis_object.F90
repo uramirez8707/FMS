@@ -104,6 +104,7 @@ module fms_diag_axis_object_mod
        procedure :: add_structured_axis_ids
        procedure :: get_structured_axis
        procedure :: is_unstructured_grid
+       procedure :: get_edges_id
   END TYPE fmsDiagAxis_type
 
   !> @brief Type to hold the diurnal axis
@@ -156,6 +157,8 @@ module fms_diag_axis_object_mod
      INTEGER                        , private :: direction       !< Direction of the axis 0, 1, -1
      CHARACTER(len=:),   ALLOCATABLE, private :: edges_name      !< Name for the previously defined "edges axis"
                                                                  !! This will be written as an attribute
+     INTEGER,            ALLOCATABLE, private :: edges_id        !< Axis ID for the edges axis
+                                                                 !! This axis will be written to the file
      CHARACTER(len=:),   ALLOCATABLE, private :: aux             !< Auxiliary name, can only be <TT>geolon_t</TT>
                                                                  !! or <TT>geolat_t</TT>
      CHARACTER(len=128)             , private :: req             !< Required field names.
@@ -190,7 +193,7 @@ module fms_diag_axis_object_mod
   !> @brief Initialize the axis
   subroutine register_diag_axis_obj(this, axis_name, axis_data, units, cart_name, long_name, direction,&
   & set_name, Domain, Domain2, DomainU, aux, req, tile_count, domain_position, axis_length )
-    class(fmsDiagFullAxis_type),INTENT(out)  :: this            !< Diag_axis obj
+    class(fmsDiagFullAxis_type),INTENT(inout):: this            !< Diag_axis obj
     CHARACTER(len=*),   INTENT(in)           :: axis_name       !< Name of the axis
     class(*),           INTENT(in)           :: axis_data(:)    !< Array of coordinate values
     CHARACTER(len=*),   INTENT(in)           :: units           !< Units for the axis
@@ -444,6 +447,16 @@ module fms_diag_axis_object_mod
     end select
   end function is_unstructured_grid
 
+  pure integer function get_edges_id(this)
+    class(fmsDiagAxis_type),           target, INTENT(in)    :: this        !< diag_axis obj
+
+    get_edges_id = diag_null
+    select type (this)
+    type is (fmsDiagFullAxis_type)
+      if (allocated(this%edges_id)) get_edges_id = this%edges_id
+    end select
+  end function
+
   !< @brief Adds the structured axis ids to the axis object
   subroutine add_structured_axis_ids(this, axis_ids)
     class(fmsDiagAxis_type),           target, INTENT(inout) :: this        !< diag_axis obj
@@ -520,11 +533,17 @@ module fms_diag_axis_object_mod
   end subroutine set_axis_id
 
   !> @brief Set the name of the edges
-  subroutine set_edges_name(this, edges_name)
-    class(fmsDiagFullAxis_type), intent(inout) :: this !< diag_axis obj
-    CHARACTER(len=*),        intent(in)        :: edges_name !< Name of the edges
+  subroutine set_edges_name(this, edges_name, edges_id)
+    class(fmsDiagFullAxis_type), intent(inout) :: this       !< diag_axis obj
+    CHARACTER(len=*),            intent(in)    :: edges_name !< Name of the edges
+    integer,                     intent(in)    :: edges_id   !< Axis id of the edges
 
+    !< Saving the name and the id of the edges axis because it will make it easier to use
+    !! downstream (i.e you need the edges name to write the attribute to the current axis,
+    !! and you need the edges id to add to the diag file object so that you can write the edges
+    !! to the file)
     this%edges_name = edges_name
+    this%edges_id = edges_id
   end subroutine
 
   !> @brief Determine if the subRegion is in the current PE.
@@ -646,7 +665,7 @@ module fms_diag_axis_object_mod
     this%parent_axis_id = parent_id
     this%subaxis_name = trim(parent_axis_name)//"_sub01"
 
-    if (present(zbounds)) then  
+    if (present(zbounds)) then
       allocate(this%zbounds(2))
       this%zbounds = zbounds
     endif
@@ -1222,7 +1241,6 @@ module fms_diag_axis_object_mod
     class(*), pointer :: zaxis_data(:)
     integer :: subaxis_indices(2)
     integer :: i
-    integer :: zaxis_id
     integer :: subaxis_id
 
     !< Determine if the axis was already created
@@ -1238,7 +1256,6 @@ module fms_diag_axis_object_mod
       select type (parent_axis => diag_axis(var_axis_ids(i))%axis)
       type is (fmsDiagFullAxis_type)
         if (parent_axis%cart_name .eq. "Z") then
-          zaxis_id = i
           zaxis_data => parent_axis%axis_data
 
           select type(zaxis_data)
@@ -1247,7 +1264,7 @@ module fms_diag_axis_object_mod
             subaxis_indices(2) = nearest_index(real(zbounds(2)), zaxis_data)
           end select
 
-          call define_new_axis(diag_axis, parent_axis, naxis, zaxis_id, &
+          call define_new_axis(diag_axis, parent_axis, naxis, parent_axis%axis_id, &
                         &subaxis_indices(1), subaxis_indices(2), subaxis_id, zbounds)
           var_axis_ids(i) = subaxis_id
           return

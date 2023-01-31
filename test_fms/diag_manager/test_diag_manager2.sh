@@ -800,6 +800,16 @@ diag_files:
     var_name: var1
     reduction: average
     kind: r4
+- file_name: file11_static
+  freq: -1
+  freq_units: days
+  time_units: hours
+  unlimdim: time
+  varlist:
+  - module: ocn_mod
+    var_name: pizza_coefficient
+    reduction: none
+    kind: r4
 _EOF
 
   my_test_count=`expr $my_test_count + 1`
