@@ -718,14 +718,7 @@ subroutine add_axes(this, axis_ids, diag_axis, naxis, yaml_id)
     return
   type is (fmsDiagFile_type)
     do i = 1, size(var_axis_ids)
-      axis_found = .false.
-      do j = 1, this%number_of_axis
-        !> Check if the axis already exists, move on
-        if (var_axis_ids(i) .eq. this%axis_ids(j)) then
-          axis_found = .true.
-          cycle
-        endif
-      enddo
+      axis_found = axis_exists_in_file(this%axis_ids, this%number_of_axis, var_axis_ids(i))
 
       if (.not. axis_found) then
         !> If the axis does not exist add it to the list
@@ -735,14 +728,33 @@ subroutine add_axes(this, axis_ids, diag_axis, naxis, yaml_id)
         !> If the axis has an edge axis add to the list too
         edges_id = diag_axis(var_axis_ids(i))%axis%get_edges_id()
         if (edges_id .ne. diag_null) then
-          this%number_of_axis = this%number_of_axis + 1
-          this%axis_ids(this%number_of_axis) = edges_id
+          !> Don't add the edges_id to the file if it is already there (i.e if a variable in the file
+          !! is in the edge dimension, the edges_id might already be in the list)
+          if (.not. axis_exists_in_file(this%axis_ids, this%number_of_axis, edges_id)) then
+            this%number_of_axis = this%number_of_axis + 1
+            this%axis_ids(this%number_of_axis) = edges_id
+          endif
         endif
       endif
     enddo
   end select
 end subroutine add_axes
 
+pure logical function axis_exists_in_file(file_axis_ids, nfile_axis, axis_id)
+  integer, intent(in) :: file_axis_ids(:)
+  integer, intent(in) :: nfile_axis
+  integer, intent(in) :: axis_id
+
+  integer :: i
+
+  axis_exists_in_file = .false.
+  do i = 1, nfile_axis
+    if (axis_id .eq. file_axis_ids(i)) then
+      axis_exists_in_file = .true.
+      return
+    endif
+  enddo
+end function axis_exists_in_file
 !> @brief adds the start time to the fileobj
 !! @note This should be called from the register field calls. It can be called multiple times (one for each variable)
 !! So it needs to make sure that the start_time is the same for each variable. The initial value is the base_time
