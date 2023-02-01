@@ -112,6 +112,7 @@ id_ug = diag_axis_init("grid_index",  real(ug_dim_data), "none", "U", long_name=
 
 id_zhalf  = diag_axis_init('zhalf',  z,  'point_Z', 'z', long_name='point_Z')
 id_z  = diag_axis_init('z',  z,  'point_Z', 'z', long_name='point_Z', edges=id_zhalf)
+
 call diag_axis_add_attribute (id_z, 'formula', 'p(n,k,j,i) = ap(k) + b(k)*ps(n,j,i)')
 call diag_axis_add_attribute (id_z, 'integer', 10)
 call diag_axis_add_attribute (id_z, '1d integer', (/10, 10/))

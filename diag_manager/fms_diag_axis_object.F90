@@ -167,7 +167,7 @@ module fms_diag_axis_object_mod
      TYPE(fmsDiagAttribute_type),allocatable , private :: attributes(:) !< Array to hold user definable attributes
      INTEGER                        , private :: num_attributes  !< Number of defined attibutes
      INTEGER                        , private :: domain_position !< The position in the doman (NORTH, EAST or CENTER)
-     integer                        , private :: structured_ids(2) !< If the axis is in the unstructured grid,
+     integer, allocatable           , private :: structured_ids(:) !< If the axis is in the unstructured grid,
                                                                    !! this is the axis ids of the structured axis
 
      contains
@@ -358,7 +358,7 @@ module fms_diag_axis_object_mod
           call register_field(fileobj, axis_name, diag_axis%type_of_data, (/axis_name/))
         case default
           !< Here the fileobj is in the unstructured domain, but the axis is not
-          !< Unstructured domain fileobjs can have axis that are not unstructured (i.e "Z" axis)
+          !< Unstructured domain fileobjs can have axis that are not domain decomposed (i.e "Z" axis)
           call register_axis(fileobj, axis_name, axis_length)
           call register_field(fileobj, axis_name, diag_axis%type_of_data, (/axis_name/))
         end select
@@ -478,6 +478,7 @@ module fms_diag_axis_object_mod
 
     select type (this)
     type is (fmsDiagFullAxis_type)
+      allocate(this%structured_ids(2))
       this%structured_ids = axis_ids
     end select
   end subroutine add_structured_axis_ids
@@ -796,7 +797,6 @@ module fms_diag_axis_object_mod
     end select
 
   end function
-
 
   !> @brief Check if a cart_name is valid and crashes if it isn't
   subroutine check_if_valid_cart_name(cart_name)
@@ -1209,7 +1209,7 @@ module fms_diag_axis_object_mod
     class(*), intent(in) :: compress_att(:) !< The compress attribute to parse
     character(len=120)   :: axis_names(2)
 
-    integer            :: ios           !< Errorcode after parsting the compress attribute
+    integer            :: ios           !< Errorcode after parsing the compress attribute
 
     select type (compress_att)
       type is (character(len=*))
