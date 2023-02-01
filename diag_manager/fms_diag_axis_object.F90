@@ -104,6 +104,7 @@ module fms_diag_axis_object_mod
        procedure :: add_structured_axis_ids
        procedure :: get_structured_axis
        procedure :: is_unstructured_grid
+       procedure :: is_subregional
        procedure :: get_edges_id
   END TYPE fmsDiagAxis_type
 
@@ -291,9 +292,10 @@ module fms_diag_axis_object_mod
   end subroutine add_axis_attribute
 
   !> @brief Write the axis meta data to an open fileobj
-  subroutine write_axis_metadata(this, fileobj, parent_axis)
+  subroutine write_axis_metadata(this, fileobj, write_edge, parent_axis)
     class(fmsDiagAxis_type),          target,  INTENT(IN)    :: this        !< diag_axis obj
     class(FmsNetcdfFile_t),                    INTENT(INOUT) :: fileobj     !< Fms2_io fileobj to write the data to
+    logical, intent(in) :: write_edge
     class(fmsDiagAxis_type), OPTIONAL, target, INTENT(IN)    :: parent_axis !< If the axis is a subaxis, axis object
                                                                             !! for the parent axis (this will be used
                                                                             !! to get some of the metadata info)
@@ -379,9 +381,11 @@ module fms_diag_axis_object_mod
       call register_variable_attribute(fileobj, axis_name, "positive", "down", str_len=4)
     end select
 
-    if (allocated(diag_axis%edges_name)) then
-      call register_variable_attribute(fileobj, axis_name, "edges", diag_axis%edges_name, &
-        str_len=len_trim(diag_axis%edges_name))
+    if (write_edge) then
+      if (allocated(diag_axis%edges_name)) then
+        call register_variable_attribute(fileobj, axis_name, "edges", diag_axis%edges_name, &
+          str_len=len_trim(diag_axis%edges_name))
+      endif
     endif
 
     do i = 1, diag_axis%num_attributes
@@ -446,6 +450,16 @@ module fms_diag_axis_object_mod
       is_unstructured_grid = trim(this%cart_name) .eq. "U"
     end select
   end function is_unstructured_grid
+
+  pure logical function is_subregional(this)
+    class(fmsDiagAxis_type),           target, INTENT(in)    :: this        !< diag_axis obj
+
+    is_subregional = .false.
+    select type (this)
+    type is (fmsDiagSubAxis_type)
+    is_subregional = .true.
+    end select
+  end function is_subregional
 
   pure integer function get_edges_id(this)
     class(fmsDiagAxis_type),           target, INTENT(in)    :: this        !< diag_axis obj

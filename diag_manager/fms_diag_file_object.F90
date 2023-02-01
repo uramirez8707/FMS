@@ -725,16 +725,6 @@ subroutine add_axes(this, axis_ids, diag_axis, naxis, yaml_id)
         this%number_of_axis = this%number_of_axis + 1
         this%axis_ids(this%number_of_axis) = var_axis_ids(i)
 
-        !> If the axis has an edge axis add to the list too
-        edges_id = diag_axis(var_axis_ids(i))%axis%get_edges_id()
-        if (edges_id .ne. diag_null) then
-          !> Don't add the edges_id to the file if it is already there (i.e if a variable in the file
-          !! is in the edge dimension, the edges_id might already be in the list)
-          if (.not. axis_exists_in_file(this%axis_ids, this%number_of_axis, edges_id)) then
-            this%number_of_axis = this%number_of_axis + 1
-            this%axis_ids(this%number_of_axis) = edges_id
-          endif
-        endif
       endif
     enddo
   end select
@@ -1215,6 +1205,10 @@ subroutine write_axis_metadata(this, diag_axis)
   integer                              :: j              !< diag_file%axis_ids(i) (for less typing)
   integer                              :: parent_axis_id !< Id of the parent_axis
   integer                              :: structured_ids(2) !< Ids of the uncompress axis
+  integer                              :: edges_id
+  logical                              :: write_edge
+
+  write_edge = .false.
 
   diag_file => this%FMS_diag_file
   fileobj => diag_file%fileobj
@@ -1222,18 +1216,28 @@ subroutine write_axis_metadata(this, diag_axis)
   do i = 1, diag_file%number_of_axis
     j = diag_file%axis_ids(i)
     parent_axis_id = diag_axis(j)%axis%get_parent_axis_id()
+
+    edges_id = diag_axis(j)%axis%get_edges_id()
+    if (edges_id .ne. diag_null) then
+      if (axis_exists_in_file(diag_file%axis_ids, diag_file%number_of_axis, edges_id)) cycle
+
+      call diag_axis(edges_id)%axis%write_axis_metadata(fileobj, .false.)
+      write_edge = .true.
+    endif
+
     if (parent_axis_id .eq. DIAG_NULL) then
-      call diag_axis(j)%axis%write_axis_metadata(fileobj)
+      call diag_axis(j)%axis%write_axis_metadata(fileobj, write_edge)
     else
-      call diag_axis(j)%axis%write_axis_metadata(fileobj, diag_axis(parent_axis_id)%axis)
+      call diag_axis(j)%axis%write_axis_metadata(fileobj, write_edge, parent_axis=diag_axis(parent_axis_id)%axis)
     endif
 
     if (diag_axis(j)%axis%is_unstructured_grid()) then
       structured_ids = diag_axis(j)%axis%get_structured_axis()
       do k = 1, size(structured_ids)
-        call diag_axis(structured_ids(k))%axis%write_axis_metadata(fileobj)
+        call diag_axis(structured_ids(k))%axis%write_axis_metadata(fileobj, .false.)
       enddo
     endif
+
   enddo
 
 end subroutine write_axis_metadata
