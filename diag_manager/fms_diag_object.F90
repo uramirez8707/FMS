@@ -593,7 +593,7 @@ subroutine fms_diag_do_io(this, time_step, is_end_of_run)
     endif
 
     if (force_write) then
-      if (.not. diag_file%is_file_static()) then
+      if (.not. diag_file%is_file_static() .or. diag_file%is_time_to_write(time_step)) then
         call diag_file%increase_unlimited_dimension()
         call diag_file%write_time_data()
       endif
