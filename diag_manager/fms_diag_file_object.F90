@@ -221,10 +221,16 @@ logical function fms_diag_files_object_init (files_array)
      allocate(obj%axis_ids(max_axes))
      obj%number_of_axis = 0
 
+     obj%is_static = obj%get_file_freq() .eq. -1
+
      !> Set the start_time of the file to the base_time and set up the *_output variables
      obj%start_time = get_base_time()
      obj%last_output = get_base_time()
-     obj%next_output = diag_time_inc(obj%start_time, obj%get_file_freq(), obj%get_file_frequnit())
+     if (obj%is_static) then
+       obj%next_output = obj%start_time !< Write static files in the first diag_send_complete call
+     else
+       obj%next_output = diag_time_inc(obj%start_time, obj%get_file_freq(), obj%get_file_frequnit())
+     endif
      obj%next_next_output = diag_time_inc(obj%next_output, obj%get_file_freq(), obj%get_file_frequnit())
 
      if (obj%has_file_new_file_freq()) then
@@ -244,7 +250,6 @@ logical function fms_diag_files_object_init (files_array)
 
      obj%time_ops = .false.
      obj%unlimited_dimension = 0
-     obj%is_static = obj%get_file_freq() .eq. -1
 
      nullify(obj)
    enddo set_ids_loop
@@ -760,7 +765,12 @@ subroutine add_start_time(this, start_time)
     !! simply update it with the start_time and set up the *_output variables
     this%start_time = start_time
     this%last_output = start_time
-    this%next_output = diag_time_inc(start_time, this%get_file_freq(), this%get_file_frequnit())
+    if (this%is_static) then
+      this%next_output = start_time
+    else
+      this%next_output = diag_time_inc(start_time, this%get_file_freq(), this%get_file_frequnit())
+    endif
+
     this%next_next_output = diag_time_inc(this%next_output, this%get_file_freq(), this%get_file_frequnit())
     if (this%has_file_new_file_freq()) then
        this%next_close = diag_time_inc(this%start_time, this%get_file_new_file_freq(), &
