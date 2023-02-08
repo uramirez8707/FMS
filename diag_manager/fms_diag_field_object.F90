@@ -147,6 +147,7 @@ type fmsDiagField_type
      procedure :: write_field_metadata
      procedure :: add_area_volume
      procedure :: get_math_needs_to_be_done
+     procedure :: append_time_cell_methods
 end type fmsDiagField_type
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! variables !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 type(fmsDiagField_type) :: null_ob
@@ -1158,7 +1159,7 @@ subroutine write_field_metadata(this, fileobj, file_id, yaml_id, diag_axis, unli
   enddo
 
   !< Append the time cell methods based on the variable's reduction
-  call append_time_cell_methods(cell_methods, field_yaml)
+  call this%append_time_cell_methods(cell_methods, field_yaml)
   if (trim(cell_methods) .ne. "") &
     call register_variable_attribute(fileobj, var_name, "cell_methods", &
       trim(adjustl(cell_methods)), str_len=len_trim(adjustl(cell_methods)))
@@ -1455,9 +1456,15 @@ subroutine add_area_volume(this, area, volume)
 end subroutine add_area_volume
 
 !> @brief Append the time cell meathods based on the variable's reduction
-subroutine append_time_cell_methods(cell_methods, field_yaml)
-  character(len=*),            intent(inout) :: cell_methods !< The cell methods var to append to
-  type(diagYamlFilesVar_type), intent(in)    :: field_yaml    !< The field's yaml
+subroutine append_time_cell_methods(this, cell_methods, field_yaml)
+  class (fmsDiagField_type),   target, intent(inout) :: this          !< diag field
+  character(len=*),                    intent(inout) :: cell_methods  !< The cell methods var to append to
+  type(diagYamlFilesVar_type),         intent(in)    :: field_yaml    !< The field's yaml
+
+  if (this%static) then
+    cell_methods = trim(cell_methods)//" time: point "
+    return
+  endif
 
   select case (field_yaml%get_var_reduction())
   case (time_none)
