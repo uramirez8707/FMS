@@ -592,19 +592,19 @@ subroutine fms_diag_do_io(this, time_step, is_end_of_run)
       call diag_file%write_axis_data(this%diag_axis)
     endif
 
-    if (diag_file%is_time_to_write(time_step)) then
+    if (force_write) then
+      if (.not. diag_file%is_file_static()) then
+        call diag_file%increase_unlimited_dimension()
+        call diag_file%write_time_data()
+      endif
+      call diag_file%close_diag_file()
+    else if (diag_file%is_time_to_write(time_step)) then
       call diag_file%increase_unlimited_dimension()
       call diag_file%write_time_data()
       !TODO call diag_file%add_variable_data()
       call diag_file%update_next_write(time_step)
       call diag_file%update_current_new_file_freq_index(time_step)
       if (diag_file%is_time_to_close_file(time_step)) call diag_file%close_diag_file()
-    else if (force_write ) then
-      if (.not. diag_file%is_file_static()) then
-        call diag_file%increase_unlimited_dimension()
-        call diag_file%write_time_data()
-      endif
-      call diag_file%close_diag_file()
     endif
   enddo
 #endif
