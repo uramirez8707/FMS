@@ -1205,6 +1205,7 @@ subroutine write_axis_metadata(this, diag_axis)
   integer                              :: i,k            !< For do loops
   integer                              :: parent_axis_id !< Id of the parent_axis
   integer                              :: structured_ids(2) !< Ids of the uncompress axis
+  integer                              :: edges_id          !< Id of the axis edge
 
   class(fmsDiagAxisContainer_type), pointer :: axis_ptr !< pointer to the axis object currently writing
 
@@ -1225,6 +1226,12 @@ subroutine write_axis_metadata(this, diag_axis)
       do k = 1, size(structured_ids)
         call diag_axis(structured_ids(k))%axis%write_axis_metadata(fileobj)
       enddo
+    endif
+
+    edges_id = axis_ptr%axis%get_edges_id()
+    if (edges_id .ne. diag_null) then
+      if (any(diag_file%axis_ids .eq. edges_id)) return
+      call diag_axis(edges_id)%axis%write_axis_metadata(fileobj)
     endif
   enddo
 

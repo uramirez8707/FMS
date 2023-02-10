@@ -423,7 +423,7 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
       select type (edges_axis => this%diag_axis(edges)%axis)
       type is (fmsDiagFullAxis_type)
         edges_name = edges_axis%get_axis_name()
-        call axis%set_edges_name(edges_name)
+        call axis%set_edges(edges_name, edges)
       end select
     endif
     call axis%register(axis_name, axis_data, units, cart_name, long_name=long_name, &
