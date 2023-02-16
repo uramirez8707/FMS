@@ -1230,7 +1230,7 @@ subroutine write_axis_metadata(this, diag_axis)
 
     edges_id = axis_ptr%axis%get_edges_id()
     if (edges_id .ne. diag_null) then
-      if (any(diag_file%axis_ids .eq. edges_id)) return
+      if (any(diag_file%axis_ids(1:diag_file%number_of_axis) .eq. edges_id)) return
       call diag_axis(edges_id)%axis%write_axis_metadata(fileobj)
     endif
   enddo

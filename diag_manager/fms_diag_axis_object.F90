@@ -302,6 +302,7 @@ module fms_diag_axis_object_mod
     type(fmsDiagFullAxis_type), pointer   :: diag_axis       !< Local pointer to the diag_axis
 
     integer :: type_of_domain !< The type of domain the current axis is in
+    logical :: is_subaxis     !< .true. if the axis is a subaxis
 
     select type(this)
     type is (fmsDiagFullAxis_type)
@@ -310,6 +311,7 @@ module fms_diag_axis_object_mod
       diag_axis => this
       type_of_domain = this%type_of_domain
     type is (fmsDiagSubAxis_type)
+      is_subaxis = .true.
       axis_name => this%subaxis_name
       axis_length = this%ending_index - this%starting_index + 1
       !< Get all the other information from the parent axis (i.e the cart_name, units, etc)
@@ -376,7 +378,7 @@ module fms_diag_axis_object_mod
       call register_variable_attribute(fileobj, axis_name, "positive", "down", str_len=4)
     end select
 
-    if (allocated(diag_axis%edges_name)) then
+    if (allocated(diag_axis%edges_name) .and. .not. is_subaxis) then
       call register_variable_attribute(fileobj, axis_name, "edges", diag_axis%edges_name, &
         str_len=len_trim(diag_axis%edges_name))
     endif
