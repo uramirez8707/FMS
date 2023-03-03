@@ -40,6 +40,8 @@ real, dimension(:), allocatable :: x, y, z
 integer :: i, j
 integer :: is, ie, js, je
 real, allocatable :: sst(:,:,:), ice(:,:)
+real, allocatable :: wut(:,:,:)
+logical, allocatable :: wutt(:,:,:)
 integer :: id_x, id_y, id_z, id_sst, id_ice
 logical :: used
 
@@ -58,7 +60,9 @@ call mpp_get_compute_domain(Domain, is, ie, js, je)
 
 ! Set up the data
 allocate(x(nlon), y(nlat), z(nz))
-allocate(sst(is:ie,js:je,1:nz), ice(is:ie,js:je))
+allocate(sst(is:ie,js:je,1:nz), ice(is:ie,js:je), wut(is:ie,js:je, 1:nz), wutt(is:ie,js:je, 1:nz))
+wut = 1
+wutt = .false.
 
 do i=1,nlon
   x(i) = i
@@ -88,11 +92,35 @@ do i=1,23
 Time = set_date(2,1,1,i,0,0)
 sst = real(i)
 ice = real(i)
-if(id_sst > 0) used = send_data(id_sst, sst, Time)
+if(id_sst > 0) used = send_data_infra_3d(id_sst, sst, Time=Time, rmask=wut) !, mask=wutt)
 if(id_ice > 0) used = send_data(id_ice, ice, Time)
 enddo
 
 call diag_manager_end(Time)
 call fms_end
 
+contains
+
+logical function send_data_infra_3d(diag_field_id, field, is_in, ie_in, js_in, je_in, ks_in, ke_in, &
+                                    time, mask, rmask, weight, err_msg)
+  integer,                             intent(in) :: diag_field_id !< The diagnostic manager identifier for this field
+  real, dimension(:,:,:),              intent(in) :: field !< A rank 1 array of floating point values being recorded
+  integer,                   optional, intent(in) :: is_in !< The starting i-index for the data being recorded
+  integer,                   optional, intent(in) :: ie_in !< The end i-index for the data being recorded
+  integer,                   optional, intent(in) :: js_in !< The starting j-index for the data being recorded
+  integer,                   optional, intent(in) :: je_in !< The end j-index for the data being recorded
+  integer,                   optional, intent(in) :: ks_in !< The starting k-index for the data being recorded
+  integer,                   optional, intent(in) :: ke_in !< The end k-index for the data being recorded
+  type(time_type),           optional, intent(in) :: time  !< The time for the current record
+  logical, dimension(:,:,:), optional, intent(in) :: mask  !< An optional 3-d logical mask
+  real, dimension(:,:,:),    optional, intent(in) :: rmask !< An optional 3-d mask array
+  real,                      optional, intent(in) :: weight !< A scalar weight factor to apply to the current
+                                                           !! record if there is averaging in time
+  character(len=*),          optional, intent(out) :: err_msg !< A log indicating the status of the post upon
+                                                           !! returning to the calling routine
+
+  send_data_infra_3d = send_data(diag_field_id, field, time=time, is_in=is_in, js_in=js_in, ks_in=ks_in, mask=mask, &
+                               rmask=rmask, ie_in=ie_in, je_in=je_in, ke_in=ke_in, weight=weight, err_msg=err_msg)
+
+end function send_data_infra_3d
 end program test_diag_manager_time
