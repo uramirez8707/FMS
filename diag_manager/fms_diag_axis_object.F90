@@ -304,6 +304,7 @@ module fms_diag_axis_object_mod
     integer :: type_of_domain !< The type of domain the current axis is in
     logical :: is_subaxis     !< .true. if the axis is a subaxis
 
+    is_subaxis = .false.
     select type(this)
     type is (fmsDiagFullAxis_type)
       axis_name => this%axis_name
