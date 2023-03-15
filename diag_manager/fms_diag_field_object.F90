@@ -1192,6 +1192,9 @@ subroutine write_coordinate_attribute (this, fileobj, var_name, diag_axis)
   integer              :: i         !< For do loops
   character(len = 252) :: aux_coord !< Auxuliary axis name
 
+  !> If the variable is a scalar, go away
+  if (.not. allocated(this%axis_ids)) return
+
   !> Determine if any of the field's axis has an auxiliary axis and the
   !! axis_names as a variable attribute
   aux_coord = ""
