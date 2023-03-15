@@ -477,12 +477,12 @@ pure function get_file_unlimdim (this) result(res)
   res = this%diag_yaml_file%get_file_unlimdim()
 end function get_file_unlimdim
 
-!> \brief Returns a copy of file_sub_region from the yaml object
-!! \return Copy of file_sub_region
-function get_file_sub_region (obj) result(res)
- class(fmsDiagFile_type), intent(in) :: obj !< The file object
- type(subRegion_type) :: res
-  res = obj%diag_yaml_file%get_file_sub_region()
+!> \brief Returns a pointer of file_sub_region from the yaml object
+!! \return Pointer of file_sub_region
+function get_file_sub_region (this) result(res)
+ class(fmsDiagFile_type), target, intent(in) :: this !< The file object
+ type(subRegion_type), pointer :: res
+  res => this%diag_yaml_file%get_file_sub_region()
 end function get_file_sub_region
 
 !> \brief Returns a copy of file_new_file_freq from the yaml object
