@@ -91,6 +91,8 @@ subroutine get_global_attribute_0d(fileobj, &
     endif
     select type(attribute_value)
         type is (character(len=*))
+            call mpp_broadcast(att_len, fileobj%io_root, pelist=fileobj%pelist)
+            if (.not. allocated(charbuf)) allocate(character(len=att_len):: charbuf(1))
             call mpp_broadcast(charbuf, len(charbuf), &
                                fileobj%io_root, &
                                pelist=fileobj%pelist)

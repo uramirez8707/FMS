@@ -141,4 +141,9 @@ if test ! -z "$ncdump_skip" ; then
     ncdump -hsv var1 test_chunksizes.res.nc | grep "DeflateLevel"
   '
 fi
+
+test_expect_success "Test variable attribute" '
+  mpirun -n 2 ../test_var_att
+'
+
 test_done

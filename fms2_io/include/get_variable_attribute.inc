@@ -44,7 +44,8 @@ subroutine get_variable_attribute_0d(fileobj, variable_name, attribute_name, &
   integer :: varid
   integer :: err
   character(len=200) :: append_error_msg !< Msg to be appended to FATAL error message
-  character(len=1024), dimension(1) :: charbuf !< 1D Character buffer
+  character(len=:), dimension(:), allocatable :: charbuf !< 1D Character buffer
+  integer :: att_len !< The length of the attribute
   logical :: reproduce_null_char_bug !< Local flag indicating to reproduce the mpp_io bug where
                                      !! the null characters were not removed after reading a string attribute
 
@@ -59,6 +60,10 @@ subroutine get_variable_attribute_0d(fileobj, variable_name, attribute_name, &
     varid = get_variable_id(fileobj%ncid, trim(variable_name), msg=append_error_msg)
     select type(attribute_value)
       type is (character(len=*))
+        err = nf90_inquire_attribute(fileobj%ncid, varid, trim(attribute_name), len=att_len)
+        call check_netcdf_code(err, append_error_msg)
+        allocate(character(len=att_len):: charbuf(1))
+
         err = nf90_get_att(fileobj%ncid, varid, trim(attribute_name), charbuf(1))
         if (reproduce_null_char_bug) then
            call string_copy(attribute_value, charbuf(1), check_for_null=.false.)
@@ -89,6 +94,8 @@ subroutine get_variable_attribute_0d(fileobj, variable_name, attribute_name, &
   endif
   select type(attribute_value)
     type is (character(len=*))
+      call mpp_broadcast(att_len, fileobj%io_root, pelist=fileobj%pelist)
+      if (.not. allocated(charbuf)) allocate(character(len=att_len):: charbuf(1))
       call mpp_broadcast(charbuf, len(charbuf), fileobj%io_root, pelist=fileobj%pelist)
       if (reproduce_null_char_bug) then
          call string_copy(attribute_value, charbuf(1), check_for_null=.false.)

@@ -37,9 +37,13 @@ character (len = 120), dimension(3) :: my_format !< Array of formats to try.
 
 character(len=20) :: buf_str !< character buffer
 integer :: i !< For Do loop
+integer, allocatable :: pes(:) !< List of pes in the current pelist
 
 call fms2_io_init
 call mpp_init
+
+allocate(pes(mpp_npes()))
+call mpp_get_current_pelist(pes)
 
 my_format(1) = '64bit'
 my_format(2) = 'classic'
@@ -47,7 +51,8 @@ my_format(3) = 'netcdf4'
 
 do i = 1, size(my_format)
 !< Write out the different possible global attributes to a netcdf file
-if (open_file(fileobj, "test_global_att_"//trim(my_format(i))//".nc", "overwrite", nc_format=my_format(i))) then
+if (open_file(fileobj, "test_global_att_"//trim(my_format(i))//".nc", "overwrite", nc_format=my_format(i), &
+    pelist=pes)) then
    call register_global_attribute(fileobj, "buf_r8_kind", real(7., kind=r8_kind))
    call register_global_attribute(fileobj, "buf_r8_kind_1d", (/ real(7., kind=r8_kind), real(9., kind=r8_kind) /))
 
@@ -70,8 +75,12 @@ else
    call mpp_error(FATAL, "test_global_att: error opening the file for writting")
 endif
 
+!< Wait for the root pe to finish writing
+call mpp_sync()
+
 !< Read the global attributes from the netcdf file
-if (open_file(fileobj, "test_global_att_"//trim(my_format(i))//".nc", "read", nc_format=my_format(i))) then
+if (open_file(fileobj, "test_global_att_"//trim(my_format(i))//".nc", "read", nc_format=my_format(i), &
+    pelist=pes)) then
    call get_global_attribute(fileobj, "buf_r8_kind", buf_r8_kind)
    call get_global_attribute(fileobj, "buf_r8_kind_1d", buf_r8_kind_1d)
 

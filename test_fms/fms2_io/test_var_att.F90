@@ -21,7 +21,7 @@
 !! "get_variable_attribute" interfaces
 program test_var_att
 use fms_mod,      only: fms_init, fms_end
-use mpp_mod,      only: mpp_error, FATAL
+use mpp_mod,      only: mpp_error, FATAL, mpp_get_current_pelist, mpp_npes, mpp_sync
 use fms2_io_mod,  only: FmsNetcdfFile_t, open_file, close_file, register_field, register_variable_attribute, &
                         get_variable_attribute
 use platform_mod, only: r8_kind, r4_kind, i8_kind, i4_kind
@@ -40,8 +40,12 @@ integer(kind=i8_kind)  :: buf_i8_kind_1d(2) !< i8_kind 1D buffer
 character (len = 120)  :: my_format(3)      !< Array of formats to try.
 character(len=20)      :: buf_str           !< character buffer
 integer                :: i                 !< For Do loop
+integer, allocatable   :: pes(:)            !< List of pes in the current pelist
 
 call fms_init
+
+allocate(pes(mpp_npes()))
+call mpp_get_current_pelist(pes)
 
 my_format(1) = '64bit'
 my_format(2) = 'classic'
@@ -49,33 +53,40 @@ my_format(3) = 'netcdf4'
 
 do i = 1, size(my_format)
    !< Write out the different possible variable attributes to a netcdf file
-   if (.not. open_file(fileobj, "test_var_att_"//trim(my_format(i))//".nc", "overwrite", nc_format=my_format(i))) &
-     call mpp_error(FATAL, "test_var_att: error opening the file for writting")
+   if (.not. open_file(fileobj, "test_var_att_"//trim(my_format(i))//".nc", "overwrite", nc_format=my_format(i), &
+                       pelist=pes)) call mpp_error(FATAL, "test_var_att: error opening the file for writting")
 
    call register_field(fileobj, "var", "double")
 
    call register_variable_attribute(fileobj, "var", "buf_r8_kind", real(7., kind=r8_kind))
-   call register_variable_attribute(fileobj, "var", "buf_r8_kind_1d", (/ real(7., kind=r8_kind), real(9., kind=r8_kind) /))
+   call register_variable_attribute(fileobj, "var", "buf_r8_kind_1d", (/ real(7., kind=r8_kind), &
+                                    real(9., kind=r8_kind) /))
 
    call register_variable_attribute(fileobj, "var", "buf_r4_kind", real(4., kind=r4_kind))
-   call register_variable_attribute(fileobj, "var", "buf_r4_kind_1d", (/ real(4., kind=r4_kind), real(6., kind=r4_kind)/) )
+   call register_variable_attribute(fileobj, "var", "buf_r4_kind_1d", (/ real(4., kind=r4_kind), &
+                                    real(6., kind=r4_kind)/) )
 
    call register_variable_attribute(fileobj, "var", "buf_i4_kind", int(3, kind=i4_kind))
-   call register_variable_attribute(fileobj, "var", "buf_i4_kind_1d", (/ int(3, kind=i4_kind), int(5, kind=i4_kind) /) )
+   call register_variable_attribute(fileobj, "var", "buf_i4_kind_1d", (/ int(3, kind=i4_kind), &
+                                    int(5, kind=i4_kind) /) )
 
    !< int8 is only supported with the "netcdf4" type
    if(i .eq. 3) then
      call register_variable_attribute(fileobj, "var", "buf_i8_kind", int(2, kind=i8_kind))
-     call register_variable_attribute(fileobj, "var", "buf_i8_kind_1d", (/ int(2, kind=i8_kind), int(4, kind=i8_kind) /) )
+     call register_variable_attribute(fileobj, "var", "buf_i8_kind_1d", (/ int(2, kind=i8_kind), &
+                                    int(4, kind=i8_kind) /) )
    endif
 
    call register_variable_attribute(fileobj, "var", "buf_str", "some text"//char(0), str_len=10)
 
    call close_file(fileobj)
 
+   !< Wait for the root pe to finish writing
+   call mpp_sync()
+
    !< Read the var attributes from the netcdf file
-   if (open_file(fileobj, "test_var_att_"//trim(my_format(i))//".nc", "read", nc_format=my_format(i))) &
-     call mpp_error(FATAL, "test_var_att: error opening the file for reading")
+   if (.not. open_file(fileobj, "test_var_att_"//trim(my_format(i))//".nc", "read", nc_format=my_format(i), &
+     pelist=pes)) call mpp_error(FATAL, "test_var_att: error opening the file for reading")
 
    call get_variable_attribute(fileobj, "var", "buf_r8_kind", buf_r8_kind)
    call get_variable_attribute(fileobj, "var", "buf_r8_kind_1d", buf_r8_kind_1d)
