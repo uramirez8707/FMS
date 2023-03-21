@@ -17,8 +17,8 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
-!> @brief  This programs tests the "register_global_attribute" and
-!! "get_global_attribute" interfaces
+!> @brief  This programs tests the "register_global_attribute",
+!! "get_global_attribute" and "get_global_att_size" interfaces
 program test_global_att
 use   fms2_io_mod
 use   mpp_mod
@@ -82,20 +82,30 @@ call mpp_sync()
 if (open_file(fileobj, "test_global_att_"//trim(my_format(i))//".nc", "read", nc_format=my_format(i), &
     pelist=pes)) then
    call get_global_attribute(fileobj, "buf_r8_kind", buf_r8_kind)
+   if (get_global_att_size(fileobj, "buf_r8_kind_1d") .ne. 2) &
+     call mpp_error(FATAL, "test_get_global_att_size: The size of buf_r8_kind_1d is not correct")
    call get_global_attribute(fileobj, "buf_r8_kind_1d", buf_r8_kind_1d)
 
    call get_global_attribute(fileobj, "buf_r4_kind", buf_r4_kind)
+   if (get_global_att_size(fileobj, "buf_r4_kind_1d") .ne. 2) &
+     call mpp_error(FATAL, "test_get_global_att_size: The size of buf_r4_kind_1d is not correct")
    call get_global_attribute(fileobj, "buf_r4_kind_1d", buf_r4_kind_1d)
 
    call get_global_attribute(fileobj, "buf_i4_kind", buf_i4_kind)
+   if (get_global_att_size(fileobj, "buf_i4_kind_1d") .ne. 2) &
+     call mpp_error(FATAL, "test_get_global_att_size: The size of buf_i4_kind_1d is not correct")
    call get_global_attribute(fileobj, "buf_i4_kind_1d", buf_i4_kind_1d)
 
    !< int8 is only supported with the "netcdf4" type
    if(i .eq. 3) then
      call get_global_attribute(fileobj, "buf_i8_kind", buf_i8_kind)
+     if (get_global_att_size(fileobj, "buf_i8_kind_1d") .ne. 2) &
+       call mpp_error(FATAL, "test_get_global_att_size: The size of buf_i8_kind_1d is not correct")
      call get_global_attribute(fileobj, "buf_i8_kind_1d", buf_i8_kind_1d)
    endif
 
+   if (get_global_att_size(fileobj, "buf_str") .ne. 10) &
+     call mpp_error(FATAL, "test_get_global_att_size: The size of buf_str is not correct")
    call get_global_attribute(fileobj, "buf_str", buf_str)
 
    call close_file(fileobj)

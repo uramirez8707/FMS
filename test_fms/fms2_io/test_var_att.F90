@@ -17,13 +17,13 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
-!> @brief  This programs tests the "register_variable_attribute" and
-!! "get_variable_attribute" interfaces
+!> @brief  This programs tests the "register_variable_attribute",
+!! "get_variable_attribute", and "get_var_att_size" interfaces
 program test_var_att
 use fms_mod,      only: fms_init, fms_end
 use mpp_mod,      only: mpp_error, FATAL, mpp_get_current_pelist, mpp_npes, mpp_sync
 use fms2_io_mod,  only: FmsNetcdfFile_t, open_file, close_file, register_field, register_variable_attribute, &
-                        get_variable_attribute
+                        get_variable_attribute, get_var_att_size
 use platform_mod, only: r8_kind, r4_kind, i8_kind, i4_kind
 
 implicit NONE
@@ -89,20 +89,30 @@ do i = 1, size(my_format)
      pelist=pes)) call mpp_error(FATAL, "test_var_att: error opening the file for reading")
 
    call get_variable_attribute(fileobj, "var", "buf_r8_kind", buf_r8_kind)
+   if (get_var_att_size(fileobj, "var", "buf_r8_kind_1d") .ne. 2) &
+     call mpp_error(FATAL, "test_get_var_att_size: The size of buf_r8_kind_1d is not correct")
    call get_variable_attribute(fileobj, "var", "buf_r8_kind_1d", buf_r8_kind_1d)
 
    call get_variable_attribute(fileobj, "var", "buf_r4_kind", buf_r4_kind)
+   if (get_var_att_size(fileobj, "var", "buf_r4_kind_1d") .ne. 2) &
+     call mpp_error(FATAL, "test_get_var_att_size: The size of buf_r4_kind_1d is not correct")
    call get_variable_attribute(fileobj, "var", "buf_r4_kind_1d", buf_r4_kind_1d)
 
    call get_variable_attribute(fileobj, "var", "buf_i4_kind", buf_i4_kind)
+   if (get_var_att_size(fileobj, "var", "buf_i4_kind_1d") .ne. 2) &
+     call mpp_error(FATAL, "test_get_var_att_size: The size of buf_i4_kind_1d is not correct")
    call get_variable_attribute(fileobj, "var", "buf_i4_kind_1d", buf_i4_kind_1d)
 
    !< int8 is only supported with the "netcdf4" type
    if(i .eq. 3) then
      call get_variable_attribute(fileobj, "var", "buf_i8_kind", buf_i8_kind)
+     if (get_var_att_size(fileobj, "var", "buf_i8_kind_1d") .ne. 2) &
+       call mpp_error(FATAL, "test_get_var_att_size: The size of buf_i8_kind_1d is not correct")
      call get_variable_attribute(fileobj, "var", "buf_i8_kind_1d", buf_i8_kind_1d)
    endif
 
+   if (get_var_att_size(fileobj, "var", "buf_str") .ne. 10) &
+     call mpp_error(FATAL, "test_get_var_att_size: The size of the string is not correct")
    call get_variable_attribute(fileobj, "var", "buf_str", buf_str)
 
    call close_file(fileobj)

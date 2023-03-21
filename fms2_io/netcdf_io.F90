@@ -240,6 +240,8 @@ public :: set_fileobj_time_name
 public :: write_restart_bc
 public :: read_restart_bc
 public :: flush_file
+public :: get_global_att_size
+public :: get_var_att_size
 
 !> @ingroup netcdf_io_mod
 interface netcdf_add_restart_variable
@@ -2352,6 +2354,72 @@ subroutine flush_file(fileobj)
     call check_netcdf_code(err, "Flush_file: File:"//trim(fileobj%path))
   endif
 end subroutine flush_file
+
+!> @brief Get the size of a global attribute
+!! @return Number of values currently stored in the attribute.
+!! For a string-valued attribute, this is the number of characters in the string.
+function get_global_att_size(fileobj, attribute_name, broadcast) &
+result(att_size)
+  class(FmsNetcdfFile_t), intent(in) :: fileobj        !< FMS2_io fileob
+  character(len=*),       intent(in) :: attribute_name !< Name of the global attribute to search for
+  logical, optional,      intent(in) :: broadcast      !< Flag controlling whether or not the data will be
+                                                       !! broadcasted to non "I/O root" ranks.
+                                                       !! The broadcast will be done by default.
+  integer :: att_size
+
+  integer :: err !< Netcdf error code
+
+  att_size = 0
+
+  if (fileobj%is_root) then
+    err = nf90_inquire_attribute(fileobj%ncid, nf90_global, trim(attribute_name), len=att_size)
+    call check_netcdf_code(err, "get_global_att_size: file:"//trim(fileobj%path)//"- attribute:"// &
+                                    & trim(attribute_name))
+  endif
+
+  if(present(broadcast)) then
+    if (.not. broadcast) return
+  endif
+
+  call mpp_broadcast(att_size, fileobj%io_root, pelist=fileobj%pelist)
+
+end function get_global_att_size
+
+!> @brief Get the size of a variable attribute
+!! @return Number of values currently stored in the attribute.
+!! For a string-valued attribute, this is the number of characters in the string.
+function get_var_att_size(fileobj, variable_name, attribute_name, broadcast) &
+result(att_size)
+  class(FmsNetcdfFile_t), intent(in) :: fileobj        !< FMS2_io fileob
+  character(len=*),       intent(in) :: variable_name  !< Name of the variable
+  character(len=*),       intent(in) :: attribute_name !< Name of the global attribute to search for
+  logical, optional,      intent(in) :: broadcast      !< Flag controlling whether or not the data will be
+                                                       !! broadcasted to non "I/O root" ranks.
+                                                       !! The broadcast will be done by default
+  integer :: att_size
+
+  integer            :: varid            !< Netcdf variable id
+  integer            :: err              !< Netcdf error code
+  character(len=200) :: append_error_msg !< Msg to be appended to FATAL error message
+
+  append_error_msg = "get_var_att_size: file:"//trim(fileobj%path)//"- variable:"//&
+                     &trim(variable_name)//" attribute: "//trim(attribute_name)
+
+  att_size = 0
+
+  if (fileobj%is_root) then
+    varid = get_variable_id(fileobj%ncid, trim(variable_name), msg=append_error_msg)
+    err = nf90_inquire_attribute(fileobj%ncid, varid, trim(attribute_name), len=att_size)
+    call check_netcdf_code(err, append_error_msg)
+  endif
+
+  if(present(broadcast)) then
+    if (.not. broadcast) return
+  endif
+
+  call mpp_broadcast(att_size, fileobj%io_root, pelist=fileobj%pelist)
+
+end function get_var_att_size
 
 end module netcdf_io_mod
 !> @}
