@@ -38,11 +38,16 @@ subroutine get_global_attribute_0d(fileobj, &
                                              !! The broadcast will be done
                                              !! by default.
     integer :: err
-    character(len=1024), dimension(1) :: charbuf !< 1D Character buffer
+    character(len=:), dimension(:), allocatable :: charbuf !< 1D Character buffer
+    integer :: att_len !< The length of the global attribute
 
     if (fileobj%is_root) then
         select type(attribute_value)
             type is (character(len=*))
+                err = nf90_inquire_attribute(fileobj%ncid, nf90_global, trim(attribute_name), len=att_len)
+                call check_netcdf_code(err, "get_global_attribute_0d: file:"//trim(fileobj%path)//"- attribute:"// &
+                                    & trim(attribute_name))
+                allocate(character(len=att_len):: charbuf(1))
                 err = nf90_get_att(fileobj%ncid, &
                                    nf90_global, &
                                    trim(attribute_name), &
