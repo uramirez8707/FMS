@@ -1,0 +1,11 @@
+<map id="fmsdiagobject_type" name="fmsdiagobject_type">
+<area shape="rect" id="node1" title=" " alt="" coords="727,255,877,281"/>
+<area shape="rect" id="node2" title=" " alt="" coords="393,53,459,80"/>
+<area shape="rect" id="node3" href="$group__time__manager__mod.html#structtime__manager__mod_1_1time__type" title="Type to represent amounts of time. Implemented as seconds and days to allow for larger intervals." alt="" coords="382,196,470,223"/>
+<area shape="rect" id="node4" title=" " alt="" coords="47,167,115,193"/>
+<area shape="rect" id="node5" title=" " alt="" coords="309,247,543,289"/>
+<area shape="rect" id="node6" href="$structfms__diag__buffer__mod_1_1fmsdiagbuffercontainer__type.html" title="holds an allocated buffer0&#45;5d object" alt="" coords="321,313,531,340"/>
+<area shape="rect" id="node7" title=" " alt="" coords="5,306,156,347"/>
+<area shape="rect" id="node8" title=" " alt="" coords="309,365,543,406"/>
+<area shape="rect" id="node9" title=" " alt="" coords="349,431,503,487"/>
+</map>

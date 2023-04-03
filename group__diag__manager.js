@@ -7,5 +7,15 @@ var group__diag__manager =
     [ "diag_output_mod", "group__diag__output__mod.html", "group__diag__output__mod" ],
     [ "diag_table_mod", "group__diag__table__mod.html", "group__diag__table__mod" ],
     [ "diag_util_mod", "group__diag__util__mod.html", "group__diag__util__mod" ],
+    [ "fms_diag_axis_object_mod", "group__fms__diag__axis__object__mod.html", null ],
+    [ "fms_diag_bbox_mod", "group__fms__diag__bbox__mod.html", "group__fms__diag__bbox__mod" ],
+    [ "fms_diag_dlinked_list_mod", "group__fms__diag__dlinked__list__mod.html", "group__fms__diag__dlinked__list__mod" ],
+    [ "fms_diag_elem_weight_procs_mod", "group__fms__diag__elem__weight__procs__mod.html", "group__fms__diag__elem__weight__procs__mod" ],
+    [ "fms_diag_fieldbuff_update_mod", "group__fms__diag__fieldbuff__update__mod.html", "group__fms__diag__fieldbuff__update__mod" ],
+    [ "fms_diag_object_container_mod", "group__fms__diag__object__container__mod.html", "group__fms__diag__object__container__mod" ],
+    [ "fms_diag_outfield_mod", "group__fms__diag__outfield__mod.html", "group__fms__diag__outfield__mod" ],
+    [ "fms_diag_time_reduction_mod", "group__fms__diag__time__reduction__mod.html", "group__fms__diag__time__reduction__mod" ],
+    [ "fms_diag_time_utils_mod", "group__fms__diag__time__utils__mod.html", "group__fms__diag__time__utils__mod" ],
+    [ "fms_diag_yaml_mod", "group__fms__diag__yaml__mod.html", "group__fms__diag__yaml__mod" ],
     [ "diag_table", "group__diag__manager.html#md_docs_diag_table", null ]
 ];

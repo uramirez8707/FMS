@@ -1,0 +1,12 @@
+<map id="diagyamlobject_type" name="diagyamlobject_type">
+<area shape="rect" id="node1" title="Object that holds the information of the diag_yaml." alt="" coords="929,237,1088,263"/>
+<area shape="rect" id="node2" title=" " alt="" coords="267,5,479,47"/>
+<area shape="rect" id="node3" href="$structfms__diag__yaml__mod_1_1diagyamlfilesvar__type.html" title="type to hold the info a diag_field" alt="" coords="640,197,807,223"/>
+<area shape="rect" id="node4" title=" " alt="" coords="271,327,475,354"/>
+<area shape="rect" id="node7" href="$structfms__diag__yaml__mod_1_1diagyamlfiles__type.html" title="type to hold the diag_file information" alt="" coords="650,411,797,438"/>
+<area shape="rect" id="node5" title=" " alt="" coords="289,85,456,127"/>
+<area shape="rect" id="node6" title=" " alt="" coords="45,427,113,454"/>
+<area shape="rect" id="node8" href="$structfms__diag__yaml__mod_1_1subregion__type.html" title="type to hold the sub region information about a file" alt="" coords="311,638,434,665"/>
+<area shape="rect" id="node9" title=" " alt="" coords="5,664,153,705"/>
+<area shape="rect" id="node10" title=" " alt="" coords="269,378,477,405"/>
+</map>

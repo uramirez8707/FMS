@@ -1,0 +1,9 @@
+digraph "Graphical Class Hierarchy"
+{
+ // INTERACTIVE_SVG=YES
+ // LATEX_PDF_SIZE
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  rankdir="LR";
+  Node0 [label="fmsdiagaxiscontainer_type",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structfms__diag__axis__object__mod_1_1fmsdiagaxiscontainer__type.html",tooltip="Type to hold the diag_axis (either subaxis or a full axis)"];
+}

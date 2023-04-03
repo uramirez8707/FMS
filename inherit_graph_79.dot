@@ -1,0 +1,15 @@
+digraph "Graphical Class Hierarchy"
+{
+ // INTERACTIVE_SVG=YES
+ // LATEX_PDF_SIZE
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  rankdir="LR";
+  Node0 [label="diagdomain_t",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structfms__diag__axis__object__mod_1_1diagdomain__t.html",tooltip="Type to hold the domain info for an axis This type was created to avoid having to send in \"Domain\",..."];
+  Node0 -> Node1 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node1 [label="diagdomain1d_t",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structfms__diag__axis__object__mod_1_1diagdomain1d__t.html",tooltip="Type to hold the 1d domain."];
+  Node0 -> Node2 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node2 [label="diagdomain2d_t",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structfms__diag__axis__object__mod_1_1diagdomain2d__t.html",tooltip="Type to hold the 2d domain."];
+  Node0 -> Node3 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node3 [label="diagdomainug_t",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structfms__diag__axis__object__mod_1_1diagdomainug__t.html",tooltip="Type to hold the unstructured domain."];
+}

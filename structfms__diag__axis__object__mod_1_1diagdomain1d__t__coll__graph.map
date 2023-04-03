@@ -1,0 +1,8 @@
+<map id="diagdomain1d_t" name="diagdomain1d_t">
+<area shape="rect" id="node1" title="Type to hold the 1d domain." alt="" coords="19,393,145,420"/>
+<area shape="rect" id="node2" href="$structfms__diag__axis__object__mod_1_1diagdomain__t.html" title="Type to hold the domain info for an axis This type was created to avoid having to send in &quot;Domain&quot;,..." alt="" coords="5,304,116,331"/>
+<area shape="rect" id="node3" href="$group__mpp__domains__mod.html#structmpp__domains__mod_1_1domain1d" title="One dimensional domain used to manage shared data access between pes." alt="" coords="140,304,227,331"/>
+<area shape="rect" id="node4" title=" " alt="" coords="55,5,120,32"/>
+<area shape="rect" id="node5" href="$group__mpp__domains__mod.html#structmpp__domains__mod_1_1domain__axis__spec" title="Used to specify index limits along an axis of a domain." alt="" coords="112,155,255,181"/>
+<area shape="rect" id="node6" title=" " alt="" coords="219,5,287,32"/>
+</map>

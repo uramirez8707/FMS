@@ -1,0 +1,30 @@
+digraph "fmsdiagfullaxis_type"
+{
+ // INTERACTIVE_SVG=YES
+ // LATEX_PDF_SIZE
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  rankdir="LR";
+  Node1 [label="fmsdiagfullaxis_type",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black",tooltip="Type to hold the diagnostic axis description."];
+  Node2 -> Node1 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node2 [label="fmsdiagaxis_type",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structfms__diag__axis__object__mod_1_1fmsdiagaxis__type.html",tooltip="Type to hold the diagnostic axis description."];
+  Node3 -> Node2 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" axis_id" ,fontname="Helvetica"];
+  Node3 [label="integer",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node4 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" aux\naxis_name\nedges_name\nlong_name\ntype_of_data\nunits" ,fontname="Helvetica"];
+  Node4 [label="character(len=:), allocatable,\l private",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node5 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" axis_data" ,fontname="Helvetica"];
+  Node5 [label="class(*), dimension\l(:), allocatable, private",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node6 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" cart_name" ,fontname="Helvetica"];
+  Node6 [label="character(len=1)",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node7 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" axis_domain" ,fontname="Helvetica"];
+  Node7 [label="class(diagdomain_t)\l, allocatable, private",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node8 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" req" ,fontname="Helvetica"];
+  Node8 [label="character(len=128)",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node9 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" attributes" ,fontname="Helvetica"];
+  Node9 [label="fmsdiagattribute_type",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__diag__data__mod.html#structdiag__data__mod_1_1fmsdiagattribute__type",tooltip="Type to hold the attributes of the field/axis/file."];
+  Node10 -> Node9 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" att_name" ,fontname="Helvetica"];
+  Node10 [label="character(len=:), allocatable",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node11 -> Node9 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" att_value" ,fontname="Helvetica"];
+  Node11 [label="class(*), dimension\l(:), allocatable",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node3 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" direction\ndomain_position\nedges_id\nlength\nnsubaxis\nnum_attributes\nstructured_ids\nsubaxis\ntile_count\ntype_of_domain\n..." ,fontname="Helvetica"];
+}

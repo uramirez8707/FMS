@@ -1,0 +1,13 @@
+<map id="fmsdiagfullaxis_type" name="fmsdiagfullaxis_type">
+<area shape="rect" id="node1" title="Type to hold the diagnostic axis description." alt="" coords="676,397,835,424"/>
+<area shape="rect" id="node2" href="$structfms__diag__axis__object__mod_1_1fmsdiagaxis__type.html" title="Type to hold the diagnostic axis description." alt="" coords="365,240,503,267"/>
+<area shape="rect" id="node3" title=" " alt="" coords="75,196,143,223"/>
+<area shape="rect" id="node4" title=" " alt="" coords="328,294,540,335"/>
+<area shape="rect" id="node5" title=" " alt="" coords="349,359,519,401"/>
+<area shape="rect" id="node6" title=" " alt="" coords="368,425,500,452"/>
+<area shape="rect" id="node7" title=" " alt="" coords="356,477,512,518"/>
+<area shape="rect" id="node8" title=" " alt="" coords="360,543,508,569"/>
+<area shape="rect" id="node9" href="$group__diag__data__mod.html#structdiag__data__mod_1_1fmsdiagattribute__type" title="Type to hold the attributes of the field/axis/file." alt="" coords="351,593,517,620"/>
+<area shape="rect" id="node10" title=" " alt="" coords="5,564,213,591"/>
+<area shape="rect" id="node11" title=" " alt="" coords="35,615,183,657"/>
+</map>

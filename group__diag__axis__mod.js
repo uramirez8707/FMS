@@ -1,11 +1,11 @@
 var group__diag__axis__mod =
 [
-    [ "diag_axis_add_attribute", "interfacediag__axis__mod_1_1diag__axis__add__attribute.html", [
-      [ "diag_axis_add_attribute_i1d", "interfacediag__axis__mod_1_1diag__axis__add__attribute.html#a8f022a3cfde8bd4e3781b98b96514fab", null ],
-      [ "diag_axis_add_attribute_r1d", "interfacediag__axis__mod_1_1diag__axis__add__attribute.html#ac9e40b871da381c6f14728d45d7b67aa", null ],
-      [ "diag_axis_add_attribute_scalar_c", "interfacediag__axis__mod_1_1diag__axis__add__attribute.html#a648bef1603f7a647f92460ba8f1a577d", null ],
-      [ "diag_axis_add_attribute_scalar_i", "interfacediag__axis__mod_1_1diag__axis__add__attribute.html#aec0ae5a49fe24b6b36263fcb8810caa5", null ],
-      [ "diag_axis_add_attribute_scalar_r", "interfacediag__axis__mod_1_1diag__axis__add__attribute.html#a7c43387dd3801c36a874d54bc5806b2a", null ]
+    [ "diag_axis_add_attribute", "group__diag__axis__mod.html#interfacediag__axis__mod_1_1diag__axis__add__attribute", [
+      [ "diag_axis_add_attribute_i1d", "group__diag__axis__mod.html#a8f022a3cfde8bd4e3781b98b96514fab", null ],
+      [ "diag_axis_add_attribute_r1d", "group__diag__axis__mod.html#ac9e40b871da381c6f14728d45d7b67aa", null ],
+      [ "diag_axis_add_attribute_scalar_c", "group__diag__axis__mod.html#a648bef1603f7a647f92460ba8f1a577d", null ],
+      [ "diag_axis_add_attribute_scalar_i", "group__diag__axis__mod.html#aec0ae5a49fe24b6b36263fcb8810caa5", null ],
+      [ "diag_axis_add_attribute_scalar_r", "group__diag__axis__mod.html#a7c43387dd3801c36a874d54bc5806b2a", null ]
     ] ],
     [ "attribute_init_axis", "group__diag__axis__mod.html#ga52728abc762146731925f0c2ed7bfe93", null ],
     [ "axis_compatible_check", "group__diag__axis__mod.html#ga241aaf31afd11ff2c6ffbfc746487f0f", null ],
@@ -25,7 +25,7 @@ var group__diag__axis__mod =
     [ "get_diag_axis_cart", "group__diag__axis__mod.html#ga439d202181dc2584f338b35381124bc9", null ],
     [ "get_diag_axis_data", "group__diag__axis__mod.html#gaa407ee1754c289606c1e3528e132d5e8", null ],
     [ "get_diag_axis_domain_name", "group__diag__axis__mod.html#gae7cc7f544e4dde3908484c69f45de108", null ],
-    [ "get_diag_axis_name", "group__diag__axis__mod.html#ga687ad43a9f0e6223ad754a9a3fed5b0c", null ],
+    [ "get_diag_axis_name", "group__diag__axis__mod.html#ga8b0b93536a453d25ea3db18d6e6fd71a", null ],
     [ "get_domain1d", "group__diag__axis__mod.html#gaeed28de0d52325d817dc3f8caff2932f", null ],
     [ "get_domain2d", "group__diag__axis__mod.html#ga5e5c270e61942c47611a48ae758c0f4c", null ],
     [ "get_domainug", "group__diag__axis__mod.html#ga6e662b343114e500df7ca182ecf73e58", null ],

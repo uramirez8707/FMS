@@ -1,0 +1,9 @@
+digraph "Graphical Class Hierarchy"
+{
+ // INTERACTIVE_SVG=YES
+ // LATEX_PDF_SIZE
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  rankdir="LR";
+  Node0 [label="fmsdiagibounds_type",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structfms__diag__bbox__mod_1_1fmsdiagibounds__type.html",tooltip="Data structure holding a 3D bounding box. It is commonlyused to represent the interval bounds or limi..."];
+}

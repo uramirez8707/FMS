@@ -1,0 +1,21 @@
+digraph "Graphical Class Hierarchy"
+{
+ // INTERACTIVE_SVG=YES
+ // LATEX_PDF_SIZE
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  rankdir="LR";
+  Node0 [label="fmsdiagbuffer_class",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structfms__diag__buffer__mod_1_1fmsdiagbuffer__class.html",tooltip="Object that holds buffered data and other diagnostics Abstract to ensure use through its extensions(b..."];
+  Node0 -> Node1 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node1 [label="buffer0d_type",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structfms__diag__buffer__mod_1_1buffer0d__type.html",tooltip="Scalar buffer type to extend fmsDiagBufferContainer_type."];
+  Node0 -> Node2 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node2 [label="buffer1d_type",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structfms__diag__buffer__mod_1_1buffer1d__type.html",tooltip="1D buffer type to extend fmsDiagBuffer_class"];
+  Node0 -> Node3 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node3 [label="buffer2d_type",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structfms__diag__buffer__mod_1_1buffer2d__type.html",tooltip="2D buffer type to extend fmsDiagBuffer_class"];
+  Node0 -> Node4 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node4 [label="buffer3d_type",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structfms__diag__buffer__mod_1_1buffer3d__type.html",tooltip="3D buffer type to extend fmsDiagBuffer_class"];
+  Node0 -> Node5 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node5 [label="buffer4d_type",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structfms__diag__buffer__mod_1_1buffer4d__type.html",tooltip="4D buffer type to extend fmsDiagBuffer_class"];
+  Node0 -> Node6 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node6 [label="buffer5d_type",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structfms__diag__buffer__mod_1_1buffer5d__type.html",tooltip="5D buffer type to extend fmsDiagBuffer_class"];
+}

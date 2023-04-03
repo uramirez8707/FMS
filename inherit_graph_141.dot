@@ -1,0 +1,9 @@
+digraph "Graphical Class Hierarchy"
+{
+ // INTERACTIVE_SVG=YES
+ // LATEX_PDF_SIZE
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  rankdir="LR";
+  Node0 [label="fmsdiagbuffercontainer_type",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structfms__diag__buffer__mod_1_1fmsdiagbuffercontainer__type.html",tooltip="holds an allocated buffer0-5d object"];
+}
