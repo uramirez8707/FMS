@@ -84,7 +84,7 @@ module time_interp_external2_mod
   public init_external_field, time_interp_external, time_interp_external_init, &
        time_interp_external_exit, get_external_field_size, get_time_axis, get_external_field_missing
   public set_override_region, reset_src_data_region
-  public get_external_fileobj
+  public get_external_fileobj, get_external_field_axis_names, get_external_fileobj_from_field_id
 
   private find_buf_index,&
          set_time_modulo
@@ -729,6 +729,16 @@ module time_interp_external2_mod
     end subroutine time_interp_external_2d
 
 
+    function get_external_fileobj_from_field_id(field_id) &
+    result(fileobj)
+       integer, intent(in) :: field_id
+
+       type(FmsNetcdfFile_t) :: fileobj
+
+       fileobj = field(field_id)%fileobj
+
+    end function get_external_fileobj_from_field_id
+
     function get_external_fileobj(filename, fileobj)
        character(len=*),             intent(in) :: filename
        type(FmsNetcdfFile_t), intent(out) :: fileobj
@@ -1314,6 +1324,17 @@ end subroutine realloc_fields
 !<IN NAME="index" TYPE="integer">
 ! returned from previous call to init_external_field.
 !</IN>
+    function get_external_field_axis_names(field_id) &
+    result(axis_names)
+       integer, intent(in) :: field_id
+       character(len=32) :: axis_names(4)
+
+       if (field_id .lt. 1 .or. field_id .gt. num_fields) &
+          call mpp_error(FATAL,'invalid index in call to get_external_field_axes_names')
+
+       axis_names = field(field_id)%axisname
+
+    end function get_external_field_axis_names
 
     function get_external_field_size(index)
 
