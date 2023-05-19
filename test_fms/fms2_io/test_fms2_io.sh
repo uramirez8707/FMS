@@ -88,4 +88,8 @@ test_expect_success "Domain Read Write Tests with a ocean mask" '
   mpirun -n 17 ../test_domain_io
 '
 
+test_expect_success "Compressed writes tests" '
+  mpirun -n 5 ../test_compressed_writes
+'
+
 test_done
