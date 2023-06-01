@@ -95,10 +95,18 @@
           glt_min = min(lat,glt_min);  glt_max = max(lat,glt_max)
           gln_min = min(lon,gln_min);  gln_max = max(lon,gln_max)
 
-          is = indp(lon, lon_in )
-          if( lon_in(is) .gt. lon ) is = max(is-1,1)
-          if( lon_in(is) .eq. lon .and. is .eq. nlon_in) is = max(is - 1,1)
-          ie = min(is+1,nlon_in)
+          is = nearest_index(lon, lon_in )
+
+          if (lon_in(1) > lon_in(nlon_in)) then
+            if( lon_in(is) .gt. lon ) is = max(is-1,1)
+            if( lon_in(is) .eq. lon .and. is .eq. nlon_in) is = max(is - 1,1)
+            ie = min(is+1,nlon_in)
+          else
+            if( lon_in(is) .lt. lon ) is = max(is+1,1)
+            if( lon_in(is) .eq. lon .and. is .eq. 1) is = max(is + 1,1)
+            ie = min(is-1,1)
+          endif
+
           if(lon_in(is) .ne. lon_in(ie) .and. lon_in(is) .le. lon) then
              wtw = ( lon_in(ie) - lon) / (lon_in(ie) - lon_in(is) )
           else
@@ -115,11 +123,17 @@
           endif
           wte = 1.0_kindl - wtw
 
-          js = indp(lat, lat_in )
+          js = nearest_index(lat, lat_in )
 
-          if( lat_in(js) .gt. lat ) js = max(js - 1, 1)
-          if( lat_in(js) .eq. lat .and. js .eq. nlat_in) js = max(js - 1, 1)
-          je = min(js + 1, nlat_in)
+          if (lat_in(1) > lat_in(nlat_in)) then
+            if( lat_in(js) .gt. lat ) js = max(js - 1, 1)
+            if( lat_in(js) .eq. lat .and. js .eq. nlat_in) js = max(js - 1, 1)
+            je = min(js + 1, nlat_in)
+          else
+            if( lat_in(js) .lt. lat ) js = max(js + 1, 1)
+            if( lat_in(js) .eq. lat .and. js .eq. 1) js = max(js + 1, 1)
+            je = min(js-1,1)
+          endif
 
           if ( lat_in(js) .ne. lat_in(je) .and. lat_in(js) .le. lat) then
              wts = ( lat_in(je) - lat )/(lat_in(je)-lat_in(js))
