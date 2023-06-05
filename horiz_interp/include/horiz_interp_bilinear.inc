@@ -97,7 +97,7 @@
 
           is = nearest_index(lon, lon_in )
 
-          if (lon_in(1) > lon_in(nlon_in)) then
+          if (lon_in(1) .lt. lon_in(nlon_in)) then
             if( lon_in(is) .gt. lon ) is = max(is-1,1)
             if( lon_in(is) .eq. lon .and. is .eq. nlon_in) is = max(is - 1,1)
             ie = min(is+1,nlon_in)
@@ -125,7 +125,7 @@
 
           js = nearest_index(lat, lat_in )
 
-          if (lat_in(1) > lat_in(nlat_in)) then
+          if (lat_in(1) .lt. lat_in(nlat_in)) then
             if( lat_in(js) .gt. lat ) js = max(js - 1, 1)
             if( lat_in(js) .eq. lat .and. js .eq. nlat_in) js = max(js - 1, 1)
             je = min(js + 1, nlat_in)
