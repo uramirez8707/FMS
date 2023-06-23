@@ -30,6 +30,7 @@ use iso_c_binding
 use time_manager_mod, only: time_type
 use mpp_mod, only: mpp_error, FATAL
 use diag_data_mod, only: DIAG_NULL, DIAG_NOT_REGISTERED, i4, i8, r4, r8
+use fms2_io_mod, only: FmsNetcdfFile_t, write_data
 
 implicit none
 
@@ -61,6 +62,10 @@ end type fmsDiagOutputBuffer_class
 !> holds an allocated buffer0-5d object
 type :: fmsDiagOutputBufferContainer_type
   class(fmsDiagOutputBuffer_class), allocatable :: diag_buffer_obj !< any 0-5d buffer object
+  character(len=:), allocatable :: var_name !< Name of the field
+  contains
+
+  procedure :: write_buffer
 end type
 
 !> Scalar buffer type to extend fmsDiagBufferContainer_type
@@ -159,6 +164,28 @@ logical function fms_diag_output_buffer_init(buffobjs, buff_list_size)
   allocate(buffobjs(buff_list_size))
   fms_diag_output_buffer_init = allocated(buffobjs)
 end function fms_diag_output_buffer_init
+
+!> @brief Write the buffer to the file
+subroutine write_buffer(this, fileobj)
+  class(fmsDiagOutputBufferContainer_type), intent(in) :: this !< buffer object to set id for
+  class(FmsNetcdfFile_t), intent(in) :: fileobj
+
+  select type(buffer_obj=>this%diag_buffer_obj)
+  type is (outputBuffer0d_type)
+    call write_data(fileobj, this%var_name, buffer_obj%buffer)
+  type is (outputBuffer1d_type)
+    call write_data(fileobj, this%var_name, buffer_obj%buffer)
+  type is (outputBuffer2d_type)
+    call write_data(fileobj, this%var_name, buffer_obj%buffer)
+  type is (outputBuffer3d_type)
+    call write_data(fileobj, this%var_name, buffer_obj%buffer)
+  type is (outputBuffer4d_type)
+    call write_data(fileobj, this%var_name, buffer_obj%buffer)
+  type is (outputBuffer5d_type)
+    call write_data(fileobj, this%var_name, buffer_obj%buffer)
+  end select
+
+end subroutine
 
 !> Creates a container type encapsulating a new buffer object for the given dimensions.
 !! The buffer object will still need to be allocated to a type via allocate_buffer() before use.

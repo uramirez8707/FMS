@@ -29,7 +29,7 @@ use diag_data_mod,  only: diag_null, diag_not_found, diag_not_registered, diag_r
 use fms_diag_file_object_mod, only: fmsDiagFileContainer_type, fmsDiagFile_type, fms_diag_files_object_init
 use fms_diag_field_object_mod, only: fmsDiagField_type, fms_diag_fields_object_init, get_default_missing_value
 use fms_diag_yaml_mod, only: diag_yaml_object_init, diag_yaml_object_end, find_diag_field, &
-                           & get_diag_files_id, diag_yaml, get_diag_field_ids, DiagYamlFilesVar_type
+                           & get_diag_files_id, diag_yaml, get_diag_field_ids, DiagYamlFilesVar_type, get_diag_fields_entries
 use fms_diag_axis_object_mod, only: fms_diag_axis_object_init, fmsDiagAxis_type, fmsDiagSubAxis_type, &
                                    &diagDomain_t, get_domain_and_domain_type, diagDomain2d_t, &
                                    &fmsDiagAxisContainer_type, fms_diag_axis_object_end, fmsDiagFullAxis_type, &
@@ -226,7 +226,6 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
   fieldptr%buffer_ids = get_diag_field_ids(diag_field_indices)
 
 !> Allocate and initialize member buffer_allocated of this field
-  allocate(fieldptr%buffer_allocated(size(diag_field_indices)))
   fieldptr%buffer_allocated = .false.
 
 !> Register the data for the field
@@ -242,6 +241,7 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
   if (present(axes) .and. present(init_time)) then
     do i = 1, size(file_ids)
      fileptr => this%FMS_diag_files(file_ids(i))%FMS_diag_file
+     call fileptr%set_buffer_ids(fieldptr%buffer_ids(i))
      call fileptr%add_field_and_yaml_id(fieldptr%get_id(), diag_field_indices(i))
      call fileptr%set_file_domain(fieldptr%get_domain(), fieldptr%get_type_of_domain())
      call fileptr%init_diurnal_axis(this%diag_axis, this%registered_axis, diag_field_indices(i))
@@ -252,6 +252,7 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
   elseif (present(axes)) then !only axes present
     do i = 1, size(file_ids)
      fileptr => this%FMS_diag_files(file_ids(i))%FMS_diag_file
+     call fileptr%set_buffer_ids(fieldptr%buffer_ids(i))
      call fileptr%add_field_and_yaml_id(fieldptr%get_id(), diag_field_indices(i))
      call fileptr%init_diurnal_axis(this%diag_axis, this%registered_axis, diag_field_indices(i))
      call fileptr%set_file_domain(fieldptr%get_domain(), fieldptr%get_type_of_domain())
@@ -261,6 +262,7 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
   elseif (present(init_time)) then !only inti time present
     do i = 1, size(file_ids)
      fileptr => this%FMS_diag_files(file_ids(i))%FMS_diag_file
+     call fileptr%set_buffer_ids(fieldptr%buffer_ids(i))
      call fileptr%add_field_and_yaml_id(fieldptr%get_id(), diag_field_indices(i))
      call fileptr%add_start_time(init_time, this%current_model_time)
      call fileptr%set_file_time_ops (fieldptr%diag_field(i), fieldptr%is_static())
@@ -268,6 +270,7 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
   else !no axis or init time present
     do i = 1, size(file_ids)
      fileptr => this%FMS_diag_files(file_ids(i))%FMS_diag_file
+     call fileptr%set_buffer_ids(fieldptr%buffer_ids(i))
      call fileptr%add_field_and_yaml_id(fieldptr%get_id(), diag_field_indices(i))
      call fileptr%set_file_time_ops (fieldptr%diag_field(i), fieldptr%is_static())
     enddo
@@ -551,6 +554,7 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
     return
   else
 !!TODO: Loop through fields and do averages/math functions
+    call this%allocate_diag_field_output_buffers(field_data, diag_field_id)
     do i = 1, size(this%FMS_diag_fields(diag_field_id)%buffer_ids)
       buffer_id = this%FMS_diag_fields(diag_field_id)%buffer_ids(i)
 
@@ -693,7 +697,7 @@ subroutine fms_diag_do_io(this, is_end_of_run)
     if (diag_file%is_time_to_write(model_time)) then
       call diag_file%increase_unlim_dimension_level()
       call diag_file%write_time_data()
-      !TODO call diag_file%add_variable_data()
+      call diag_file%write_field_data(this%FMS_diag_output_buffers)
       call diag_file%update_next_write(model_time)
       call diag_file%update_current_new_file_freq_index(model_time)
       if (diag_file%is_time_to_close_file(model_time)) call diag_file%close_diag_file()
@@ -980,6 +984,8 @@ subroutine allocate_diag_field_output_buffers(this, field_data, field_id)
   real :: missing_value !< Fill value to initialize output buffers
   character(len=128), allocatable :: var_name !< Field name to initialize output buffers
 
+  if (this%FMS_diag_fields(field_id)%buffer_allocated) return
+
   ! Determine the type of the field data
   var_type = get_var_type(field_data(1, 1, 1, 1))
 
@@ -1017,16 +1023,22 @@ subroutine allocate_diag_field_output_buffers(this, field_data, field_id)
   ! Loop over a number of fields/buffers where this variable occurs
   do i = 1, size(this%FMS_diag_fields(field_id)%buffer_ids)
     buffer_id = this%FMS_diag_fields(field_id)%buffer_ids(i)
-    ptr_diag_field_yaml => diag_yaml%get_diag_field_from_id(buffer_id)
+    ptr_diag_field_yaml => diag_yaml%diag_fields(buffer_id)
     num_diurnal_samples = ptr_diag_field_yaml%get_n_diurnal() !< Get number of diurnal samples
 
     ! If diurnal axis exists, fill lengths of axes.
     if (num_diurnal_samples .ne. 0) then
       allocate(axes_length(ndims + 1)) !< Include extra length for the diurnal axis
-      do j = 1, ndims
-        axes_length(j) = this%fms_get_axis_length(axis_ids(j))
-      enddo
+    else
+      allocate(axes_length(ndims))
+    endif
+
+    do j = 1, ndims
       !TODO This is going to require more work for when we have subRegion variables
+      axes_length(j) = this%fms_get_axis_length(axis_ids(j))
+    enddo
+
+    if (num_diurnal_samples .ne. 0) then
       axes_length(ndims + 1) = num_diurnal_samples
       ndims = ndims + 1 !< Add one more dimension for the diurnal axis
     endif
@@ -1036,6 +1048,7 @@ subroutine allocate_diag_field_output_buffers(this, field_data, field_id)
     ! outputBuffer4d_type or outputBuffer5d_type.
     if (.not. allocated(this%FMS_diag_output_buffers(buffer_id)%diag_buffer_obj)) then
       this%FMS_diag_output_buffers(buffer_id) = fms_diag_output_buffer_create_container(ndims)
+      this%FMS_diag_output_buffers(buffer_id)%var_name = ptr_diag_field_yaml%get_var_outname()
     end if
 
     ptr_diag_buffer_obj => this%FMS_diag_output_buffers(buffer_id)%diag_buffer_obj
@@ -1074,7 +1087,9 @@ subroutine allocate_diag_field_output_buffers(this, field_data, field_id)
       class default
         call mpp_error( FATAL, 'allocate_diag_field_output_buffers: invalid buffer type')
     end select
+    deallocate(axes_length)
   enddo
+  this%FMS_diag_fields(field_id)%buffer_allocated = .true.
 #else
   call mpp_error( FATAL, "allocate_diag_field_output_buffers: "//&
     "you can not use the modern diag manager without compiling with -Duse_yaml")
@@ -1126,4 +1141,5 @@ function fms_diag_compare_window(this, field, field_id, &
     "you can not use the modern diag manager without compiling with -Duse_yaml")
 #endif
 end function fms_diag_compare_window
+
 end module fms_diag_object_mod

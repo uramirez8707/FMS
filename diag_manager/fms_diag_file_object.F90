@@ -45,6 +45,7 @@ use fms_diag_axis_object_mod, only: diagDomain_t, get_domain_and_domain_type, fm
                                     fmsDiagFullAxis_type, define_subaxis, define_diurnal_axis, &
                                     fmsDiagDiurnalAxis_type, create_new_z_subaxis
 use fms_diag_field_object_mod, only: fmsDiagField_type
+use fms_diag_output_buffer_mod, only: fmsDiagOutputBufferContainer_type, fmsDiagOutputBuffer_class
 use mpp_mod, only: mpp_get_current_pelist, mpp_npes, mpp_root_pe, mpp_pe, mpp_error, FATAL, stdout, &
                    uppercase, lowercase
 
@@ -87,14 +88,16 @@ type :: fmsDiagFile_type
   integer, allocatable                         :: num_registered_fields !< The number of fields registered
                                                                         !! to the file
   integer, dimension(:), allocatable :: axis_ids !< Array of axis ids in the file
-  integer, dimension(:), allocatable :: buffer_ids !< array of buffer ids associated with the file
   integer :: number_of_axis !< Number of axis in the file
+  integer, dimension(:), allocatable :: buffer_ids !< array of buffer ids associated with the file
+  integer :: number_of_buffers !< Number of buffers that have been added to the file
   logical :: time_ops !< .True. if file contains variables that are time_min, time_max, time_average or time_sum
   integer :: unlim_dimension_level !< The unlimited dimension level currently being written
   logical :: is_static !< .True. if the frequency is -1
 
  contains
   procedure, public :: add_field_and_yaml_id
+  procedure, public :: set_buffer_ids
   procedure, public :: is_field_registered
   procedure, public :: init_diurnal_axis
   procedure, public :: has_file_metadata_from_model
@@ -164,6 +167,7 @@ type fmsDiagFileContainer_type
   procedure :: is_time_to_write
   procedure :: is_time_to_close_file
   procedure :: write_time_data
+  procedure :: write_field_data
   procedure :: update_next_write
   procedure :: update_current_new_file_freq_index
   procedure :: increase_unlim_dimension_level
@@ -208,13 +212,16 @@ logical function fms_diag_files_object_init (files_array)
      obj%diag_yaml_file => diag_yaml%diag_files(i)
      obj%id = i
      allocate(obj%field_ids(diag_yaml%diag_files(i)%size_file_varlist()))
+     allocate(obj%buffer_ids(diag_yaml%diag_files(i)%size_file_varlist()))
      allocate(obj%yaml_ids(diag_yaml%diag_files(i)%size_file_varlist()))
      allocate(obj%field_registered(diag_yaml%diag_files(i)%size_file_varlist()))
      !! Initialize the integer arrays
      obj%field_ids = DIAG_NOT_REGISTERED
      obj%yaml_ids = DIAG_NOT_REGISTERED
+     obj%buffer_ids = DIAG_NOT_REGISTERED
      obj%field_registered = .FALSE.
      obj%num_registered_fields = 0
+     obj%number_of_buffers = 0
 
      !> These will be set in a set_file_domain
      obj%type_of_domain = NO_DOMAIN
@@ -284,6 +291,16 @@ subroutine add_field_and_yaml_id (this, new_field_id, yaml_id)
                  "number of fields.")
   endif
 end subroutine add_field_and_yaml_id
+
+!> \brief Adds a field and yaml ID to the file
+subroutine set_buffer_ids (this, buffer_id)
+  class(fmsDiagFile_type), intent(inout) :: this         !< The file object
+  integer,                 intent(in)    :: buffer_id    !< Buffer id to add to the file
+
+  this%number_of_buffers = this%number_of_buffers + 1
+  this%buffer_ids(this%number_of_buffers) = buffer_id
+
+end subroutine set_buffer_ids
 
 !> \brief Initializes a diurnal axis for a fileobj
 !! \note This is going to be called for every variable in the file, if the variable is not a diurnal variable
@@ -1155,6 +1172,24 @@ subroutine write_time_data(this)
   endif
 
 end subroutine write_time_data
+
+!> \brief Write out the field data to the file
+subroutine write_field_data(this, buffer_obj)
+  class(fmsDiagFileContainer_type), intent(in), target   :: this !< The file object
+  type(fmsDiagOutputBufferContainer_type), intent(in), target :: buffer_obj(:)
+
+  class(fmsDiagFile_type), pointer     :: diag_file      !< Diag_file object to open
+  class(FmsNetcdfFile_t), pointer :: fileobj
+  integer :: i
+
+  diag_file => this%FMS_diag_file
+  fileobj => diag_file%fileobj
+
+  do i = 1, diag_file%number_of_buffers
+    call buffer_obj(diag_file%buffer_ids(i))%write_buffer(fileobj)
+  enddo
+
+end subroutine write_field_data
 
 !> \brief Updates the current_new_file_freq_index if using a new_file_freq
 subroutine update_current_new_file_freq_index(this, time_step)

@@ -75,7 +75,7 @@ type fmsDiagField_type
                                                                            !! been allocated
      logical, allocatable, private                    :: math_needs_to_be_done !< If true, do math
                                                                            !! functions. False when done.
-     logical, allocatable, dimension(:)               :: buffer_allocated  !< True if a buffer pointed by
+     logical, allocatable                             :: buffer_allocated  !< True if a buffer pointed by
                                                                            !! the corresponding index in
                                                                            !! buffer_ids(:) is allocated.
   contains
@@ -1158,7 +1158,7 @@ subroutine write_field_metadata(this, fileobj, file_id, yaml_id, diag_axis, unli
   else
     call register_variable_attribute(fileobj, var_name, "missing_value", &
       get_default_missing_value(field_yaml%get_var_kind()))
-      call register_variable_attribute(fileobj, var_name, "_FillValue", &
+    call register_variable_attribute(fileobj, var_name, "_FillValue", &
       get_default_missing_value(field_yaml%get_var_kind()))
   endif
 
