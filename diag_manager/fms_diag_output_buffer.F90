@@ -30,7 +30,7 @@ use iso_c_binding
 use time_manager_mod, only: time_type
 use mpp_mod, only: mpp_error, FATAL
 use diag_data_mod, only: DIAG_NULL, DIAG_NOT_REGISTERED, i4, i8, r4, r8
-use fms2_io_mod, only: FmsNetcdfFile_t, write_data
+use fms2_io_mod, only: FmsNetcdfFile_t, write_data, FmsNetcdfDomainFile_t, FmsNetcdfUnstructuredDomainFile_t
 
 implicit none
 
@@ -66,6 +66,7 @@ type :: fmsDiagOutputBufferContainer_type
   contains
 
   procedure :: write_buffer
+  procedure :: write_buffer_wrapper
 end type
 
 !> Scalar buffer type to extend fmsDiagBufferContainer_type
@@ -166,25 +167,40 @@ logical function fms_diag_output_buffer_init(buffobjs, buff_list_size)
 end function fms_diag_output_buffer_init
 
 !> @brief Write the buffer to the file
-subroutine write_buffer(this, fileobj)
+subroutine write_buffer(this, fileobj, unlim_dim_level)
+  class(fmsDiagOutputBufferContainer_type), intent(in) :: this !< buffer object to set id for
+  integer, intent(in), optional :: unlim_dim_level
+  class(FmsNetcdfFile_t), intent(in) :: fileobj
+
+  select type(fileobj)
+  type is (FmsNetcdfFile_t)
+    call this%write_buffer_wrapper(fileobj, unlim_dim_level=unlim_dim_level)
+  type is (FmsNetcdfDomainFile_t)
+    call this%write_buffer_wrapper(fileobj, unlim_dim_level=unlim_dim_level)
+  type is (FmsNetcdfUnstructuredDomainFile_t)
+    call this%write_buffer_wrapper(fileobj, unlim_dim_level=unlim_dim_level)
+  end select
+end subroutine write_buffer
+
+subroutine write_buffer_wrapper(this, fileobj, unlim_dim_level)
   class(fmsDiagOutputBufferContainer_type), intent(in) :: this !< buffer object to set id for
   class(FmsNetcdfFile_t), intent(in) :: fileobj
+  integer, intent(in), optional :: unlim_dim_level
 
   select type(buffer_obj=>this%diag_buffer_obj)
   type is (outputBuffer0d_type)
-    call write_data(fileobj, this%var_name, buffer_obj%buffer)
+    call write_data(fileobj, this%var_name, buffer_obj%buffer(1), unlim_dim_level=unlim_dim_level)
   type is (outputBuffer1d_type)
-    call write_data(fileobj, this%var_name, buffer_obj%buffer)
+    call write_data(fileobj, this%var_name, buffer_obj%buffer, unlim_dim_level=unlim_dim_level)
   type is (outputBuffer2d_type)
-    call write_data(fileobj, this%var_name, buffer_obj%buffer)
+    call write_data(fileobj, this%var_name, buffer_obj%buffer, unlim_dim_level=unlim_dim_level)
   type is (outputBuffer3d_type)
-    call write_data(fileobj, this%var_name, buffer_obj%buffer)
+    call write_data(fileobj, this%var_name, buffer_obj%buffer, unlim_dim_level=unlim_dim_level)
   type is (outputBuffer4d_type)
-    call write_data(fileobj, this%var_name, buffer_obj%buffer)
+    call write_data(fileobj, this%var_name, buffer_obj%buffer, unlim_dim_level=unlim_dim_level)
   type is (outputBuffer5d_type)
-    call write_data(fileobj, this%var_name, buffer_obj%buffer)
+    call write_data(fileobj, this%var_name, buffer_obj%buffer, unlim_dim_level=unlim_dim_level)
   end select
-
 end subroutine
 
 !> Creates a container type encapsulating a new buffer object for the given dimensions.

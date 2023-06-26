@@ -1185,9 +1185,15 @@ subroutine write_field_data(this, buffer_obj)
   diag_file => this%FMS_diag_file
   fileobj => diag_file%fileobj
 
-  do i = 1, diag_file%number_of_buffers
-    call buffer_obj(diag_file%buffer_ids(i))%write_buffer(fileobj)
-  enddo
+  if (diag_file%is_static) then
+    do i = 1, diag_file%number_of_buffers
+      call buffer_obj(diag_file%buffer_ids(i))%write_buffer(fileobj)
+    enddo
+  else
+    do i = 1, diag_file%number_of_buffers
+      call buffer_obj(diag_file%buffer_ids(i))%write_buffer(fileobj, unlim_dim_level=diag_file%unlim_dimension_level)
+    enddo
+  endif
 
 end subroutine write_field_data
 
