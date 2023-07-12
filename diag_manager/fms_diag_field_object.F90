@@ -388,9 +388,13 @@ subroutine set_data_buffer (this, input_data, diag_axis, is, js, ks, ie, je, ke)
   class (fmsDiagField_type) , intent(inout):: this !< The field object
   class(*), dimension(:,:,:,:), intent(in) :: input_data !< The input array
   class(fmsDiagAxisContainer_type),intent(in)   :: diag_axis(:)          !< Array of diag_axis
-  integer :: is, js, ks !< Starting indicies of the field_data
-  integer :: ie, je, ke !< Ending indicied of the field_data
-!> Allocate the buffer if it is not allocated
+  integer :: is, js, ks !< Starting indicies of the field_data relative to the global domain
+  integer :: ie, je, ke !< Ending indicied of the field_data relative to the global domain
+  integer :: isc, jsc, ksc !< Starting indicies of the field_data relative to the compute domain
+  integer :: iec, jec, kec !< Ending indicied of the field_data relative to the compute domain
+  integer :: cds(4) !< Compute domain starting indices
+
+  !> Allocate the buffer if it is not allocated
   if (.not.allocated(this%data_buffer_allocated)) this%data_buffer_allocated = .false.
   if (.not.this%data_buffer_allocated) &
     this%data_buffer_allocated =  allocate_data_buffer(this, input_data, diag_axis)
@@ -398,27 +402,35 @@ subroutine set_data_buffer (this, input_data, diag_axis, is, js, ks, ie, je, ke)
     call mpp_error ("set_data_buffer", "The data buffer for the field "//trim(this%varname)//" was unable to be "//&
       "allocated.", FATAL)
 
+  cds = get_starting_compute_domain(this%axis_ids, diag_axis)
+  isc = is - cds(1) + 1
+  jsc = js - cds(2) + 1
+  ksc = ks - cds(3) + 1
+  iec = isc + size(input_data, 1) - 1
+  jec = jsc + size(input_data, 2) - 1
+  kec = ksc + size(input_data, 3) - 1
+
 !> Buffer a copy of the data
   select type (input_data)
     type is (real(kind=r4_kind))
       select type (db => this%data_buffer)
         type is (real(kind=r4_kind))
-          db(is:ie, js:je, ks:ke, :) = input_data
+          db(isc:iec, jsc:jec, ksc:kec, :) = input_data
       end select
     type is (real(kind=r8_kind))
       select type (db => this%data_buffer)
         type is (real(kind=r8_kind))
-          db(is:ie, js:je, ks:ke, :) = input_data
+          db(isc:iec, jsc:jec, ksc:kec, :) = input_data
       end select
     type is (integer(kind=i4_kind))
       select type (db => this%data_buffer)
         type is (integer(kind=i4_kind))
-          db(is:ie, js:je, ks:ke, :) = input_data
+          db(isc:iec, jsc:jec, ksc:kec, :) = input_data
       end select
     type is (integer(kind=i8_kind))
       select type (db => this%data_buffer)
         type is (integer(kind=i8_kind))
-          db(is:ie, js:je, ks:ke, :) = input_data
+          db(isc:iec, jsc:jec, ksc:kec, :) = input_data
       end select
     class default
         call mpp_error ("set_data_buffer", "The data input to set_data_buffer for "//&
@@ -1639,6 +1651,28 @@ subroutine dump_field_obj (this, unit_num)
   endif
 
 end subroutine
+
+!< @brief Get the starting compute domain indices for a set of axis
+!! @return compute domain starting indices
+function get_starting_compute_domain(axis_ids, diag_axis) &
+result(compute_domain)
+  integer,                         intent(in) :: axis_ids(:)  !< Array of axis ids
+  class(fmsDiagAxisContainer_type),intent(in) :: diag_axis(:) !< Array of axis object
+
+  integer :: compute_domain(4)
+  integer :: a              !< For looping through axes
+  integer :: compute_idx(2) !< Compute domain indices (starting, ending)
+  logical :: dummy          !< Dummy variable for the `get_compute_domain` subroutine
+
+  compute_domain = 1
+  axis_loop: do a = 1,size(axis_ids)
+    select type (axis => diag_axis(axis_ids(a))%axis)
+      type is (fmsDiagFullAxis_type)
+        call axis%get_compute_domain(compute_idx, dummy)
+        if ( compute_idx(1) .ne. diag_null) compute_domain(a) = compute_idx(1)
+    end select
+  enddo axis_loop
+end function get_starting_compute_domain
 
 #endif
 end module fms_diag_field_object_mod
