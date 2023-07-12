@@ -705,12 +705,15 @@ subroutine set_file_domain(this, domain, type_of_domain)
 end subroutine set_file_domain
 
 !> @brief Loops through a variable's axis_ids and adds them to the FMSDiagFile object if they don't exist
-subroutine add_axes(this, axis_ids, diag_axis, naxis, yaml_id)
-  class(fmsDiagFile_type),          intent(inout)       :: this          !< The file object
-  integer,                          INTENT(in)          :: axis_ids(:)   !< Array of axes_ids
-  class(fmsDiagAxisContainer_type), intent(inout)       :: diag_axis(:)  !< Diag_axis object
-  integer,                          intent(inout)       :: naxis         !< Number of axis that have been registered
-  integer,                          intent(in)          :: yaml_id       !< Yaml id of the yaml section for this var
+subroutine add_axes(this, axis_ids, diag_axis, naxis, yaml_id, output_buffers)
+  class(fmsDiagFile_type),                 intent(inout) :: this              !< The file object
+  integer,                                 INTENT(in)    :: axis_ids(:)       !< Array of axes_ids
+  class(fmsDiagAxisContainer_type),        intent(inout) :: diag_axis(:)      !< Diag_axis object
+  integer,                                 intent(inout) :: naxis             !< Number of axis that have been
+                                                                              !! registered
+  integer,                                 intent(in)    :: yaml_id           !< Yaml id of the field section for
+                                                                              !! this var
+  type(fmsDiagOutputBufferContainer_type), intent(inout) :: output_buffers(:) !< Array of output buffers
 
   type(diagYamlFilesVar_type), pointer     :: field_yaml  !< pointer to the yaml entry
 
@@ -749,6 +752,9 @@ subroutine add_axes(this, axis_ids, diag_axis, naxis, yaml_id)
         do i = 1, size(var_axis_ids)
           this%number_of_axis = this%number_of_axis + 1 !< This is the current number of axis in the file
           this%axis_ids(this%number_of_axis) = diag_axis(var_axis_ids(i))%axis%get_subaxes_id()
+
+          !< Change the variable axis ids to the subaxis that was just created
+          var_axis_ids(i) = this%axis_ids(this%number_of_axis)
         enddo
       else
         this%axis_ids = diag_null
@@ -773,6 +779,9 @@ subroutine add_axes(this, axis_ids, diag_axis, naxis, yaml_id)
       endif
     enddo
   end select
+
+  !> Add the axis to the buffer object
+  call output_buffers(yaml_id)%add_axis_ids(var_axis_ids)
 end subroutine add_axes
 
 !> @brief adds the start time to the fileobj
