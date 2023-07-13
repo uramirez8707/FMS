@@ -700,8 +700,6 @@ diag_files:
     var_name: var4
     output_name: var4_bounded
     reduction: average
-#TODO subregional variables do not work
-    write_var: False
     kind: r8
     zbounds: 2.0 3.0
 - file_name: file3
@@ -730,8 +728,6 @@ diag_files:
   freq: 6 hours
   time_units: hours
   unlimdim: time
-#TODO subregional variables do not currently work
-  write_file: False
   varlist:
   - module: atm_mod
     var_name: var4
