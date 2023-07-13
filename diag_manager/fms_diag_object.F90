@@ -644,8 +644,7 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
 
         diag_field => this%FMS_diag_fields(file_field_ids(ifield))
         !> Check if math needs to be done
-        ! math = diag_field%get_math_needs_to_be_done()
-        math = .false. !TODO: replace this with real thing
+        math = diag_field%get_math_needs_to_be_done()
         calling_math: if (math) then
           !!TODO: call math functions !!
         endif calling_math
@@ -1032,7 +1031,7 @@ subroutine allocate_diag_field_output_buffers(this, field_data, field_id)
       ndims = size(axis_ids)
     endif
 
-    ptr_diag_field_yaml => diag_yaml%get_diag_field_from_id(buffer_id)
+    ptr_diag_field_yaml => diag_yaml%diag_fields(buffer_id)
     num_diurnal_samples = ptr_diag_field_yaml%get_n_diurnal() !< Get number of diurnal samples
 
     ! If diurnal axis exists, fill lengths of axes.
@@ -1096,6 +1095,7 @@ subroutine allocate_diag_field_output_buffers(this, field_data, field_id)
       class default
         call mpp_error( FATAL, 'allocate_diag_field_output_buffers: invalid buffer type')
     end select
+    if (allocated(axis_ids)) deallocate(axis_ids)
     deallocate(axes_length)
   enddo
   this%FMS_diag_fields(field_id)%buffer_allocated = .true.
