@@ -873,8 +873,7 @@ title: test_diag_manager
 base_date: 2 1 1 0 0 0
 diag_files:
 - file_name: file_openmp_test
-  freq: 1
-  freq_units: hours
+  freq: 1 hours
   time_units: hours
   unlimdim: time
   varlist:
@@ -897,6 +896,7 @@ my_test_count=`expr $my_test_count + 1`
   test_expect_success "Test the modern diag manager end to end but it uses the openmp stuff(test $my_test_count)" '
     mpirun -n 6 ../test_dm_openmp
   '
+export OMP_NUM_THREADS=1
 else
   my_test_count=`expr $my_test_count + 1`
   test_expect_failure "test modern diag manager failure when compiled without -Duse-yaml flag (test $my_test_count)" '
