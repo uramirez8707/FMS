@@ -1042,7 +1042,6 @@ subroutine allocate_diag_field_output_buffers(this, field_data, field_id)
     endif
 
     do j = 1, ndims
-      !TODO This is going to require more work for when we have subRegion variables
       axes_length(j) = this%fms_get_axis_length(axis_ids(j))
     enddo
 
