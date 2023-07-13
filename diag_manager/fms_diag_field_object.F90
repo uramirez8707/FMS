@@ -1495,10 +1495,10 @@ function get_default_missing_value(var_type) &
 
   select case(var_type)
   case (r4)
-    allocate(integer(kind=r4_kind) :: rslt)
+    allocate(real(kind=r4_kind) :: rslt)
     rslt = real(CMOR_MISSING_VALUE, kind=r4_kind)
   case (r8)
-    allocate(integer(kind=r8_kind) :: rslt)
+    allocate(real(kind=r8_kind) :: rslt)
     rslt = real(CMOR_MISSING_VALUE, kind=r8_kind)
   case default
   end select
