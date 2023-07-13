@@ -67,7 +67,9 @@ type :: fmsDiagOutputBufferContainer_type
   contains
 
   procedure :: write_buffer
-  procedure :: write_buffer_wrapper
+  procedure :: write_buffer_wrapper_netcdf
+  procedure :: write_buffer_wrapper_domain
+  procedure :: write_buffer_wrapper_u
   procedure :: add_axis_ids
   procedure :: get_axis_ids
 end type
@@ -177,17 +179,17 @@ subroutine write_buffer(this, fileobj, unlim_dim_level)
 
   select type(fileobj)
   type is (FmsNetcdfFile_t)
-    call this%write_buffer_wrapper(fileobj, unlim_dim_level=unlim_dim_level)
+    call this%write_buffer_wrapper_netcdf(fileobj, unlim_dim_level=unlim_dim_level)
   type is (FmsNetcdfDomainFile_t)
-    call this%write_buffer_wrapper(fileobj, unlim_dim_level=unlim_dim_level)
+    call this%write_buffer_wrapper_domain(fileobj, unlim_dim_level=unlim_dim_level)
   type is (FmsNetcdfUnstructuredDomainFile_t)
-    call this%write_buffer_wrapper(fileobj, unlim_dim_level=unlim_dim_level)
+    call this%write_buffer_wrapper_u(fileobj, unlim_dim_level=unlim_dim_level)
   end select
 end subroutine write_buffer
 
-subroutine write_buffer_wrapper(this, fileobj, unlim_dim_level)
+subroutine write_buffer_wrapper_netcdf(this, fileobj, unlim_dim_level)
   class(fmsDiagOutputBufferContainer_type), intent(in) :: this !< buffer object to set id for
-  class(FmsNetcdfFile_t), intent(in) :: fileobj
+  type(FmsNetcdfFile_t), intent(in) :: fileobj
   integer, intent(in), optional :: unlim_dim_level
 
   select type(buffer_obj=>this%diag_buffer_obj)
@@ -205,6 +207,49 @@ subroutine write_buffer_wrapper(this, fileobj, unlim_dim_level)
     call write_data(fileobj, this%var_name, buffer_obj%buffer, unlim_dim_level=unlim_dim_level)
   end select
 end subroutine
+
+subroutine write_buffer_wrapper_domain(this, fileobj, unlim_dim_level)
+  class(fmsDiagOutputBufferContainer_type), intent(in) :: this !< buffer object to set id for
+  type(FmsNetcdfDomainFile_t), intent(in) :: fileobj
+  integer, intent(in), optional :: unlim_dim_level
+
+  select type(buffer_obj=>this%diag_buffer_obj)
+  type is (outputBuffer0d_type)
+    call write_data(fileobj, this%var_name, buffer_obj%buffer(1), unlim_dim_level=unlim_dim_level)
+  type is (outputBuffer1d_type)
+    call write_data(fileobj, this%var_name, buffer_obj%buffer, unlim_dim_level=unlim_dim_level)
+  type is (outputBuffer2d_type)
+    call write_data(fileobj, this%var_name, buffer_obj%buffer, unlim_dim_level=unlim_dim_level)
+  type is (outputBuffer3d_type)
+    call write_data(fileobj, this%var_name, buffer_obj%buffer, unlim_dim_level=unlim_dim_level)
+  type is (outputBuffer4d_type)
+    call write_data(fileobj, this%var_name, buffer_obj%buffer, unlim_dim_level=unlim_dim_level)
+  type is (outputBuffer5d_type)
+    call write_data(fileobj, this%var_name, buffer_obj%buffer, unlim_dim_level=unlim_dim_level)
+  end select
+end subroutine
+
+subroutine write_buffer_wrapper_u(this, fileobj, unlim_dim_level)
+  class(fmsDiagOutputBufferContainer_type), intent(in) :: this !< buffer object to set id for
+  type(FmsNetcdfUnstructuredDomainFile_t), intent(in) :: fileobj
+  integer, intent(in), optional :: unlim_dim_level
+
+  select type(buffer_obj=>this%diag_buffer_obj)
+  type is (outputBuffer0d_type)
+    call write_data(fileobj, this%var_name, buffer_obj%buffer(1), unlim_dim_level=unlim_dim_level)
+  type is (outputBuffer1d_type)
+    call write_data(fileobj, this%var_name, buffer_obj%buffer, unlim_dim_level=unlim_dim_level)
+  type is (outputBuffer2d_type)
+    call write_data(fileobj, this%var_name, buffer_obj%buffer, unlim_dim_level=unlim_dim_level)
+  type is (outputBuffer3d_type)
+    call write_data(fileobj, this%var_name, buffer_obj%buffer, unlim_dim_level=unlim_dim_level)
+  type is (outputBuffer4d_type)
+    call write_data(fileobj, this%var_name, buffer_obj%buffer, unlim_dim_level=unlim_dim_level)
+  type is (outputBuffer5d_type)
+    call write_data(fileobj, this%var_name, buffer_obj%buffer, unlim_dim_level=unlim_dim_level)
+  end select
+end subroutine
+
 
 !> Creates a container type encapsulating a new buffer object for the given dimensions.
 !! The buffer object will still need to be allocated to a type via allocate_buffer() before use.
