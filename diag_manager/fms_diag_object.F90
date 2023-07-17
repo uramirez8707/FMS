@@ -173,7 +173,7 @@ integer function fms_register_diag_field_obj &
  CHARACTER(len=*),               INTENT(in)    :: modname               !< The module name
  CHARACTER(len=*),               INTENT(in)    :: varname               !< The variable name
  TYPE(time_type),  OPTIONAL,     INTENT(in)    :: init_time             !< Initial time
- INTEGER, TARGET,  OPTIONAL,     INTENT(in)    :: axes(:)               !< The axes indicies
+ INTEGER,          OPTIONAL,     INTENT(in)    :: axes(:)               !< The axes indicies
  CHARACTER(len=*), OPTIONAL,     INTENT(in)    :: longname              !< THe variables long name
  CHARACTER(len=*), OPTIONAL,     INTENT(in)    :: units                 !< The units of the variables
  CHARACTER(len=*), OPTIONAL,     INTENT(in)    :: standname             !< The variables stanard name
@@ -224,6 +224,7 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
 !> Initialize buffer_ids of this field with the diag_field_indices(diag_field_indices)
 !! of the sorted variable list
   fieldptr%buffer_ids = get_diag_field_ids(diag_field_indices)
+  call add_field_id_to_buffers(fieldptr%buffer_ids, this%FMS_diag_output_buffers, this%registered_variables)
 
 !> Allocate and initialize member buffer_allocated of this field
   fieldptr%buffer_allocated = .false.
@@ -644,7 +645,7 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
 
         diag_field => this%FMS_diag_fields(file_field_ids(ifield))
         !> Check if math needs to be done
-        math = diag_field%get_math_needs_to_be_done()
+        math = .true. !diag_field%get_math_needs_to_be_done()
         calling_math: if (math) then
           !!TODO: call math functions !!
         endif calling_math
@@ -699,7 +700,7 @@ subroutine fms_diag_do_io(this, is_end_of_run)
     if (diag_file%is_time_to_write(model_time)) then
       call diag_file%increase_unlim_dimension_level()
       call diag_file%write_time_data()
-      call diag_file%write_field_data(this%FMS_diag_output_buffers)
+      call diag_file%write_field_data(this%FMS_diag_fields, this%FMS_diag_output_buffers)
       call diag_file%update_next_write(model_time)
       call diag_file%update_current_new_file_freq_index(model_time)
       if (diag_file%is_time_to_close_file(model_time)) call diag_file%close_diag_file()
@@ -1017,10 +1018,7 @@ subroutine allocate_diag_field_output_buffers(this, field_data, field_id)
   endif
 
   ! Determine dimensions of the field
-  is_scalar = .True.
-  if (this%FMS_diag_fields(field_id)%has_axis_ids()) then
-    is_scalar = .False.
-  endif
+  is_scalar = this%FMS_diag_fields(field_id)%is_scalar()
 
   ! Loop over a number of fields/buffers where this variable occurs
   do i = 1, size(this%FMS_diag_fields(field_id)%buffer_ids)
@@ -1054,7 +1052,7 @@ subroutine allocate_diag_field_output_buffers(this, field_data, field_id)
     ! outputBuffer0d_type, outputBuffer1d_type, outputBuffer2d_type, outputBuffer3d_type,
     ! outputBuffer4d_type or outputBuffer5d_type.
     if (.not. allocated(this%FMS_diag_output_buffers(buffer_id)%diag_buffer_obj)) then
-      this%FMS_diag_output_buffers(buffer_id) = fms_diag_output_buffer_create_container(ndims)
+      call fms_diag_output_buffer_create_container(ndims, this%FMS_diag_output_buffers(buffer_id))
       this%FMS_diag_output_buffers(buffer_id)%var_name = ptr_diag_field_yaml%get_var_outname()
     end if
 

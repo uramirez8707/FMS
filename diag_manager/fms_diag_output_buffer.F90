@@ -64,6 +64,7 @@ type :: fmsDiagOutputBufferContainer_type
   class(fmsDiagOutputBuffer_class), allocatable :: diag_buffer_obj !< any 0-5d buffer object
   character(len=:), allocatable :: var_name !< Name of the field
   integer,                          allocatable :: axis_ids(:)     !< Axis ids for the buffer
+  integer                                       :: field_id        !< The id of the field the buffer belongs to
   contains
 
   procedure :: write_buffer
@@ -72,6 +73,7 @@ type :: fmsDiagOutputBufferContainer_type
   procedure :: write_buffer_wrapper_u
   procedure :: add_axis_ids
   procedure :: get_axis_ids
+  procedure :: get_field_id
 end type
 
 !> Scalar buffer type to extend fmsDiagBufferContainer_type
@@ -155,6 +157,7 @@ public :: fmsDiagOutputBufferContainer_type
 ! public routines
 public :: fms_diag_output_buffer_init
 public :: fms_diag_output_buffer_create_container
+public :: add_field_id_to_buffers
 
 contains
 
@@ -254,33 +257,31 @@ end subroutine
 !> Creates a container type encapsulating a new buffer object for the given dimensions.
 !! The buffer object will still need to be allocated to a type via allocate_buffer() before use.
 !> @result A fmsDiagBufferContainer_type that holds a bufferNd_type, where N is buff_dims
-function fms_diag_output_buffer_create_container(buff_dims) &
-result(rslt)
+subroutine fms_diag_output_buffer_create_container(buff_dims, buffer_obj)
   integer, intent(in)                            :: buff_dims !< dimensions
-  type(fmsDiagOutputBufferContainer_type), allocatable :: rslt
+  type(fmsDiagOutputBufferContainer_type), intent(inout)        :: buffer_obj
   character(len=5) :: dim_output !< string to output buff_dims on error
 
-  allocate(rslt)
   select case (buff_dims)
     case (0)
-      allocate(outputBuffer0d_type :: rslt%diag_buffer_obj)
+      allocate(outputBuffer0d_type :: buffer_obj%diag_buffer_obj)
     case (1)
-      allocate(outputBuffer1d_type :: rslt%diag_buffer_obj)
+      allocate(outputBuffer1d_type :: buffer_obj%diag_buffer_obj)
     case (2)
-      allocate(outputBuffer2d_type :: rslt%diag_buffer_obj)
+      allocate(outputBuffer2d_type :: buffer_obj%diag_buffer_obj)
     case (3)
-      allocate(outputBuffer3d_type :: rslt%diag_buffer_obj)
+      allocate(outputBuffer3d_type :: buffer_obj%diag_buffer_obj)
     case (4)
-      allocate(outputBuffer4d_type :: rslt%diag_buffer_obj)
+      allocate(outputBuffer4d_type :: buffer_obj%diag_buffer_obj)
     case (5)
-      allocate(outputBuffer5d_type :: rslt%diag_buffer_obj)
+      allocate(outputBuffer5d_type :: buffer_obj%diag_buffer_obj)
     case default
       write( dim_output, *) buff_dims
       dim_output = adjustl(dim_output)
       call mpp_error(FATAL, 'fms_diag_buffer_create_container: invalid number of dimensions given:' // dim_output //&
                             '. Must be 0-5')
   end select
-end function fms_diag_output_buffer_create_container
+end subroutine fms_diag_output_buffer_create_container
 
 !!--------generic routines for any fmsDiagBuffer_class objects
 
@@ -1541,5 +1542,26 @@ function get_axis_ids(this) &
   endif
 end function
 
+function get_field_id(this) &
+  result(res)
+
+  class(fmsDiagOutputBufferContainer_type), intent(in) :: this        !< Buffer object
+  integer :: res
+
+  res = this%field_id
+end function get_field_id
+
+subroutine add_field_id_to_buffers(buffer_ids, output_buffers, field_id)
+  integer,                                 intent(in)    :: buffer_ids(:)
+  type(fmsDiagOutputBufferContainer_type), intent(inout) :: output_buffers(:)
+  integer,                                 intent(in)    :: field_id
+
+  integer :: i !< To loop through the buffer_ids
+
+  do i = 1, size(buffer_ids)
+    output_buffers(buffer_ids(i))%field_id = field_id
+  enddo
+
+end subroutine add_field_id_to_buffers
 #endif
 end module fms_diag_output_buffer_mod

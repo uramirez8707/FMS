@@ -678,6 +678,15 @@ diag_files:
     output_name: potato
     reduction: average
     kind: r4
+  - module: atm_mod
+    var_name: var7
+    reduction: none
+    kind: r4
+  - module: lnd_mod
+    var_name: var1
+    output_name: brick_temp
+    reduction: average
+    kind: r4
 - file_name: file2
   freq: 6 hours
   time_units: hours

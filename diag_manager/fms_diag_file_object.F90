@@ -1208,13 +1208,16 @@ subroutine write_time_data(this)
 end subroutine write_time_data
 
 !> \brief Write out the field data to the file
-subroutine write_field_data(this, buffer_obj)
+subroutine write_field_data(this, field_obj, buffer_obj)
   class(fmsDiagFileContainer_type), intent(in), target   :: this !< The file object
+  type(fmsDiagField_type),                 intent(in), target :: field_obj(:)
   type(fmsDiagOutputBufferContainer_type), intent(in), target :: buffer_obj(:)
 
   class(fmsDiagFile_type), pointer     :: diag_file      !< Diag_file object to open
-  class(FmsNetcdfFile_t), pointer :: fileobj
-  integer :: i
+  class(FmsNetcdfFile_t),  pointer     :: fileobj        !< Fileobj to write to
+  integer                              :: i              !< For do loops
+  integer                              :: field_id       !< The id of the field writing the data to
+  logical                              :: is_static      !< .True. if the variable is static
 
   diag_file => this%FMS_diag_file
   fileobj => diag_file%fileobj
@@ -1225,7 +1228,13 @@ subroutine write_field_data(this, buffer_obj)
     enddo
   else
     do i = 1, diag_file%number_of_buffers
-      call buffer_obj(diag_file%buffer_ids(i))%write_buffer(fileobj, unlim_dim_level=diag_file%unlim_dimension_level)
+      field_id = buffer_obj(diag_file%buffer_ids(i))%get_field_id()
+      is_static = field_obj(field_id)%is_static()
+      if (is_static) then
+         if (diag_file%unlim_dimension_level .eq. 1) call buffer_obj(diag_file%buffer_ids(i))%write_buffer(fileobj)
+      else
+        call buffer_obj(diag_file%buffer_ids(i))%write_buffer(fileobj, unlim_dim_level=diag_file%unlim_dimension_level)
+      endif
     enddo
   endif
 

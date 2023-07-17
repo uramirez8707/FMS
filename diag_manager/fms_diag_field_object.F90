@@ -630,7 +630,10 @@ end function diag_obj_is_registered
 function diag_obj_is_static (this) result (rslt)
     class(fmsDiagField_type), intent(in) :: this
     logical :: rslt
-    rslt = this%static
+
+    rslt = .false.
+    if (allocated(this%static)) rslt = this%static
+
 end function diag_obj_is_static
 
 !> @brief Determine if the field is a scalar
