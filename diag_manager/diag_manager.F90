@@ -4388,7 +4388,7 @@ END FUNCTION register_static_field
     if (use_modern_diag) then
       call fms_diag_object%fms_diag_field_add_attribute(diag_field_id, att_name, (/att_value /))
     else
-      CALL diag_field_add_attribute_r1d(diag_field_id, att_name, (/ att_value /))
+      CALL diag_field_add_attribute_r81d(diag_field_id, att_name, (/ att_value /))
     endif
   END SUBROUTINE diag_field_add_attribute_scalar_r8
 
@@ -4401,7 +4401,7 @@ END FUNCTION register_static_field
    if (use_modern_diag) then
      call fms_diag_object%fms_diag_field_add_attribute(diag_field_id, att_name, (/att_value /))
    else
-     CALL diag_field_add_attribute_r1d(diag_field_id, att_name, (/ att_value /))
+     CALL diag_field_add_attribute_r41d(diag_field_id, att_name, (/ att_value /))
    endif
  END SUBROUTINE diag_field_add_attribute_scalar_r4
 
