@@ -760,7 +760,8 @@ module fms_diag_axis_object_mod
   !> @return the axis length
   function axis_length(this) &
   result(res)
-    class(fmsDiagSubAxis_type)  , INTENT(INOUT) :: this             !< diag_sub_axis obj
+    class(fmsDiagSubAxis_type)  , INTENT(IN) :: this             !< diag_sub_axis obj
+    integer :: res
 
     res = this%ending_index - this%starting_index + 1
   end function
