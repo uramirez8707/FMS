@@ -218,6 +218,8 @@ do i=1,23
   !TODO I don't know about this (scalar field) or how this is suppose to work #WUT
   used = send_data(id_var8, var_data%var6, Time)
 
+  used = send_data(id_var9, var_data%var9, Time)
+
   call diag_send_complete(Time_step)
 enddo
 call deallocate_dummy_data(var_data)

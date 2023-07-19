@@ -143,6 +143,7 @@ type fmsDiagField_type
      procedure :: get_missing_value
      procedure :: get_data_RANGE
      procedure :: get_axis_id
+     procedure :: get_data_buffer
      procedure :: dump_field_obj
      procedure :: get_domain
      procedure :: get_type_of_domain
@@ -1311,7 +1312,8 @@ end function get_data_buffer
 !! \return Copy of math_needs_to_be_done flag
 pure logical function get_math_needs_to_be_done(this)
   class (fmsDiagField_type), intent(in) :: this !< diag object
-  get_math_needs_to_be_done = this%math_needs_to_be_done
+  get_math_needs_to_be_done = .true.
+  if (allocated(this%math_needs_to_be_done)) get_math_needs_to_be_done = this%math_needs_to_be_done
 end function get_math_needs_to_be_done
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!! Allocation checks

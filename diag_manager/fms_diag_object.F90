@@ -645,8 +645,9 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
 
         diag_field => this%FMS_diag_fields(file_field_ids(ifield))
         !> Check if math needs to be done
-        math = .true. !diag_field%get_math_needs_to_be_done()
+        math = diag_field%get_math_needs_to_be_done()
         calling_math: if (math) then
+          call this%allocate_diag_field_output_buffers(diag_field%get_data_buffer(), file_field_ids(ifield))
           !!TODO: call math functions !!
         endif calling_math
         !> Clean up, clean up, everybody everywhere
