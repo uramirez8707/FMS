@@ -1312,7 +1312,7 @@ end function get_data_buffer
 !! \return Copy of math_needs_to_be_done flag
 pure logical function get_math_needs_to_be_done(this)
   class (fmsDiagField_type), intent(in) :: this !< diag object
-  get_math_needs_to_be_done = .true.
+  get_math_needs_to_be_done = .false.
   if (allocated(this%math_needs_to_be_done)) get_math_needs_to_be_done = this%math_needs_to_be_done
 end function get_math_needs_to_be_done
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
