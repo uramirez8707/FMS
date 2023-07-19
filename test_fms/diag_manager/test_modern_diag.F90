@@ -44,6 +44,7 @@ type data_type
   real(kind=r8_kind), allocatable   :: var4(:,:,:)      !< Dummy data for var4
   real(kind=r8_kind), allocatable   :: var5(:)          !< Dummy data for var5
   real(kind=r8_kind), allocatable   :: var6(:)          !< Dummy data for var6
+  real(kind=r8_kind), allocatable   :: var9(:,:)        !< Dummy data for var9
 end type data_type
 
 type(time_type)                   :: Time             !< Time of the simulation
@@ -77,6 +78,7 @@ integer                           :: id_var5          !< diag_field id for var i
 integer                           :: id_var6          !< diag_field id for var that is not domain decomposed
 integer                           :: id_var7          !< 1D var
 integer                           :: id_var8          !< Scalar var
+integer                           :: id_var9          !< 2D var on the unstructured grid
 type(data_type)                   :: var_data         !< Dummy variable data to send to diag_manager
 logical                           :: used             !< Used for send_data call
 integer                           :: io_status        !< Status after reading the namelist
@@ -168,6 +170,8 @@ id_var6 = register_diag_field  ('atm_mod', 'var6', (/id_z/), Time, 'Var not doma
 id_var7 = register_diag_field  ('lnd_mod', 'var1', Time, 'Some scalar var', 'mullions')
 id_var8 = register_static_field ('atm_mod', 'var7', (/id_z/), "Be static!", "none")
 
+id_var9 = register_diag_field  ('lnd_mod', 'var9', (/id_ug, id_z/), Time, 'Var in a UG domain', 'mullions')
+
 if (.not. debug) then
   if (id_var1  .ne. 1) call mpp_error(FATAL, "var1 does not have the expected id")
   if (id_var2  .ne. 2) call mpp_error(FATAL, "var2 does not have the expected id")
@@ -177,6 +181,7 @@ if (.not. debug) then
   if (id_var6  .ne. 6) call mpp_error(FATAL, "var6 does not have the expected id")
   if (id_var7  .ne. 7) call mpp_error(FATAL, "var7 does not have the expected id")
   if (id_var8  .ne. 8) call mpp_error(FATAL, "var8 does not have the expected id")
+  if (id_var9  .ne. 9) call mpp_error(FATAL, "var9 does not have the expected id")
 endif
 
 call diag_field_add_cell_measures(id_var6, area=id_var8, volume=id_var8)
@@ -252,13 +257,15 @@ subroutine allocate_dummy_data(var, lat_lon_domain, cube_sphere, lnd_domain, nz)
 
   allocate(var%var6(nz)) !< 1D variable not domain decomposed
 
+  allocate(var%var9(nland, nz)) !< 2D variable unstructured grid
+
 end subroutine allocate_dummy_data
 
 !> @brief Allocates the dummy data to send to send_data
 subroutine deallocate_dummy_data(var)
   type(data_type), intent(inout) :: var             !< Data var to deallocate
 
-  deallocate(var%var1, var%var2, var%var3, var%var4, var%var5, var%var6)
+  deallocate(var%var1, var%var2, var%var3, var%var4, var%var5, var%var6, var%var9)
 end subroutine deallocate_dummy_data
 
 !> @brief Sets the dummy_data to use in send_data

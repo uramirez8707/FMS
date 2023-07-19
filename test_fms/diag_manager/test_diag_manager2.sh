@@ -724,6 +724,10 @@ diag_files:
     var_name: var7
     reduction: average
     kind: r4
+  - module: lnd_mod
+    var_name: var9
+    reduction: average
+    kind: r4
 - file_name: file4
   freq: 6 hours
   time_units: hours
