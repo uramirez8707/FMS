@@ -392,7 +392,7 @@ subroutine set_data_buffer (this, input_data, is, js, ks, ie, je, ke)
   class (fmsDiagField_type) , intent(inout):: this !< The field object
   class(*), dimension(:,:,:,:), intent(in) :: input_data !< The input array
   integer :: is, js, ks !< Starting indicies of the field_data relative to the global domain
-  integer :: ie, je, ke !< Ending indicied of the field_data relative to the global domain
+  integer :: ie, je, ke !< Ending indicies of the field_data relative to the global domain
 
   if (.not.this%data_buffer_is_allocated) &
     call mpp_error ("set_data_buffer", "The data buffer for the field "//trim(this%varname)//" was unable to be "//&
