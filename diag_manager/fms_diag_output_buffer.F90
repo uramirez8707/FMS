@@ -24,7 +24,7 @@
 !! buffer0-5d types extend fmsDiagBuffer_class, and upon allocation
 !! are added to the module's buffer_lists depending on it's dimension
 module fms_diag_output_buffer_mod
-
+#ifdef use_yaml
 use platform_mod
 use iso_c_binding
 use time_manager_mod, only: time_type
@@ -37,7 +37,6 @@ implicit none
 
 private
 
-#ifdef use_yaml
 !> @brief Object that holds buffered data and other diagnostics
 !! Abstract to ensure use through its extensions(buffer0-5d types)
 type, abstract :: fmsDiagOutputBuffer_class
