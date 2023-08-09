@@ -51,12 +51,12 @@ SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
                   $(abs_top_srcdir)/test_fms/tap-driver.sh
 
 # Run the test.
-TESTS = test_diag_manager2.sh test_reductions_methods.sh
+TESTS = test_diag_manager2.sh test_reduction_methods.sh
 
 testing_utils.mod: testing_utils.$(OBJEXT)
 
 # Copy over other needed files to the srcdir
-EXTRA_DIST = test_diag_manager2.sh check_crashes.sh test_reductions_methods.sh
+EXTRA_DIST = test_diag_manager2.sh check_crashes.sh test_reduction_methods.sh
 
 if USING_YAML
 skipflag=""

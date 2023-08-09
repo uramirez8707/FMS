@@ -32,7 +32,7 @@ program check_time_none
   integer                            :: nz                 !< Number of points in the z direction
   integer                            :: nw                 !< Number of points in the 4th dimension
   integer                            :: i                  !< For looping
-  
+
   call fms_init()
 
   nx = 96
@@ -63,23 +63,25 @@ program check_time_none
 
 contains
 
-subroutine check_data_1d(buffer, time_level)
-    real(kind=r8_kind), intent(inout) :: buffer(:)
-    real(kind=r8_kind) :: buffer_exp
-    integer, intent(in) :: time_level
-    
-    integer ii, j, k, l
+  !> @brief Check that the 1d data read in is correct
+  subroutine check_data_1d(buffer, time_level)
+    real(kind=r8_kind), intent(inout) :: buffer(:)     !< Buffer read from the table
+    integer,            intent(in)    :: time_level    !< Time level read in
+    real(kind=r8_kind)                :: buffer_exp    !< Expected result
+
+    integer ii, j, k, l !< For looping
 
     do ii = 1, size(buffer, 1)
       buffer_exp = real(ii, kind=r8_kind)* 1000_r8_kind+10_r8_kind+1_r8_kind + &
                    real(time_level*6, kind=r8_kind)/100_r8_kind
       if (abs(buffer(ii) - buffer_exp) > 0.01) then
         print *, mpp_pe(), ii, buffer(ii), buffer_exp
-        call mpp_error(FATAL, "Data is not correct")
+        call mpp_error(FATAL, "Check_time_none::check_data_1d:: Data is not correct")
       endif
     enddo
   end subroutine check_data_1d
 
+  !> @brief Check that the 2d data read in is correct
   subroutine check_data_2d(buffer, time_level)
     real(kind=r8_kind), intent(inout) :: buffer(:,:)   !< Buffer read from the table
     integer,            intent(in)    :: time_level    !< Time level read in
@@ -100,11 +102,12 @@ subroutine check_data_1d(buffer, time_level)
     enddo
   end subroutine check_data_2d
 
+  !> @brief Check that the 3d data read in is correct
   subroutine check_data_3d(buffer, time_level)
     real(kind=r8_kind), intent(inout) :: buffer(:,:,:) !< Buffer read from the table
     integer,            intent(in)    :: time_level    !< Time level read in
     real(kind=r8_kind)                :: buffer_exp    !< Expected result
-    
+
     integer ii, j, k, l !< For looping
 
     do ii = 1, size(buffer, 1)
@@ -116,7 +119,7 @@ subroutine check_data_1d(buffer, time_level)
                        real(time_level*6, kind=r8_kind)/100_r8_kind
           if (abs(buffer(ii, j, k) - buffer_exp) > 0.01) then
             print *, mpp_pe(), ii, buffer(ii, j, k), buffer_exp
-            call mpp_error(FATAL, "Data is not correct")
+            call mpp_error(FATAL, "Check_time_none::check_data_3d:: Data is not correct")
           endif
         enddo
       enddo

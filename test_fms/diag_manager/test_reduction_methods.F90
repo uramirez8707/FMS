@@ -83,7 +83,7 @@ program test_reduction_methods
   logical                            :: used            !< Dummy argument to send_data
 
 
-  integer, parameter :: test_normal = 0  !< sending a buffer in the compute domain 
+  integer, parameter :: test_normal = 0  !< sending a buffer in the compute domain
   integer, parameter :: test_openmp = 1  !< sending a buffer in the compute domain but with blocking
   integer, parameter :: test_halos = 2   !< sending a buffer in the data domain (i.e with halos)
   integer, parameter :: no_mask = 0      !< Not using a mask
@@ -157,8 +157,10 @@ program test_reduction_methods
   end select
 
   !< Register the axis
-  id_x  = diag_axis_init('x',  real((/ (i, i = 1,nx) /), kind=r8_kind),  'point_E', 'x', long_name='point_E', Domain2=Domain)
-  id_y  = diag_axis_init('y',  real((/ (i, i = 1,ny) /), kind=r8_kind),  'point_N', 'y', long_name='point_N', Domain2=Domain)
+  id_x  = diag_axis_init('x',  real((/ (i, i = 1,nx) /), kind=r8_kind),  'point_E', 'x', long_name='point_E', &
+    Domain2=Domain)
+  id_y  = diag_axis_init('y',  real((/ (i, i = 1,ny) /), kind=r8_kind),  'point_N', 'y', long_name='point_N', &
+    Domain2=Domain)
   id_z  = diag_axis_init('z',  real((/ (i, i = 1,nz) /), kind=r8_kind),  'point_Z', 'z', long_name='point_Z')
   id_w  = diag_axis_init('w',  real((/ (i, i = 1,nw) /), kind=r8_kind),  'point_W', 'n', long_name='point_W')
 
@@ -315,7 +317,7 @@ program test_reduction_methods
     integer,            intent(in)    :: js              !< Starting y index
     integer,            intent(in)    :: je              !< Ending y index
     integer,            intent(in)    :: nhalo           !< Number of halos
-    
+
     integer :: ii, j, k, l
 
     do ii = is, ie

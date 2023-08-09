@@ -1640,7 +1640,7 @@ END FUNCTION register_static_field
     TYPE (time_type), INTENT(in), OPTIONAL :: time
     INTEGER, INTENT(in), OPTIONAL :: is_in, js_in, ks_in,ie_in,je_in, ke_in
     LOGICAL, DIMENSION(:,:,:), INTENT(in), OPTIONAL, contiguous, target :: mask
-    CLASS(*), DIMENSION(:,:,:), INTENT(in), OPTIONAL, target :: rmask
+    CLASS(*), DIMENSION(:,:,:), INTENT(in), OPTIONAL, contiguous, target :: rmask
     CHARACTER(len=*), INTENT(out), OPTIONAL :: err_msg
 
     REAL :: weight1

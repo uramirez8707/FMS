@@ -731,6 +731,7 @@ logical function fms_diag_do_reduction(this, field_data, diag_field_id, oor_mask
   integer,                   intent(in), optional :: is_in, js_in, ks_in !< Starting indices of the variable
   integer,                   intent(in), optional :: ie_in, je_in, ke_in !< Ending indices of the variable
 
+#ifdef use_yaml
   type(fmsDiagField_type), pointer :: field_ptr
   integer :: reduction_method !< Integer representing a reduction method: none, average, min, max, ... etc.
   integer :: id !< For looping through buffer ids
@@ -751,6 +752,10 @@ logical function fms_diag_do_reduction(this, field_data, diag_field_id, oor_mask
     end select
   enddo
   fms_diag_do_reduction = .true.
+#else
+  fms_diag_do_reduction = .false.
+  CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling with -Duse_yaml")
+#endif
 end function fms_diag_do_reduction
 
 !> @brief Adds the diag ids of the Area and or Volume of the diag_field_object
