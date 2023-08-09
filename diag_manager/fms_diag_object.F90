@@ -20,8 +20,9 @@ module fms_diag_object_mod
 use mpp_mod, only: fatal, note, warning, mpp_error, mpp_pe, mpp_root_pe, stdout
 use diag_data_mod,  only: diag_null, diag_not_found, diag_not_registered, diag_registered_id, &
                          &DIAG_FIELD_NOT_FOUND, diag_not_registered, max_axes, TWO_D_DOMAIN, &
-                         &get_base_time, NULL_AXIS_ID, get_var_type, diag_not_registered
-
+                         &get_base_time, NULL_AXIS_ID, get_var_type, diag_not_registered, &
+                         &time_none, time_average, time_min, time_max, time_rms, time_sum, &
+                         &time_diurnal, time_power
   USE time_manager_mod, ONLY: set_time, set_date, get_time, time_type, OPERATOR(>=), OPERATOR(>),&
        & OPERATOR(<), OPERATOR(==), OPERATOR(/=), OPERATOR(/), OPERATOR(+), ASSIGNMENT(=), get_date, &
        & get_ticks_per_second
@@ -730,7 +731,25 @@ logical function fms_diag_do_reduction(this, field_data, diag_field_id, oor_mask
   integer,                   intent(in), optional :: is_in, js_in, ks_in !< Starting indices of the variable
   integer,                   intent(in), optional :: ie_in, je_in, ke_in !< Ending indices of the variable
 
-  !TODO Everything
+  type(fmsDiagField_type), pointer :: field_ptr
+  integer :: reduction_method !< Integer representing a reduction method: none, average, min, max, ... etc.
+  integer :: id !< For looping through buffer ids
+
+  field_ptr => this%FMS_diag_fields(diag_field_id)
+
+  do id = 1, size(field_ptr%buffer_ids)
+    reduction_method =field_ptr%diag_field(id)%get_var_reduction()
+    select case (reduction_method)
+    case (time_none)
+    case (time_max)
+    case (time_min)
+    case (time_average)
+    case (time_diurnal)
+    case (time_power)
+    case (time_rms)
+    case (time_sum)
+    end select
+  enddo
   fms_diag_do_reduction = .true.
 end function fms_diag_do_reduction
 
