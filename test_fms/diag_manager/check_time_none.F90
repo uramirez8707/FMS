@@ -19,13 +19,15 @@
 
 !> @brief  Checks the output file after running test_reduction_methods using the "none" reduction method
 program check_time_none
-  use fms_mod,           only: fms_init, fms_end
+  use fms_mod,           only: fms_init, fms_end, string
   use fms2_io_mod,       only: FmsNetcdfFile_t, read_data, close_file, open_file
   use mpp_mod,           only: mpp_npes, mpp_error, FATAL, mpp_pe
   use platform_mod,      only: r8_kind
   use testing_utils,     only: allocate_buffer
 
   type(FmsNetcdfFile_t)              :: fileobj            !< FMS2 fileobj
+  type(FmsNetcdfFile_t)              :: fileobj1            !< FMS2 fileobj for subregional file 1
+  type(FmsNetcdfFile_t)              :: fileobj2            !< FMS2 fileobj for subregional file 2
   real(kind=r8_kind), allocatable    :: cdata_out(:,:,:,:) !< Data in the compute domain
   integer                            :: nx                 !< Number of points in the x direction
   integer                            :: ny                 !< Number of points in the y direction
@@ -43,29 +45,74 @@ program check_time_none
   if (.not. open_file(fileobj, "test_none.nc", "read")) &
     call mpp_error(FATAL, "unable to open file")
 
+  if (.not. open_file(fileobj1, "test_none_regional.nc.0004", "read")) &
+    call mpp_error(FATAL, "unable to open file")
+
+  if (.not. open_file(fileobj2, "test_none_regional.nc.0005", "read")) &
+    call mpp_error(FATAL, "unable to open file")
+
   cdata_out = allocate_buffer(1, nx, 1, ny, nz, nw)
 
   do i = 1, 8
     cdata_out = -999_r8_kind
+    print *, "Checking answers for var0_none - time_level:", string(i)
+    call read_data(fileobj, "var0_none", cdata_out(1:1,1,1,1), unlim_dim_level=i) !eyeroll
+    call check_data_0d(cdata_out(1,1,1,1), i)
+
+    cdata_out = -999_r8_kind
+    print *, "Checking answers for var1_none - time_level:", string(i)
     call read_data(fileobj, "var1_none", cdata_out(:,1,1,1), unlim_dim_level=i)
     call check_data_1d(cdata_out(:,1,1,1), i)
 
     cdata_out = -999_r8_kind
+    print *, "Checking answers for var2_none - time_level:", string(i)
     call read_data(fileobj, "var2_none", cdata_out(:,:,1,1), unlim_dim_level=i)
     call check_data_2d(cdata_out(:,:,1,1), i)
 
     cdata_out = -999_r8_kind
+    print *, "Checking answers for var3_none - time_level:", string(i)
     call read_data(fileobj, "var3_none", cdata_out(:,:,:,1), unlim_dim_level=i)
     call check_data_3d(cdata_out(:,:,:,1), i)
+
+    cdata_out = -999_r8_kind
+    print *, "Checking answers for var3_Z - time_level:", string(i)
+    call read_data(fileobj, "var3_Z", cdata_out(:,:,1:2,1), unlim_dim_level=i)
+    call check_data_3d(cdata_out(:,:,1:2,1), i, nz_offset=1)
+
+    cdata_out = -999_r8_kind
+    print *, "Checking answers for var3_none in the first regional file- time_level:", string(i)
+    call read_data(fileobj1, "var3_none", cdata_out(1:4,1:3,1:2,1), unlim_dim_level=i)
+    call check_data_3d(cdata_out(1:4,1:3,1:2,1), i, nx_offset=77, ny_offset=77, nz_offset=1)
+
+    cdata_out = -999_r8_kind
+    print *, "Checking answers for var3_none in the second regional file- time_level:", string(i)
+    call read_data(fileobj2, "var3_none", cdata_out(1:4,1:1,1:2,1), unlim_dim_level=i)
+    call check_data_3d(cdata_out(1:4,1:1,1:2,1), i, nx_offset=77, ny_offset=80, nz_offset=1)
   enddo
 
   call fms_end()
 
 contains
 
+  !> @brief Check that the 0d data read in is correct
+  subroutine check_data_0d(buffer, time_level)
+    real(kind=r8_kind), intent(inout) :: buffer        !< Buffer read from the table
+    integer,            intent(in)    :: time_level    !< Time level read in
+
+    real(kind=r8_kind)                :: buffer_exp    !< Expected result
+
+    buffer_exp = 1000_r8_kind+10_r8_kind+1_r8_kind + &
+      real(time_level*6, kind=r8_kind)/100_r8_kind
+
+    if (abs(buffer - buffer_exp) > 0.01) then
+      print *, mpp_pe(), time_level, buffer_exp
+      call mpp_error(FATAL, "Check_time_none::check_data_0d:: Data is not correct")
+    endif
+  end subroutine check_data_0d
+
   !> @brief Check that the 1d data read in is correct
   subroutine check_data_1d(buffer, time_level)
-    real(kind=r8_kind), intent(inout) :: buffer(:)     !< Buffer read from the table
+    real(kind=r8_kind), intent(in)    :: buffer(:)     !< Buffer read from the table
     integer,            intent(in)    :: time_level    !< Time level read in
     real(kind=r8_kind)                :: buffer_exp    !< Expected result
 
@@ -83,7 +130,7 @@ contains
 
   !> @brief Check that the 2d data read in is correct
   subroutine check_data_2d(buffer, time_level)
-    real(kind=r8_kind), intent(inout) :: buffer(:,:)   !< Buffer read from the table
+    real(kind=r8_kind), intent(in)    :: buffer(:,:)   !< Buffer read from the table
     integer,            intent(in)    :: time_level    !< Time level read in
     real(kind=r8_kind)                :: buffer_exp    !< Expected result
 
@@ -103,19 +150,34 @@ contains
   end subroutine check_data_2d
 
   !> @brief Check that the 3d data read in is correct
-  subroutine check_data_3d(buffer, time_level)
-    real(kind=r8_kind), intent(inout) :: buffer(:,:,:) !< Buffer read from the table
+  subroutine check_data_3d(buffer, time_level, nx_offset, ny_offset, nz_offset)
+    real(kind=r8_kind), intent(in)    :: buffer(:,:,:) !< Buffer read from the table
     integer,            intent(in)    :: time_level    !< Time level read in
     real(kind=r8_kind)                :: buffer_exp    !< Expected result
+    integer, optional,  intent(in)    :: nx_offset
+    integer, optional,  intent(in)    :: ny_offset
+    integer, optional,  intent(in)    :: nz_offset
 
-    integer ii, j, k, l !< For looping
+    integer :: ii, j, k, l !< For looping
+    integer :: nx_oset
+    integer :: ny_oset
+    integer :: nz_oset
+
+    nx_oset = 0
+    if (present(nx_offset)) nx_oset = nx_offset
+
+    ny_oset = 0
+    if (present(ny_offset)) ny_oset = ny_offset
+
+    nz_oset = 0
+    if (present(nz_offset)) nz_oset = nz_offset
 
     do ii = 1, size(buffer, 1)
       do j = 1, size(buffer, 2)
         do k = 1, size(buffer, 3)
-          buffer_exp = real(ii, kind=r8_kind)* 1000_r8_kind + &
-                       10_r8_kind*real(j, kind=r8_kind) + &
-                       1_r8_kind*real(k, kind=r8_kind) + &
+          buffer_exp = real(ii+nx_oset, kind=r8_kind)* 1000_r8_kind + &
+                       10_r8_kind*real(j+ny_oset, kind=r8_kind) + &
+                       1_r8_kind*real(k+nz_oset, kind=r8_kind) + &
                        real(time_level*6, kind=r8_kind)/100_r8_kind
           if (abs(buffer(ii, j, k) - buffer_exp) > 0.01) then
             print *, mpp_pe(), ii, buffer(ii, j, k), buffer_exp

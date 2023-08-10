@@ -33,11 +33,16 @@ test_none
 2 1 1 0 0 0
 
 "test_none",      6,  "hours", 1, "hours", "time"
+"test_none_regional",      6,  "hours", 1, "hours", "time"
 
 "ocn_mod", "var0", "var0_none", "test_none", "all", .false., "none", 2
 "ocn_mod", "var1", "var1_none", "test_none", "all", .false., "none", 2
 "ocn_mod", "var2", "var2_none", "test_none", "all", .false., "none", 2
 "ocn_mod", "var3", "var3_none", "test_none", "all", .false., "none", 2
+
+"ocn_mod", "var3", "var3_Z", "test_none", "all", .false., "-1 -1 -1 -1 2. 3.", 2
+
+"ocn_mod", "var3", "var3_none", "test_none_regional", "all", .false., "78. 81. 78. 81. 2. 3.", 2 #chosen by MKL
 _EOF
 
 my_test_count=1
