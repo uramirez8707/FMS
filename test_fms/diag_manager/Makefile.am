@@ -65,5 +65,5 @@ endif
 
 TESTS_ENVIRONMENT = skipflag=${skipflag}
 
-CLEANFILES = *.yaml input.nml *.nc *.out diag_table* *-files/* *.dpi *.spi *.dyn *.spl
+CLEANFILES = *.yaml input.nml *.nc *.out diag_table* *-files/* *.dpi *.spi *.dyn *.spl *.mod
 
