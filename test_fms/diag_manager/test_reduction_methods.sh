@@ -24,6 +24,7 @@
 # Set common test settings.
 . ../test-lib.sh
 
+if [ -z "${skipflag}" ]; then
 # create and enter directory for in/output files
 output_dir
 
@@ -65,6 +66,6 @@ test_expect_success "Running diag_manager with "none" reduction method with halo
 test_expect_success "Checking answers for the "none" reduction method with halo output (test $my_test_count)" '
   mpirun -n 1 ../check_time_none
 '
-
+fi
 test_done
 #No need to test the masking because it is not used for instantaneous output
