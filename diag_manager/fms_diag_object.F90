@@ -198,8 +198,9 @@ integer function fms_register_diag_field_obj &
  LOGICAL,          OPTIONAL,     INTENT(in)    :: static                !< True if the variable is static
 #ifdef use_yaml
 
- class (fmsDiagFile_type), pointer :: fileptr => null() !< Pointer to the diag_file
- class (fmsDiagField_type), pointer :: fieldptr => null() !< Pointer to the diag_field
+ class (fmsDiagFile_type), pointer :: fileptr !< Pointer to the diag_file
+ class (fmsDiagField_type), pointer :: fieldptr !< Pointer to the diag_fielf
+ class (fmsDiagOutputBuffer_type), pointer :: bufferptr !< Pointer to the output buffer
  integer, allocatable :: file_ids(:) !< The file IDs for this variable
  integer :: i !< For do loops
  integer, allocatable :: diag_field_indices(:) !< indices where the field was found in the yaml
@@ -224,13 +225,21 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
 
 !> Use pointers for convenience
   fieldptr => this%FMS_diag_fields(this%registered_variables)
+!> Get the file IDs from the field indicies from the yaml
+  file_ids = get_diag_files_id(diag_field_indices)
+  call fieldptr%set_file_ids(file_ids)
 
 !> Initialize buffer_ids of this field with the diag_field_indices(diag_field_indices)
 !! of the sorted variable list
   fieldptr%buffer_ids = get_diag_field_ids(diag_field_indices)
   do i = 1, size(fieldptr%buffer_ids)
-    call this%FMS_diag_output_buffers(fieldptr%buffer_ids(i))%set_field_id(this%registered_variables)
-    call this%FMS_diag_output_buffers(fieldptr%buffer_ids(i))%set_yaml_id(fieldptr%buffer_ids(i))
+    bufferptr => this%FMS_diag_output_buffers(fieldptr%buffer_ids(i))
+    call bufferptr%set_field_id(this%registered_variables)
+    call bufferptr%set_yaml_id(fieldptr%buffer_ids(i))
+
+    fileptr => this%FMS_diag_files(file_ids(i))%FMS_diag_file
+    call bufferptr%set_time_period_end(fieldptr%is_static(), fileptr%get_file_freq(), fileptr%get_file_frequnit(), &
+      init_time=init_time)
   enddo
 
 !> Allocate and initialize member buffer_allocated of this field
@@ -242,9 +251,7 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
        mask_variant= mask_variant, standname=standname, do_not_log=do_not_log, err_msg=err_msg, &
        interp_method=interp_method, tile_count=tile_count, area=area, volume=volume, realm=realm, &
        static=static)
-!> Get the file IDs from the field indicies from the yaml
-  file_ids = get_diag_files_id(diag_field_indices)
-  call fieldptr%set_file_ids(file_ids)
+
 !> Add the axis information, initial time, and field IDs to the files
   if (present(axes) .and. present(init_time)) then
     do i = 1, size(file_ids)
@@ -785,6 +792,9 @@ function fms_diag_do_reduction(this, field_data, diag_field_id, oor_mask, weight
     !< Go away if the file is a subregional file and the current PE does not have any data for it
     if (.not. file_ptr%writing_on_this_pe()) cycle
 
+    !< Go away if finished doing math for this buffer
+    if (buffer_ptr%is_done_with_math()) cycle
+
     bounds_out = bounds
     if (.not. using_blocking) then
       !< Set output bounds to start at 1:size(buffer_ptr%buffer)
@@ -857,6 +867,21 @@ function fms_diag_do_reduction(this, field_data, diag_field_id, oor_mask, weight
       error_msg = "The reduction method is not supported. "//&
         "Only none, min, max, sum, average, power, rms, and diurnal are supported."
     end select
+
+    call buffer_ptr%increase_time_step_count()
+
+    if (field_ptr%is_static() .or. file_ptr%FMS_diag_file%is_done_writing_data()) then
+      call buffer_ptr%set_done_with_math()
+    else
+      if (present(time)) then
+        if (time .ge. buffer_ptr%get_time_period_end()) then
+          call buffer_ptr%set_time_period_end(.false., &
+            file_ptr%FMS_diag_file%get_file_freq(), file_ptr%FMS_diag_file%get_file_frequnit(), &
+            init_time=time)
+          call buffer_ptr%initialize_buffer(reduction_method, field_ptr%get_varname())
+        endif
+      endif
+    endif
   enddo buffer_loop
 #else
   error_msg = ""
@@ -1135,7 +1160,6 @@ subroutine allocate_diag_field_output_buffers(this, field_data, field_id)
   class(DiagYamlFilesVar_type), pointer :: ptr_diag_field_yaml !< Pointer to a field from yaml fields
   integer, allocatable :: axis_ids(:) !< Pointer to indices of axes of the field variable
   integer :: var_type !< Stores type of the field data (r4, r8, i4, i8, and string) represented as an integer.
-  class(*), allocatable :: missing_value !< Missing value to initialize the data to
   character(len=128), allocatable :: var_name !< Field name to initialize output buffers
   logical :: is_scalar !< Flag indicating that the variable is a scalar
   integer :: yaml_id !< Yaml id for the buffer
@@ -1148,29 +1172,6 @@ subroutine allocate_diag_field_output_buffers(this, field_data, field_id)
 
   ! Get variable/field name
   var_name = this%Fms_diag_fields(field_id)%get_varname()
-
-  ! Get missing value for the field
-  !TODO class (*) is weird missing_value = this%FMS_diag_fields(field_id)%get_missing_value(var_type)
-  !!should work ...
-  if (this%FMS_diag_fields(field_id)%has_missing_value()) then
-    select type (my_type => this%FMS_diag_fields(field_id)%get_missing_value(var_type))
-      type is (real(kind=r4_kind))
-        missing_value = real(my_type, kind=r4_kind)
-      type is (real(kind=r8_kind))
-        missing_value = real(my_type, kind=r8_kind)
-      class default
-        call mpp_error( FATAL, 'fms_diag_object_mod:allocate_diag_field_output_buffers Invalid type')
-    end select
-  else
-    select type (my_type => get_default_missing_value(var_type))
-      type is (real(kind=r4_kind))
-        missing_value = real(my_type, kind=r4_kind)
-      type is (real(kind=r8_kind))
-        missing_value = real(my_type, kind=r8_kind)
-      class default
-        call mpp_error( FATAL, 'fms_diag_object_mod:allocate_diag_field_output_buffers Invalid type')
-    end select
-  endif
 
   ! Determine dimensions of the field
   is_scalar = this%FMS_diag_fields(field_id)%is_scalar()
@@ -1207,7 +1208,7 @@ subroutine allocate_diag_field_output_buffers(this, field_data, field_id)
     ptr_diag_buffer_obj => this%FMS_diag_output_buffers(buffer_id)
     call ptr_diag_buffer_obj%allocate_buffer(field_data(1, 1, 1, 1), ndims, axes_length(1:5), &
           this%FMS_diag_fields(field_id)%get_varname(), num_diurnal_samples)
-    call ptr_diag_buffer_obj%initialize_buffer(missing_value, var_name)
+    call ptr_diag_buffer_obj%initialize_buffer(ptr_diag_field_yaml%get_var_reduction(), var_name)
 
     if (allocated(axis_ids)) deallocate(axis_ids)
   enddo
