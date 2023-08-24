@@ -387,7 +387,7 @@ end function
 function is_done_with_math(this) &
   result(res)
   class(fmsDiagOutputBuffer_type), intent(in) :: this        !< Buffer object
-  integer :: res
+  logical :: res
 
   res = this%done_with_math
 end function is_done_with_math
@@ -524,13 +524,14 @@ end subroutine write_buffer_wrapper_u
 
 !> @brief Does the time_none reduction method on the buffer object
 !! @return Error message if the math was not successful
-function do_time_none_wrapper(this, field_data, mask, bounds_in, bounds_out) &
+function do_time_none_wrapper(this, field_data, mask, bounds_in, bounds_out, missing_value) &
   result(err_msg)
   class(fmsDiagOutputBuffer_type), intent(inout) :: this                !< buffer object to write
   class(*),                        intent(in)    :: field_data(:,:,:,:) !< Buffer data for current time
   type(fmsDiagIbounds_type),       intent(in)    :: bounds_in           !< Indicies for the buffer passed in
   type(fmsDiagIbounds_type),       intent(in)    :: bounds_out          !< Indicies for the output buffer
   logical,                         intent(in)    :: mask(:,:,:,:)       !< Mask for the field
+  real(kind=r8_kind),              intent(in)    :: missing_value       !< Missing_value for data points that are masked
   character(len=50) :: err_msg
 
   !TODO This does not need to be done for every time step
@@ -540,14 +541,14 @@ function do_time_none_wrapper(this, field_data, mask, bounds_in, bounds_out) &
     type is (real(kind=r8_kind))
       select type (field_data)
       type is (real(kind=r8_kind))
-        call do_time_none(output_buffer, field_data, mask, bounds_in, bounds_out)
+        call do_time_none(output_buffer, field_data, mask, bounds_in, bounds_out, missing_value)
       class default
         err_msg="the output buffer and the buffer send in are not of the same type (r8_kind)"
       end select
     type is (real(kind=r4_kind))
       select type (field_data)
       type is (real(kind=r4_kind))
-        call do_time_none(output_buffer, field_data, mask, bounds_in, bounds_out)
+        call do_time_none(output_buffer, field_data, mask, bounds_in, bounds_out, real(missing_value, kind=r4_kind))
       class default
         err_msg="the output buffer and the buffer send in are not of the same type (r4_kind)"
       end select

@@ -22,7 +22,7 @@ use diag_data_mod,  only: diag_null, diag_not_found, diag_not_registered, diag_r
                          &DIAG_FIELD_NOT_FOUND, diag_not_registered, max_axes, TWO_D_DOMAIN, &
                          &get_base_time, NULL_AXIS_ID, get_var_type, diag_not_registered, &
                          &time_none, time_max, time_min, time_sum, time_average, time_diurnal, &
-                         &time_power, time_rms
+                         &time_power, time_rms, r8
 
   USE time_manager_mod, ONLY: set_time, set_date, get_time, time_type, OPERATOR(>=), OPERATOR(>),&
        & OPERATOR(<), OPERATOR(==), OPERATOR(/=), OPERATOR(/), OPERATOR(+), ASSIGNMENT(=), get_date, &
@@ -199,7 +199,7 @@ integer function fms_register_diag_field_obj &
 #ifdef use_yaml
 
  class (fmsDiagFile_type), pointer :: fileptr !< Pointer to the diag_file
- class (fmsDiagField_type), pointer :: fieldptr !< Pointer to the diag_fielf
+ class (fmsDiagField_type), pointer :: fieldptr !< Pointer to the diag_field
  class (fmsDiagOutputBuffer_type), pointer :: bufferptr !< Pointer to the output buffer
  integer, allocatable :: file_ids(:) !< The file IDs for this variable
  integer :: i !< For do loops
@@ -740,7 +740,7 @@ end subroutine fms_diag_do_io
 function fms_diag_do_reduction(this, field_data, diag_field_id, oor_mask, weight, &
   bounds, using_blocking, time) &
   result(error_msg)
-  class(fmsDiagObject_type), intent(in), target   :: this                !< Diag Object
+  class(fmsDiagObject_type), intent(inout), target:: this                !< Diag Object
   class(*),                  intent(in)           :: field_data(:,:,:,:) !< Field data
   integer,                   intent(in)           :: diag_field_id       !< ID of the input field
   logical,                   intent(in), target   :: oor_mask(:,:,:,:)   !< mask
@@ -776,9 +776,22 @@ function fms_diag_do_reduction(this, field_data, diag_field_id, oor_mask, weight
   logical                   :: block_in_subregion !< .True. if the current block is part of the subregion
   integer                   :: starting           !< Starting index of the subregion relative to the compute domain
   integer                   :: ending             !< Ending index of the subregion relative to the compute domain
+  real(kind=r8_kind)        :: missing_value      !< Missing_value for data points that are masked
+                                                  !! This will obtained as r8 and converted to the right type as
+                                                  !! needed. This is to avoid yet another select type ...
 
   !TODO mostly everything
   field_ptr => this%FMS_diag_fields(diag_field_id)
+  if (field_ptr%has_missing_value()) then
+    select type (missing_val => field_ptr%get_missing_value(r8))
+    type is (real(kind=r8_kind))
+      missing_value = missing_val
+    class default
+      call mpp_error(FATAl, "The missing value for the field:"//trim(field_ptr%get_varname())//&
+        &" was not allocated to the correct type. This shouldn't have happened")
+    end select
+  endif
+
   buffer_loop: do ids = 1, size(field_ptr%buffer_ids)
     error_msg = ""
     buffer_id = this%FMS_diag_fields(diag_field_id)%buffer_ids(ids)
@@ -794,6 +807,15 @@ function fms_diag_do_reduction(this, field_data, diag_field_id, oor_mask, weight
 
     !< Go away if finished doing math for this buffer
     if (buffer_ptr%is_done_with_math()) cycle
+
+    if (present(time)) then
+      if (time .ge. buffer_ptr%get_time_period_end()) then
+        call buffer_ptr%set_time_period_end(.false., &
+          file_ptr%FMS_diag_file%get_file_freq(), file_ptr%FMS_diag_file%get_file_frequnit(), &
+          init_time=time)
+        call buffer_ptr%initialize_buffer(reduction_method, field_ptr%get_varname())
+      endif
+    endif
 
     bounds_out = bounds
     if (.not. using_blocking) then
@@ -852,7 +874,7 @@ function fms_diag_do_reduction(this, field_data, diag_field_id, oor_mask, weight
     reduction_method = field_yaml_ptr%get_var_reduction()
     select case(reduction_method)
     case (time_none)
-      error_msg = buffer_ptr%do_time_none_wrapper(field_data, oor_mask, bounds_in, bounds_out)
+      error_msg = buffer_ptr%do_time_none_wrapper(field_data, oor_mask, bounds_in, bounds_out, missing_value)
       if (trim(error_msg) .ne. "") then
         return
       endif
@@ -872,15 +894,6 @@ function fms_diag_do_reduction(this, field_data, diag_field_id, oor_mask, weight
 
     if (field_ptr%is_static() .or. file_ptr%FMS_diag_file%is_done_writing_data()) then
       call buffer_ptr%set_done_with_math()
-    else
-      if (present(time)) then
-        if (time .ge. buffer_ptr%get_time_period_end()) then
-          call buffer_ptr%set_time_period_end(.false., &
-            file_ptr%FMS_diag_file%get_file_freq(), file_ptr%FMS_diag_file%get_file_frequnit(), &
-            init_time=time)
-          call buffer_ptr%initialize_buffer(reduction_method, field_ptr%get_varname())
-        endif
-      endif
     endif
   enddo buffer_loop
 #else
