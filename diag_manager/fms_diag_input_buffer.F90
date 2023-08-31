@@ -41,10 +41,12 @@ module fms_diag_input_buffer_mod
     procedure :: get_buffer
     procedure :: get_mask
     procedure :: get_weight
-    procedure :: init_input_buffer_object
+    procedure :: init => init_input_buffer_object
     procedure :: set_input_buffer_object
     procedure :: is_initialized
   end type fmsDiagInputBuffer_t
+
+  public :: fmsDiagInputBuffer_t
 
   contains
 
