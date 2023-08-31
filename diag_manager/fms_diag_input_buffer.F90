@@ -18,7 +18,7 @@
 !***********************************************************************
 !> @defgroup fms_diag_input_buffer_mod fms_diag_input_buffer_mod
 !> @ingroup diag_manager
-!! @brief 
+!! @brief
 !> @addtogroup fms_diag_input_buffer_mod
 !> @{
 module fms_diag_input_buffer_mod
@@ -141,7 +141,7 @@ module fms_diag_input_buffer_mod
     logical,                     intent(in)    :: mask(:,:,:,:)       !< Mask for the field
     integer,                     intent(in)    :: is, js, ks          !< Starting index for each of the dimension
     integer,                     intent(in)    :: ie, je, ke          !< Ending index for each of the dimensions
-  
+
     character(len=128) :: err_msg
     err_msg = ""
 

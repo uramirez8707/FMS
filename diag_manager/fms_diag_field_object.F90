@@ -407,7 +407,7 @@ subroutine set_data_buffer (this, input_data, mask, weight, is, js, ks, ie, je, 
       "allocated.", FATAL)
   err_msg = this%input_data_buffer%set_input_buffer_object(input_data, weight, mask, is, js, ks, ie, je, ke)
   if (trim(err_msg) .ne. "") call mpp_error(FATAL, "Field:"//trim(this%varname)//" -"//trim(err_msg))
-  
+
 end subroutine set_data_buffer
 !> Allocates the global data buffer for a given field using a single thread. Returns true when the
 !! buffer is allocated
@@ -425,7 +425,7 @@ logical function allocate_data_buffer(this, input_data, diag_axis)
     call mpp_error(FATAL, "Field:"//trim(this%varname)//" -"//trim(err_msg))
     return
   endif
-  
+
   allocate_data_buffer = .true.
 end function allocate_data_buffer
 !> Sets the flag saying that the math functions need to be done
@@ -1220,7 +1220,7 @@ function get_data_buffer (this) &
   result(rslt)
   class (fmsDiagField_type), target, intent(in) :: this  !< diag field
   class(*),dimension(:,:,:,:), pointer      :: rslt !< The field's data buffer
-  
+
   if (.not. this%data_buffer_is_allocated) &
   call mpp_error(FATAL, "The input data buffer for the field:"&
     //trim(this%varname)//" was never allocated.")
