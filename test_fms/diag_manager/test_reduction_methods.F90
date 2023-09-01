@@ -266,7 +266,6 @@ program test_reduction_methods
           used=send_data(id_var3, cdata(is1:ie1, js1:je1, :, 1), time, is_in=is1, js_in=js1, &
             mask=clmask(is1:ie1, js1:je1, :, 1))
         end select
-!$omp barrier
       enddo
     end select
     call diag_send_complete(Time_step)
