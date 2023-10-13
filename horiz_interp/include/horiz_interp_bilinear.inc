@@ -95,8 +95,21 @@
           glt_min = min(lat,glt_min);  glt_max = max(lat,glt_max)
           gln_min = min(lon,gln_min);  gln_max = max(lon,gln_max)
 
-          is = indp(lon, lon_in )
-          if( lon_in(is) .gt. lon ) is = max(is-1,1)
+          is = nearest_index(lon, lon_in )
+          if (lon_in(1) > lon_in(2)) then
+            ! Lon_in is decreasing
+            ! This is so that is is the lower bound.
+            ! For example, if the array is [10, 20, 30, 40, 50] and lon is 49, `is` is going to be 5 from `nearest_index`
+            ! but it needs to be 4 so that it can use the data at lon_in(4) and lon_in(5)
+            if( lon_in(is) .gt. lon ) is = max(is-1,1)
+          else
+            ! Lon_in is increasing
+            ! This is so that is is the lower bound.
+            ! For example, if the array is [50 40 30 20 10] and lon is 11, `is` is going to be 5 from `nearest_index`
+            ! but it needs to be 4 so that it can use the data at lon_in(4) and lon_in(5)
+            if( lon_in(is) .lt. lon ) is = max(is-1,1)
+          endif
+
           if( lon_in(is) .eq. lon .and. is .eq. nlon_in) is = max(is - 1,1)
           ie = min(is+1,nlon_in)
           if(lon_in(is) .ne. lon_in(ie) .and. lon_in(is) .le. lon) then
@@ -104,6 +117,7 @@
           else
              !     east or west of the last data value. this could be because a
              !     cyclic condition is needed or the dataset is too small.
+             print *, "WUT"
              ln_err = 1
              ie = 1
              is = nlon_in
@@ -115,9 +129,16 @@
           endif
           wte = 1.0_kindl - wtw
 
-          js = indp(lat, lat_in )
+          js = nearest_index(lat, lat_in )
 
-          if( lat_in(js) .gt. lat ) js = max(js - 1, 1)
+          if (lat_in(1) > lat_in(2)) then
+            ! Lat_in is decreasing
+            if( lat_in(js) .lt. lat ) js = max(js - 1, 1)
+          else
+            ! Lat_in is increasing
+            if( lat_in(js) .gt. lat ) js = max(js - 1, 1)
+          endif
+
           if( lat_in(js) .eq. lat .and. js .eq. nlat_in) js = max(js - 1, 1)
           je = min(js + 1, nlat_in)
 
