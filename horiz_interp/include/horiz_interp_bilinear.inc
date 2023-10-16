@@ -107,7 +107,7 @@
           if (decreasing_lon) then
             ! Lon_in is decreasing
             ! This is so that is is the lower bound.
-            ! For example, if the array is [10, 20, 30, 40, 50] and lon is 49, `is` is going to be 5 from `nearest_index`
+            ! For example, if the array is [10 20 30 40 50] and lon is 49, `is` is going to be 5 from `nearest_index`
             ! but it needs to be 4 so that it can use the data at lon_in(4) and lon_in(5)
             if( lon_in(is) .gt. lon ) is = max(is-1,1)
           else
