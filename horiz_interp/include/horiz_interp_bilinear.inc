@@ -34,6 +34,8 @@
     real(FMS_HI_KIND_)    :: wtw, wte, wts, wtn, lon, lat, tpi, hpi
     real(FMS_HI_KIND_)    :: glt_min, glt_max, gln_min, gln_max, min_lon, max_lon
     integer,parameter     :: kindl = FMS_HI_KIND_
+    logical               :: decreasing_lat !< .True. if latitude is monotically decreasing
+    logical               :: decreasing_lon !< .True. if longitude is monotically decreasing
 
     warns = 0
     if(present(verbose)) warns = verbose
@@ -74,6 +76,12 @@
        endif
     endif
 
+    decreasing_lat = .false.
+    if (lat_in(1) > lat_in(2)) decreasing_lat = .true.
+
+    decreasing_lon = .false.
+    if (lon_in(1) > lon_in(2)) decreasing_lon = .true.
+
     do n = 1, nlat_out
        do m = 1, nlon_out
           lon = lon_out(m,n)
@@ -96,7 +104,7 @@
           gln_min = min(lon,gln_min);  gln_max = max(lon,gln_max)
 
           is = nearest_index(lon, lon_in )
-          if (lon_in(1) > lon_in(2)) then
+          if (decreasing_lon) then
             ! Lon_in is decreasing
             ! This is so that is is the lower bound.
             ! For example, if the array is [10, 20, 30, 40, 50] and lon is 49, `is` is going to be 5 from `nearest_index`
@@ -112,12 +120,12 @@
 
           if( lon_in(is) .eq. lon .and. is .eq. nlon_in) is = max(is - 1,1)
           ie = min(is+1,nlon_in)
-          if(lon_in(is) .ne. lon_in(ie) .and. lon_in(is) .le. lon) then
+
+          if(lon_in(is) .ne. lon_in(ie) .and. (decreasing_lon .or. lon_in(is) .le. lon)) then
              wtw = ( lon_in(ie) - lon) / (lon_in(ie) - lon_in(is) )
           else
              !     east or west of the last data value. this could be because a
              !     cyclic condition is needed or the dataset is too small.
-             print *, "WUT"
              ln_err = 1
              ie = 1
              is = nlon_in
@@ -131,7 +139,7 @@
 
           js = nearest_index(lat, lat_in )
 
-          if (lat_in(1) > lat_in(2)) then
+          if (decreasing_lat) then
             ! Lat_in is decreasing
             if( lat_in(js) .lt. lat ) js = max(js - 1, 1)
           else
@@ -142,7 +150,7 @@
           if( lat_in(js) .eq. lat .and. js .eq. nlat_in) js = max(js - 1, 1)
           je = min(js + 1, nlat_in)
 
-          if ( lat_in(js) .ne. lat_in(je) .and. lat_in(js) .le. lat) then
+          if ( lat_in(js) .ne. lat_in(je) .and. (decreasing_lat .or. lat_in(js) .le. lat)) then
              wts = ( lat_in(je) - lat )/(lat_in(je)-lat_in(js))
           else
              !     north or south of the last data value. this could be because a
