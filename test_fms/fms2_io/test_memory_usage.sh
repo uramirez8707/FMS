@@ -1,3 +1,5 @@
+#!/bin/sh
+
 #***********************************************************************
 #*                   GNU Lesser General Public License
 #*
@@ -17,32 +19,27 @@
 #* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 #***********************************************************************
 
-# This is an automake file for the test_fms/fms2_io directory of the FMS
-# package.
+# This is part of the GFDL FMS package. This is a shell script to
+# execute tests in the test_fms/fms2_io directory.
 
-# J.Liptak, R.Menzel, U.Ramirez
+# Author: Ed Hartnett 6/10/20
+#
+# Set common test settings.
+. ../test-lib.sh
 
-# Find the needed mod and .inc files.
-AM_CPPFLAGS = -I$(top_srcdir)/include -I$(MODDIR)
+# make an input.nml for mpp_init to read
+touch input.nml
 
-# Link to the FMS library.
-LDADD = $(top_builddir)/libFMS/libFMS.la
+cat <<_EOF > input.nml
+&fms_nml
+  print_memory_usage = .true.
+/
+&test_memory_nml
+/
+_EOF
+# run the tests
+test_expect_success "Test the memory usage" '
+  mpirun -n 1 ./test_memory_usage
+'
 
-# Build these test programs.
-check_PROGRAMS = test_memory_usage
-
-# This is the source code for the tests.
-test_memory_usage_SOURCES = test_memory_usage.F90
-
-TEST_EXTENSIONS = .sh
-SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
-                  $(abs_top_srcdir)/test_fms/tap-driver.sh
-
-# Run the test programs.
-TESTS = test_memory_usage.sh
-
-# Include these files in the distribution.
-EXTRA_DIST = test_memory_usage.sh
-
-# Clean up
-CLEANFILES = *out input.nml *.nc *.dpi *.spi *.dyn *.spl
+test_done
