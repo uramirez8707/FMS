@@ -162,6 +162,12 @@
 
           wtn = 1.0_kindl - wts
 
+          write(mpp_pe()+100, *) "lat:", string(lat*RAD_TO_DEG), " lon:", string(lon*RAD_TO_DEG)
+          write(mpp_pe()+100, *) "lon_in:", lon_in*RAD_TO_DEG
+          write(mpp_pe()+100, *) "lat_in:", lat_in*RAD_TO_DEG
+          write(mpp_pe()+100, *) "is:", string(is), " ie:", string(ie), " ", string(lon_in(is)*RAD_TO_DEG), ":", string(lon_in(ie)*RAD_TO_DEG)
+          write(mpp_pe()+100, *) "js:", string(js), " je:", string(je), " ", string(lat_in(js)*RAD_TO_DEG), ":", string(lat_in(je)*RAD_TO_DEG)
+
           Interp % i_lon (m,n,1) = is; Interp % i_lon (m,n,2) = ie
           Interp % j_lat (m,n,1) = js; Interp % j_lat (m,n,2) = je
           Interp % HI_KIND_TYPE_ % wti   (m,n,1) = wtw

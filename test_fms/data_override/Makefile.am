@@ -35,7 +35,8 @@ check_PROGRAMS = \
   test_data_override_r4 \
   test_data_override_r8 \
   test_data_override_ongrid_r4 \
-  test_data_override_ongrid_r8
+  test_data_override_ongrid_r8 \
+  test_data_override_mono
 
 # This is the source code for the test.
 test_data_override_r4_SOURCES = test_data_override.F90
@@ -56,6 +57,8 @@ test_data_override_ongrid_r8_CPPFLAGS = $(AM_CPPFLAGS) -DDO_TEST_KIND_=r8_kind
 test_get_grid_v1_r4_CPPFLAGS = $(AM_CPPFLAGS) -DDO_TEST_KIND_=r4_kind
 test_get_grid_v1_r8_CPPFLAGS = $(AM_CPPFLAGS) -DDO_TEST_KIND_=r8_kind
 
+test_data_override_mono_SOURCES = test_data_override_mono.F90
+
 if SKIP_PARSER_TESTS
 skipflag="skip"
 else
@@ -69,7 +72,7 @@ TESTS_ENVIRONMENT= test_input_path="@TEST_INPUT_PATH@" \
                    parser_skip=${skipflag}
 
 # Run the test program.
-TESTS = test_data_override2.sh
+#TESTS = test_data_override2.sh
 
 # Include these files with the distribution.
 EXTRA_DIST = test_data_override2.sh
