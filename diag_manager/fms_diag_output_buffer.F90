@@ -27,7 +27,7 @@ module fms_diag_output_buffer_mod
 #ifdef use_yaml
 use platform_mod
 use iso_c_binding
-use time_manager_mod, only: time_type, operator(==), operator(>)
+use time_manager_mod, only: time_type, operator(==), operator(>), operator(<)
 use mpp_mod, only: mpp_error, FATAL, NOTE
 use diag_data_mod, only: DIAG_NULL, DIAG_NOT_REGISTERED, i4, i8, r4, r8, get_base_time, MIN_VALUE, MAX_VALUE, EMPTY, &
                          time_min, time_max
@@ -65,6 +65,7 @@ type :: fmsDiagOutputBuffer_type
   procedure :: get_yaml_id
   procedure :: init_buffer_time
   procedure :: update_buffer_time
+  procedure :: is_there_data_to_write
   procedure :: is_done_with_math
   procedure :: set_done_with_math
   procedure :: write_buffer
@@ -338,6 +339,19 @@ subroutine init_buffer_time(this, time)
     this%time = get_base_time()
   endif
 end subroutine init_buffer_time
+
+!> @brief Determine if there is any data to write (i.e send_data has been called)
+!! @return .true. if there is data to write
+function is_there_data_to_write(this, model_time) &
+  result(res)
+  class(fmsDiagOutputBuffer_type), intent(inout) :: this        !< Buffer object
+  type(time_type),                 intent(in)    :: model_time  !< current model time
+
+  logical :: res
+
+  res = .true.
+  if (this%time < model_time) res = .false.
+end function
 
 !> @brief Update the buffer time if it is a new time
 !! @return .true. if the buffer was updated

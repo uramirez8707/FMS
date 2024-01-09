@@ -47,7 +47,7 @@ use fms_diag_axis_object_mod, only: diagDomain_t, get_domain_and_domain_type, fm
 use fms_diag_field_object_mod, only: fmsDiagField_type
 use fms_diag_output_buffer_mod, only: fmsDiagOutputBuffer_type
 use mpp_mod, only: mpp_get_current_pelist, mpp_npes, mpp_root_pe, mpp_pe, mpp_error, FATAL, stdout, &
-                   uppercase, lowercase
+                   uppercase, lowercase, NOTE
 
 implicit none
 private
@@ -1134,10 +1134,11 @@ subroutine write_time_metadata(this)
 end subroutine write_time_metadata
 
 !> \brief Write out the field data to the file
-subroutine write_field_data(this, field_obj, buffer_obj)
+subroutine write_field_data(this, field_obj, buffer_obj, model_time)
   class(fmsDiagFileContainer_type),        intent(in),    target :: this           !< The diag file object to write to
   type(fmsDiagField_type),                 intent(in),    target :: field_obj(:)   !< The field object to write from
   type(fmsDiagOutputBuffer_type),          intent(inout), target :: buffer_obj(:)  !< The buffer object with the data
+  type(time_type),                         intent(in)            :: model_time     !< current model time
 
   class(fmsDiagFile_type), pointer     :: diag_file      !< Diag_file object to open
   class(FmsNetcdfFile_t),  pointer     :: fms2io_fileobj !< Fileobj to write to
@@ -1162,6 +1163,8 @@ subroutine write_field_data(this, field_obj, buffer_obj)
         if (diag_file%unlim_dimension_level .eq. 1) &
         call buffer_obj(diag_file%buffer_ids(i))%write_buffer(fms2io_fileobj)
       else
+        if (.not. buffer_obj(diag_file%buffer_ids(i))%is_there_data_to_write(model_time)) &
+          call mpp_error(NOTE, "Send data was never called. Writing fill values for variable ")
         call buffer_obj(diag_file%buffer_ids(i))%write_buffer(fms2io_fileobj, &
                         unlim_dim_level=diag_file%unlim_dimension_level)
       endif
