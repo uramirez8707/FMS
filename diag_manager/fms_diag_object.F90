@@ -955,6 +955,7 @@ function fms_diag_do_reduction(this, field_data, diag_field_id, oor_mask, weight
       if (.not. block_in_subregion) cycle
     endif is_subregional_reduced_k_range
 
+    new_time = buffer_ptr%update_buffer_time(time)
     !< Determine the reduction method for the buffer
     reduction_method = field_yaml_ptr%get_var_reduction()
     select case(reduction_method)
@@ -983,7 +984,6 @@ function fms_diag_do_reduction(this, field_data, diag_field_id, oor_mask, weight
         return
       endif
     case (time_average)
-      new_time = buffer_ptr%update_buffer_time(time)
       error_msg = buffer_ptr%do_time_sum_wrapper(field_data, oor_mask, field_ptr%get_mask_variant(), &
         bounds_in, bounds_out, missing_value, new_time)
       if (trim(error_msg) .ne. "") then

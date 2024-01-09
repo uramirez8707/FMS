@@ -1144,6 +1144,7 @@ subroutine write_field_data(this, field_obj, buffer_obj, model_time)
   class(FmsNetcdfFile_t),  pointer     :: fms2io_fileobj !< Fileobj to write to
   integer                              :: i              !< For do loops
   integer                              :: field_id       !< The id of the field writing the data from
+  type(fmsDiagOutputBuffer_type), pointer :: output_buffer !< Buffer object
 
   diag_file => this%FMS_diag_file
   fms2io_fileobj => diag_file%fms2io_fileobj
@@ -1157,15 +1158,19 @@ subroutine write_field_data(this, field_obj, buffer_obj, model_time)
     enddo
   else
     do i = 1, diag_file%number_of_buffers
-      field_id = buffer_obj(diag_file%buffer_ids(i))%get_field_id()
+      output_buffer => buffer_obj(diag_file%buffer_ids(i))
+      field_id = output_buffer%get_field_id()
       if (field_obj(field_id)%is_static()) then
         !< If the variable is static, only write it the first time
         if (diag_file%unlim_dimension_level .eq. 1) &
-        call buffer_obj(diag_file%buffer_ids(i))%write_buffer(fms2io_fileobj)
+        call output_buffer%write_buffer(fms2io_fileobj)
       else
-        if (.not. buffer_obj(diag_file%buffer_ids(i))%is_there_data_to_write(model_time)) &
-          call mpp_error(NOTE, "Send data was never called. Writing fill values for variable ")
-        call buffer_obj(diag_file%buffer_ids(i))%write_buffer(fms2io_fileobj, &
+        if (.not. output_buffer%is_there_data_to_write(model_time)) then
+          call mpp_error(NOTE, "Send data was never called. Writing fill values for variable:"//&
+            field_obj(field_id)%get_modname()//":"//field_obj(field_id)%get_varname())
+          cycle
+        endif
+        call output_buffer%write_buffer(fms2io_fileobj, &
                         unlim_dim_level=diag_file%unlim_dimension_level)
       endif
     enddo
