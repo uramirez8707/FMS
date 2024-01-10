@@ -778,7 +778,7 @@ subroutine fms_diag_do_io(this, is_end_of_run)
         field_yaml => diag_yaml%get_diag_field_from_id(diag_buff%get_yaml_id())
         diag_field => this%FMS_diag_fields(diag_buff%get_field_id())
 
-        if (.not. diag_buff%is_there_data_to_write(model_time)) cycle
+        if (.not. diag_buff%is_there_data_to_write(diag_file%FMS_diag_file%get_last_time_output())) cycle
 
         ! sets missing value
         mval = diag_field%find_missing_value(missing_val)
@@ -803,7 +803,7 @@ subroutine fms_diag_do_io(this, is_end_of_run)
     if (is_writing) then
       call diag_file%increase_unlim_dimension_level()
       call diag_file%write_time_data()
-      call diag_file%write_field_data(this%FMS_diag_fields, this%FMS_diag_output_buffers, model_time)
+      call diag_file%write_field_data(this%FMS_diag_fields, this%FMS_diag_output_buffers)
       call diag_file%update_next_write(model_time)
       call diag_file%update_current_new_file_freq_index(model_time)
       if (diag_file%is_time_to_close_file(model_time)) call diag_file%close_diag_file()

@@ -147,6 +147,7 @@ type :: fmsDiagFile_type
  procedure, public :: dump_file_obj
  procedure, public :: get_buffer_ids
  procedure, public :: get_number_of_buffers
+ procedure, public :: get_last_time_output
 end type fmsDiagFile_type
 
 type, extends (fmsDiagFile_type) :: subRegionalFile_type
@@ -1134,11 +1135,10 @@ subroutine write_time_metadata(this)
 end subroutine write_time_metadata
 
 !> \brief Write out the field data to the file
-subroutine write_field_data(this, field_obj, buffer_obj, model_time)
+subroutine write_field_data(this, field_obj, buffer_obj)
   class(fmsDiagFileContainer_type),        intent(in),    target :: this           !< The diag file object to write to
   type(fmsDiagField_type),                 intent(in),    target :: field_obj(:)   !< The field object to write from
   type(fmsDiagOutputBuffer_type),          intent(inout), target :: buffer_obj(:)  !< The buffer object with the data
-  type(time_type),                         intent(in)            :: model_time     !< current model time
 
   class(fmsDiagFile_type), pointer     :: diag_file      !< Diag_file object to open
   class(FmsNetcdfFile_t),  pointer     :: fms2io_fileobj !< Fileobj to write to
@@ -1165,7 +1165,7 @@ subroutine write_field_data(this, field_obj, buffer_obj, model_time)
         if (diag_file%unlim_dimension_level .eq. 1) &
         call output_buffer%write_buffer(fms2io_fileobj)
       else
-        if (.not. output_buffer%is_there_data_to_write(model_time)) then
+        if (.not. output_buffer%is_there_data_to_write(diag_file%get_last_time_output())) then
           call mpp_error(NOTE, "Send data was never called. Writing fill values for variable:"//&
             field_obj(field_id)%get_modname()//":"//field_obj(field_id)%get_varname())
           cycle
@@ -1500,6 +1500,15 @@ pure function get_number_of_buffers(this)
   integer :: get_number_of_buffers !< returned number of buffers
   get_number_of_buffers = this%number_of_buffers
 end function get_number_of_buffers
+
+!> \brief Get the time the last output was written for this file
+!! \return the time the last output was written
+function get_last_time_output(this) &
+  result(res)
+  class(fmsDiagFile_type), intent(in) :: this !< file object
+  type(time_type) :: res
+  res = this%last_output
+end function get_last_time_output
 
 #endif
 end module fms_diag_file_object_mod
