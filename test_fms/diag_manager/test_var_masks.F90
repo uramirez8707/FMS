@@ -67,7 +67,8 @@ program test_var_masks
   id_x  = diag_axis_init('x',  x,  'point_E', 'x', long_name='point_E')
   id_y  = diag_axis_init('y',  y,  'point_N', 'y', long_name='point_N')
 
-  id_var1 = register_diag_field  ('atmos', 'ua', (/id_x, id_y/), Time, missing_value=-999., mask_variant=.True.)
+  id_var1 = register_diag_field  ('atmos', 'ua', (/id_x, id_y/), Time, missing_value=-999., mask_variant=.True., &
+                                  scale_factor = 0.5)
 
   call diag_manager_set_time_end(set_date(2,1,2,0,0,0))
   do i = 1, 24
@@ -81,7 +82,7 @@ program test_var_masks
 
     ! Double send_data calls at the same time. This is similar to what happens with the
     ! `tntpbl` and `tnhuspbl` diagnostics in the physics
-    ! TODO used = send_data(id_var1, var1_data, Time, mask=var1_mask)
+    used = send_data(id_var1, var1_data, Time, mask=var1_mask)
     call diag_send_complete(Time_step)
   enddo
 

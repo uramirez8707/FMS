@@ -70,6 +70,8 @@ type fmsDiagField_type
      INTEGER                         , private        :: type_of_domain    !< The type of domain ("NO_DOMAIN",
                                                                            !! "TWO_D_DOMAIN", or "UG_DOMAIN")
      integer, allocatable, private                    :: area, volume      !< The Area and Volume
+     real(kind=r8_kind), allocatable, private         :: scale_factor      !< scale factor to multiply the data by
+                                                                           !! before it is written
      class(*), allocatable, private                   :: missing_value     !< The missing fill value
      class(*), allocatable, private                   :: data_RANGE(:)     !< The range of the variable data
      type(fmsDiagInputBuffer_t), allocatable          :: input_data_buffer !< Input buffer object for when buffering
@@ -178,6 +180,8 @@ type fmsDiagField_type
      procedure :: is_variable_in_file
      procedure :: get_field_file_name
      procedure :: generate_associated_files_att
+     procedure :: get_scale_factor
+     procedure :: has_scale_factor
 end type fmsDiagField_type
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! variables !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 type(fmsDiagField_type) :: null_ob
@@ -223,7 +227,7 @@ end function fms_diag_fields_object_init
 subroutine fms_register_diag_field_obj &
        (this, modname, varname, diag_field_indices, diag_axis, axes, &
        longname, units, missing_value, varRange, mask_variant, standname, &
-       do_not_log, err_msg, interp_method, tile_count, area, volume, realm, static)
+       do_not_log, err_msg, interp_method, tile_count, area, volume, realm, static, scale_factor)
 
  class(fmsDiagField_type),       INTENT(inout) :: this                  !< Diaj_obj to fill
  CHARACTER(len=*),               INTENT(in)    :: modname               !< The module name
@@ -250,6 +254,8 @@ subroutine fms_register_diag_field_obj &
  CHARACTER(len=*), OPTIONAL,     INTENT(in)    :: realm                 !< String to set as the value to the
                                                                         !! modeling_realm attribute
  LOGICAL,          OPTIONAL,     INTENT(in)    :: static                !< Set to true if it is a static field
+ CLASS(*),         OPTIONAL,     INTENT(in)    :: scale_factor          !< scale factor to multiply the data by after
+                                                                        !! it has been averaged
 
 !> Fill in information from the register call
   this%varname = trim(varname)
@@ -364,6 +370,18 @@ subroutine fms_register_diag_field_obj &
  !< Allocate space for any additional variable attributes
  !< These will be fill out when calling `diag_field_add_attribute`
  allocate(this%attributes(max_field_attributes))
+
+ if (present(scale_factor)) then
+  select type (scale_factor)
+  type is (real(kind=r4_kind))
+    this%scale_factor = real(scale_factor, kind=r4_kind)
+  type is (real(kind=r8_kind))
+    this%scale_factor = scale_factor
+  class Default
+    call mpp_error(FATAL, "The scale factor must be an r4 or r8. Please check you register_diag_field call for "//&
+                        & "field:"//trim(varname)//" in mod:"//trim(modname))
+  end select
+ endif
  this%num_attributes = 0
  this%registered = .true.
 end subroutine fms_register_diag_field_obj
@@ -1759,6 +1777,33 @@ pure logical function has_mask_allocated(this)
   class(fmsDiagField_type),intent(in) :: this !< field object to check mask allocation for
   has_mask_allocated = allocated(this%mask)
 end function has_mask_allocated
+
+!> @brief Determines if a field has a scale factor
+!! @returns .True. if the field has a scale factor
+pure function has_scale_factor(this) &
+result(res)
+  class(fmsDiagField_type),intent(in) :: this !< field object to check mask allocation for
+  logical :: res
+
+  res = .False.
+  if (allocated(this%scale_factor)) then
+    res = .True.
+  endif
+end function has_scale_factor
+
+!> @brief Queries for the scale factor of a field object
+!! @returns the scale factor, null if the scale factor is not allocated
+pure function get_scale_factor(this) &
+result(res)
+  class(fmsDiagField_type),intent(in) :: this !< field object to check mask allocation for
+  real(kind=r8_kind) :: res
+
+  if (this%has_scale_factor()) then
+    res = this%scale_factor
+  else
+    res = real(diag_null, kind=r8_kind)
+  endif
+end function get_scale_factor
 
 !> @brief Determine if the variable is in the file
 !! @return .True. if the varibale is in the file

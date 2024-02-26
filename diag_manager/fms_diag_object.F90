@@ -174,7 +174,7 @@ end subroutine fms_diag_object_end
 integer function fms_register_diag_field_obj &
        (this, modname, varname, axes, init_time, &
        longname, units, missing_value, varRange, mask_variant, standname, &
-       do_not_log, err_msg, interp_method, tile_count, area, volume, realm, static)
+       do_not_log, err_msg, interp_method, tile_count, area, volume, realm, static, scale_factor)
 
  class(fmsDiagObject_type),TARGET,INTENT(inout):: this       !< Diaj_obj to fill
  CHARACTER(len=*),               INTENT(in)    :: modname               !< The module name
@@ -199,6 +199,8 @@ integer function fms_register_diag_field_obj &
  CHARACTER(len=*), OPTIONAL,     INTENT(in)    :: realm                 !< String to set as the value to the
                                                                         !! modeling_realm attribute
  LOGICAL,          OPTIONAL,     INTENT(in)    :: static                !< True if the variable is static
+ CLASS(*),         OPTIONAL,     INTENT(in)    :: scale_factor          !< scale factor to multiply the data by before
+                                                                        !! is is written
 #ifdef use_yaml
 
  class (fmsDiagFile_type), pointer :: fileptr !< Pointer to the diag_file
@@ -242,7 +244,7 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
        axes=axes, longname=longname, units=units, missing_value=missing_value, varRange= varRange, &
        mask_variant= mask_variant, standname=standname, do_not_log=do_not_log, err_msg=err_msg, &
        interp_method=interp_method, tile_count=tile_count, area=area, volume=volume, realm=realm, &
-       static=static)
+       static=static, scale_factor=scale_factor)
 
 !> Add the axis information, initial time, and field IDs to the files
   if (present(axes) .and. present(init_time)) then
@@ -311,7 +313,7 @@ end function fms_register_diag_field_obj
 !! in the diag_table.yaml
 INTEGER FUNCTION fms_register_diag_field_scalar(this,module_name, field_name, init_time, &
        & long_name, units, missing_value, var_range, standard_name, do_not_log, err_msg,&
-       & area, volume, realm)
+       & area, volume, realm, scale_factor)
     class(fmsDiagObject_type),TARGET,INTENT(inout):: this       !< Diaj_obj to fill
     CHARACTER(len=*),           INTENT(in) :: module_name   !< Module where the field comes from
     CHARACTER(len=*),           INTENT(in) :: field_name    !< Name of the field
@@ -326,6 +328,8 @@ INTEGER FUNCTION fms_register_diag_field_scalar(this,module_name, field_name, in
     INTEGER,          OPTIONAL, INTENT(in) :: area          !< Id of the area field
     INTEGER,          OPTIONAL, INTENT(in) :: volume        !< Id of the volume field
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: realm         !< String to set as the modeling_realm attribute
+    CLASS(*),         OPTIONAL, INTENT(in) :: scale_factor  !< scale factor to multiply the data by before it is
+                                                            !! written
 #ifndef use_yaml
 fms_register_diag_field_scalar=DIAG_FIELD_NOT_FOUND
 CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling with -Duse_yaml")
@@ -334,7 +338,7 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
       & module_name, field_name, init_time=init_time, &
       & longname=long_name, units=units, missing_value=missing_value, varrange=var_range, &
       & standname=standard_name, do_not_log=do_not_log, err_msg=err_msg, &
-      & area=area, volume=volume, realm=realm)
+      & area=area, volume=volume, realm=realm, scale_factor=scale_factor)
 #endif
 end function fms_register_diag_field_scalar
 
@@ -343,7 +347,7 @@ end function fms_register_diag_field_scalar
 !! in the diag_table.yaml
 INTEGER FUNCTION fms_register_diag_field_array(this, module_name, field_name, axes, init_time, &
        & long_name, units, missing_value, var_range, mask_variant, standard_name, verbose,&
-       & do_not_log, err_msg, interp_method, tile_count, area, volume, realm)
+       & do_not_log, err_msg, interp_method, tile_count, area, volume, realm, scale_factor)
     class(fmsDiagObject_type),TARGET,INTENT(inout):: this       !< Diaj_obj to fill
     CHARACTER(len=*),           INTENT(in) :: module_name   !< Module where the field comes from
     CHARACTER(len=*),           INTENT(in) :: field_name    !< Name of the field
@@ -366,6 +370,8 @@ INTEGER FUNCTION fms_register_diag_field_array(this, module_name, field_name, ax
     INTEGER,          OPTIONAL, INTENT(in) :: area          !< Id of the area field
     INTEGER,          OPTIONAL, INTENT(in) :: volume        !< Id of the volume field
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: realm         !< String to set as the modeling_realm attribute
+    CLASS(*),         OPTIONAL, INTENT(in) :: scale_factor  !< scale factor to multiply the data by before it is
+                                                            !! written
 
 #ifndef use_yaml
 fms_register_diag_field_array=DIAG_FIELD_NOT_FOUND
@@ -375,7 +381,8 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
       & module_name, field_name, init_time=init_time, &
       & axes=axes, longname=long_name, units=units, missing_value=missing_value, varrange=var_range, &
       & mask_variant=mask_variant, standname=standard_name, do_not_log=do_not_log, err_msg=err_msg, &
-      & interp_method=interp_method, tile_count=tile_count, area=area, volume=volume, realm=realm)
+      & interp_method=interp_method, tile_count=tile_count, area=area, volume=volume, realm=realm, &
+      & scale_factor=scale_factor)
 #endif
 end function fms_register_diag_field_array
 
@@ -808,8 +815,9 @@ subroutine fms_diag_do_io(this, end_time)
           if( field_yaml%get_var_reduction() .ge. time_average) then
             if(DEBUG_REDUCT)call mpp_error(NOTE, "fms_diag_do_io:: finishing reduction for "//diag_field%get_longname())
             error_string = diag_buff%diag_reduction_done_wrapper( &
-                                    field_yaml%get_var_reduction(), &
-                                   mval, diag_field%get_var_is_masked(), diag_field%get_mask_variant())
+                                    field_yaml%get_var_reduction(), mval, &
+                                    diag_field%get_var_is_masked(), diag_field%get_mask_variant(), &
+                                    diag_field%has_scale_factor(), diag_field%get_scale_factor())
           endif
         endif
         call diag_file%write_field_data(diag_field, diag_buff)

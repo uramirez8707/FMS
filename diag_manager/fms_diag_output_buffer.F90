@@ -705,13 +705,16 @@ end function do_time_sum_wrapper
 !> Finishes calculations for any reductions that use an average (avg, rms, pow)
 !! TODO add mask and any other needed args for adjustment, and pass in the adjusted mask
 !! to time_update_done
-function diag_reduction_done_wrapper(this, reduction_method, missing_value, has_mask, mask_variant) &
+function diag_reduction_done_wrapper(this, reduction_method, missing_value, has_mask, &
+                                     mask_variant, has_scale_factor, scale_factor) & !! , has_halo, mask) &
   result(err_msg)
   class(fmsDiagOutputBuffer_type), intent(inout) :: this !< Updated buffer object
   integer, intent(in)                            :: reduction_method !< enumerated reduction type from diag_data
   real(kind=r8_kind), intent(in)                 :: missing_value !< missing_value for masked data points
   logical, intent(in)                            :: has_mask !< indicates if there was a mask used during buffer updates
   logical, intent(in)                            :: mask_variant !< Indicates if the mask changes over time
+  logical, intent(in)                            :: has_scale_factor !< indicates if a field has a scale factor
+  real(kind=r8_kind), intent(in)                 :: scale_factor !< Scale factor to multiply the data by before
   character(len=51)                              :: err_msg !< error message to return, blank if sucessful
 
   if(.not. allocated(this%buffer)) return
@@ -719,11 +722,11 @@ function diag_reduction_done_wrapper(this, reduction_method, missing_value, has_
   err_msg = ""
   select type(buff => this%buffer)
     type is (real(r8_kind))
-      call time_update_done(buff, this%weight_sum, reduction_method, missing_value, has_mask, mask_variant, &
-        this%diurnal_sample_size)
+      call time_update_done(buff, this%weight_sum, reduction_method, missing_value, has_mask, &
+                            mask_variant, has_scale_factor, scale_factor, this%diurnal_sample_size)
     type is (real(r4_kind))
       call time_update_done(buff, this%weight_sum, reduction_method, real(missing_value, r4_kind), has_mask, &
-                            mask_variant, this%diurnal_sample_size)
+                            mask_variant, has_scale_factor, real(scale_factor, r4_kind), this%diurnal_sample_size)
   end select
   this%weight_sum = 0.0_r8_kind
 

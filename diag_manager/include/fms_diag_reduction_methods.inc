@@ -342,7 +342,7 @@ end subroutine DO_TIME_SUM_UPDATE_
 !! Just divides the buffer by the counter array(which is just the sum of the weights used in the buffer's reduction)
 !! TODO: change has_mask to an actual logical mask so we don't have to check for missing values
 subroutine SUM_UPDATE_DONE_(out_buffer_data, weight_sum, reduction_method, missing_val, has_mask, mask_variant, &
-                            n_diurnal_samples)
+                            has_scale_factor, scale_factor, n_diurnal_samples)
   real(FMS_TRM_KIND_), intent(inout) :: out_buffer_data(:,:,:,:,:) !< data buffer previously updated with
                                                                    !! do_time_sum_update
   real(r8_kind), intent(in)          :: weight_sum(:,:,:,:) !< sum of weights for averaging,
@@ -352,6 +352,8 @@ subroutine SUM_UPDATE_DONE_(out_buffer_data, weight_sum, reduction_method, missi
   real(FMS_TRM_KIND_), intent(in)    :: missing_val !< missing value for masked elements
   logical, intent(in)                :: has_mask !< indicates if mask is used so missing values can be skipped
   logical, intent(in)                :: mask_variant !< Indicates if the mask changes over time
+  logical, intent(in)                :: has_scale_factor !< indicates if a field has a scale factor
+  real(FMS_TRM_KIND_), intent(in)    :: scale_factor !< Scale factor to multiply the data by before
   integer, optional, intent(in)      :: n_diurnal_samples !< number of diurnal samples as set in reduction method
   integer, allocatable :: wsum(:,:,:,:) !< local cp of weight_sum, only changed if using diurnal
   !! TODO replace conditional in the `where` with passed in and ajusted mask from the original call
@@ -400,6 +402,10 @@ subroutine SUM_UPDATE_DONE_(out_buffer_data, weight_sum, reduction_method, missi
     ! There is no mask!
     out_buffer_data(:,:,:,:,:) = out_buffer_data(:,:,:,:,:) &
                                / wsum(1,1,1,1)
+  endif
+
+  if (has_scale_factor) then
+    out_buffer_data = out_buffer_data * scale_factor
   endif
 
   if(reduction_method .eq. time_rms .and. has_mask) then
