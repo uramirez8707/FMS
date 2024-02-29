@@ -27,9 +27,9 @@ module fms_diag_output_buffer_mod
 #ifdef use_yaml
 use platform_mod
 use iso_c_binding
-use time_manager_mod, only: time_type, operator(==), get_ticks_per_second, get_time, operator(>)
+use time_manager_mod, only: time_type, operator(==), operator(>=), get_ticks_per_second, get_time, operator(>)
 use constants_mod, only: SECONDS_PER_DAY
-use mpp_mod, only: mpp_error, FATAL, NOTE
+use mpp_mod, only: mpp_error, FATAL, NOTE, mpp_pe, mpp_root_pe
 use diag_data_mod, only: DIAG_NULL, DIAG_NOT_REGISTERED, i4, i8, r4, r8, get_base_time, MIN_VALUE, MAX_VALUE, EMPTY, &
                          time_min, time_max
 use fms2_io_mod, only: FmsNetcdfFile_t, write_data, FmsNetcdfDomainFile_t, FmsNetcdfUnstructuredDomainFile_t
@@ -49,7 +49,9 @@ type :: fmsDiagOutputBuffer_type
   class(*), allocatable :: buffer(:,:,:,:,:)  !< 5D numeric data array
   integer               :: ndim               !< Number of dimensions for each variable
   integer,  allocatable :: buffer_dims(:)     !< holds the size of each dimension in the buffer
-  real(r8_kind)         :: weight_sum !< (x,y,z, time-of-day) used in the time averaging functions
+  real(r8_kind), allocatable :: weight_sum(:,:,:,:) !< Weight sum as an array
+                                                    !! (this will be have a size of 1,1,1,1 when not using variable
+                                                    !! masks!)
   integer,  allocatable :: num_elements(:)    !< used in time-averaging
   integer,  allocatable :: axis_ids(:)        !< Axis ids for the buffer
   integer               :: field_id           !< The id of the field the buffer belongs to
@@ -61,6 +63,7 @@ type :: fmsDiagOutputBuffer_type
                                               !! time and sample size if using a diurnal reduction
   logical               :: send_data_called   !< .True. if send_data has been called
   type(time_type)       :: time               !< The last time the data was received
+  type(time_type)       :: next_output        !< The next time to output the data
 
   contains
   procedure :: add_axis_ids
@@ -70,8 +73,10 @@ type :: fmsDiagOutputBuffer_type
   procedure :: set_yaml_id
   procedure :: get_yaml_id
   procedure :: init_buffer_time
+  procedure :: set_next_output
   procedure :: update_buffer_time
   procedure :: is_there_data_to_write
+  procedure :: is_time_to_finish_reduction
   procedure :: set_send_data_called
   procedure :: is_done_with_math
   procedure :: set_done_with_math
@@ -141,14 +146,16 @@ subroutine flush_buffer(this)
   if (allocated(this%buffer_dims))  deallocate(this%buffer_dims)
   if (allocated(this%num_elements)) deallocate(this%num_elements)
   if (allocated(this%axis_ids))     deallocate(this%axis_ids)
+  if (allocated(this%weight_sum))   deallocate(this%weight_sum)
 end subroutine flush_buffer
 
 !> Allocates a 5D buffer to given buff_type.
-subroutine allocate_buffer(this, buff_type, ndim, buff_sizes, field_name, diurnal_samples)
+subroutine allocate_buffer(this, buff_type, ndim, buff_sizes, mask_variant, field_name, diurnal_samples)
   class(fmsDiagOutputBuffer_type), intent(inout), target :: this            !< 5D buffer object
   class(*),                        intent(in)            :: buff_type       !< allocates to the type of buff_type
   integer,                         intent(in)            :: ndim            !< Number of dimension
   integer,                         intent(in)            :: buff_sizes(4)   !< dimension buff_sizes
+  logical,                         intent(in)            :: mask_variant    !< Mask changes over time
   character(len=*),                intent(in)            :: field_name      !< field name for error output
   integer,                         intent(in)            :: diurnal_samples !< number of diurnal samples
 
@@ -164,28 +171,31 @@ subroutine allocate_buffer(this, buff_type, ndim, buff_sizes, field_name, diurna
     type is (integer(kind=i4_kind))
       allocate(integer(kind=i4_kind) :: this%buffer(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4),  &
                                                   & n_samples))
-      this%weight_sum = 0.0_r4_kind
       this%buffer_type = i4
     type is (integer(kind=i8_kind))
       allocate(integer(kind=i8_kind) :: this%buffer(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4), &
                                                   & n_samples))
-      this%weight_sum = 0.0_r8_kind
       this%buffer_type = i8
     type is (real(kind=r4_kind))
       allocate(real(kind=r4_kind) :: this%buffer(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4),  &
                                                & n_samples))
-      this%weight_sum = 0.0_r4_kind
       this%buffer_type = r4
     type is (real(kind=r8_kind))
       allocate(real(kind=r8_kind) :: this%buffer(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4), &
                                                & n_samples))
-      this%weight_sum = 0.0_r8_kind
       this%buffer_type = r8
     class default
        call mpp_error("allocate_buffer", &
            "The buff_type value passed to allocate a buffer is not a r8, r4, i8, or i4" // &
            "for field:" // field_name, FATAL)
   end select
+  if (mask_variant) then
+    allocate(this%weight_sum(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4)))
+  else
+    allocate(this%weight_sum(1,1,1,1))
+  endif
+  this%weight_sum = 0.0_r8_kind
+
   allocate(this%num_elements(n_samples))
   this%num_elements = 0
   this%done_with_math = .false.
@@ -347,12 +357,26 @@ subroutine init_buffer_time(this, time)
   endif
 end subroutine init_buffer_time
 
+!> @brief Sets the next output
+subroutine set_next_output(this, time, is_static)
+  class(fmsDiagOutputBuffer_type), intent(inout) :: this        !< Buffer object
+  type(time_type),                 intent(in)    :: time        !< time to add to the buffer
+  logical, optional,               intent(in)    :: is_static   !< .True. if the field is static
+
+  this%next_output = time
+  if (present(is_static)) then
+    !< If the field is static set the next_output to be equal to time
+    !! this should only be used in the init, so next_output will be equal to the the init time
+    if (is_static) this%next_output = this%time
+  endif
+end subroutine set_next_output
+
 !> @brief Update the buffer time if it is a new time
 !! @return .true. if the buffer was updated
 function update_buffer_time(this, time) &
   result(res)
   class(fmsDiagOutputBuffer_type), intent(inout) :: this        !< Buffer object
-  type(time_type),                 intent(in)    :: time        !< time to add to the buffer
+  type(time_type),                 intent(in)    :: time        !< Current model time
 
   logical :: res
 
@@ -361,6 +385,8 @@ function update_buffer_time(this, time) &
     res = .true.
   else
     res = .false.
+    !< If this is the first time send_data has been called
+    if (.not. this%send_data_called) res = .true.
   endif
 end function
 
@@ -632,7 +658,7 @@ end function do_time_max_wrapper
 
 !> @brief Does the time_sum reduction method on the buffer object
 !! @return Error message if the math was not successful
-function do_time_sum_wrapper(this, field_data, mask, is_masked, bounds_in, bounds_out, missing_value, &
+function do_time_sum_wrapper(this, field_data, mask, is_masked, mask_variant, bounds_in, bounds_out, missing_value, &
                              increase_counter, pow_value) &
   result(err_msg)
   class(fmsDiagOutputBuffer_type), intent(inout) :: this                !< buffer object to write
@@ -641,6 +667,7 @@ function do_time_sum_wrapper(this, field_data, mask, is_masked, bounds_in, bound
   type(fmsDiagIbounds_type),       intent(in)    :: bounds_out          !< Indicies for the output buffer
   logical,                         intent(in)    :: mask(:,:,:,:)       !< Mask for the field
   logical,                         intent(in)    :: is_masked           !< .True. if the field has a mask
+  logical,                         intent(in)    :: mask_variant        !< .True. if the mask changes over time
   real(kind=r8_kind),              intent(in)    :: missing_value       !< Missing_value for data points that are masked
   logical,                         intent(in)    :: increase_counter    !< .True. if data has not been received for
                                                                         !! time, so the counter needs to be increased
@@ -655,7 +682,7 @@ function do_time_sum_wrapper(this, field_data, mask, is_masked, bounds_in, bound
     type is (real(kind=r8_kind))
       select type (field_data)
       type is (real(kind=r8_kind))
-        call do_time_sum_update(output_buffer, this%weight_sum, field_data, mask, is_masked, &
+        call do_time_sum_update(output_buffer, this%weight_sum, field_data, mask, is_masked, mask_variant, &
                                 bounds_in, bounds_out, missing_value, increase_counter, this%diurnal_section, &
                                 pow=pow_value)
       class default
@@ -664,8 +691,9 @@ function do_time_sum_wrapper(this, field_data, mask, is_masked, bounds_in, bound
     type is (real(kind=r4_kind))
       select type (field_data)
       type is (real(kind=r4_kind))
-        call do_time_sum_update(output_buffer, this%weight_sum, field_data, mask, is_masked, bounds_in, bounds_out, &
-          real(missing_value, kind=r4_kind), increase_counter, this%diurnal_section, pow=pow_value)
+        call do_time_sum_update(output_buffer, this%weight_sum, field_data, mask, is_masked, mask_variant, &
+                                bounds_in, bounds_out, real(missing_value, kind=r4_kind), increase_counter, &
+                                this%diurnal_section, pow=pow_value)
       class default
         err_msg="do_time_sum_wrapper::the output buffer and the buffer send in are not of the same type (r4_kind)"
       end select
@@ -677,25 +705,25 @@ end function do_time_sum_wrapper
 !> Finishes calculations for any reductions that use an average (avg, rms, pow)
 !! TODO add mask and any other needed args for adjustment, and pass in the adjusted mask
 !! to time_update_done
-function diag_reduction_done_wrapper(this, reduction_method, missing_value, has_mask) & !! , has_halo, mask) &
+function diag_reduction_done_wrapper(this, reduction_method, missing_value, has_mask, mask_variant) &
   result(err_msg)
   class(fmsDiagOutputBuffer_type), intent(inout) :: this !< Updated buffer object
   integer, intent(in)                            :: reduction_method !< enumerated reduction type from diag_data
   real(kind=r8_kind), intent(in)                 :: missing_value !< missing_value for masked data points
   logical, intent(in)                            :: has_mask !< indicates if there was a mask used during buffer updates
+  logical, intent(in)                            :: mask_variant !< Indicates if the mask changes over time
   character(len=51)                              :: err_msg !< error message to return, blank if sucessful
 
   if(.not. allocated(this%buffer)) return
 
-  if(this%weight_sum .eq. 0.0_r8_kind) return
-
   err_msg = ""
   select type(buff => this%buffer)
     type is (real(r8_kind))
-      call time_update_done(buff, this%weight_sum, reduction_method, missing_value, has_mask, this%diurnal_sample_size)
+      call time_update_done(buff, this%weight_sum, reduction_method, missing_value, has_mask, mask_variant, &
+        this%diurnal_sample_size)
     type is (real(r4_kind))
       call time_update_done(buff, this%weight_sum, reduction_method, real(missing_value, r4_kind), has_mask, &
-                            this%diurnal_sample_size)
+                            mask_variant, this%diurnal_sample_size)
   end select
   this%weight_sum = 0.0_r8_kind
 
@@ -805,6 +833,23 @@ function is_there_data_to_write(this) &
 
   res = this%send_data_called
 end function
+
+!> @brief Determine if it is time to finish the reduction method
+!! @return .true. if it is time to finish the reduction method
+function is_time_to_finish_reduction(this, end_time) &
+  result(res)
+  class(fmsDiagOutputBuffer_type), intent(inout) :: this        !< Buffer object
+  type(time_type), optional,       intent(in)    :: end_time    !< The time at the end of the run
+
+  logical :: res
+
+  res = .false.
+  if (this%time >= this%next_output) res = .true.
+
+  if (present(end_time)) then
+    if (end_time >= this%next_output) res = .true.
+  endif
+end function is_time_to_finish_reduction
 
 !> @brief Sets send_data_called to .true.
 subroutine set_send_data_called(this)

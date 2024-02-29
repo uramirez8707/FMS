@@ -8,7 +8,7 @@ module fms_diag_field_object_mod
 !! that contains all of the information of the variable.  It is extended by a type that holds the
 !! appropriate buffer for the data for manipulation.
 #ifdef use_yaml
-use diag_data_mod,  only: diag_null, CMOR_MISSING_VALUE, diag_null_string, MAX_STR_LEN
+use diag_data_mod,  only: prepend_date, diag_null, CMOR_MISSING_VALUE, diag_null_string, MAX_STR_LEN
 use diag_data_mod,  only: r8, r4, i8, i4, string, null_type_int, NO_DOMAIN
 use diag_data_mod,  only: max_field_attributes, fmsDiagAttribute_type
 use diag_data_mod,  only: diag_null, diag_not_found, diag_not_registered, diag_registered_id, &
@@ -20,7 +20,7 @@ use fms_diag_yaml_mod, only:  diagYamlFilesVar_type, get_diag_fields_entries, ge
   & find_diag_field, get_num_unique_fields, diag_yaml
 use fms_diag_axis_object_mod, only: diagDomain_t, get_domain_and_domain_type, fmsDiagAxis_type, &
   & fmsDiagAxisContainer_type, fmsDiagFullAxis_Type
-use time_manager_mod, ONLY: time_type
+use time_manager_mod, ONLY: time_type, get_date
 use fms2_io_mod, only: FmsNetcdfFile_t, FmsNetcdfDomainFile_t, FmsNetcdfUnstructuredDomainFile_t, register_field, &
                        register_variable_attribute
 use fms_diag_input_buffer_mod, only: fmsDiagInputBuffer_t
@@ -47,7 +47,8 @@ type fmsDiagField_type
      logical, allocatable, private                    :: static            !< true if this is a static var
      logical, allocatable, private                    :: scalar            !< .True. if the variable is a scalar
      logical, allocatable, private                    :: registered        !< true when registered
-     logical, allocatable, private                    :: mask_variant      !< If there is a mask variant
+     logical, allocatable, private                    :: mask_variant      !< true if the mask changes over time
+     logical, allocatable, private                    :: var_is_masked     !< true if the field is masked
      logical, allocatable, private                    :: do_not_log        !< .true. if no need to log the diag_field
      logical, allocatable, private                    :: local             !< If the output is local
      integer,          allocatable, private           :: vartype           !< the type of varaible
@@ -98,7 +99,8 @@ type fmsDiagField_type
      procedure :: set_math_needs_to_be_done => set_math_needs_to_be_done
      procedure :: add_attribute => diag_field_add_attribute
      procedure :: vartype_inq => what_is_vartype
-     procedure :: set_mask_variant
+     procedure :: set_var_is_masked
+     procedure :: get_var_is_masked
 ! Check functions
      procedure :: is_static => diag_obj_is_static
      procedure :: is_scalar
@@ -175,6 +177,7 @@ type fmsDiagField_type
      procedure :: has_mask_allocated
      procedure :: is_variable_in_file
      procedure :: get_field_file_name
+     procedure :: generate_associated_files_att
 end type fmsDiagField_type
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! variables !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 type(fmsDiagField_type) :: null_ob
@@ -348,8 +351,8 @@ subroutine fms_register_diag_field_obj &
     this%volume = volume
   endif
 
+  this%mask_variant = .false.
   if (present(mask_variant)) then
-    allocate(this%mask_variant)
     this%mask_variant = mask_variant
   endif
 
@@ -448,12 +451,22 @@ subroutine set_math_needs_to_be_done (this, math_needs_to_be_done)
 end subroutine set_math_needs_to_be_done
 
 !> @brief Set the mask_variant to .true.
-subroutine set_mask_variant(this, is_masked)
+subroutine set_var_is_masked(this, is_masked)
   class (fmsDiagField_type) , intent(inout):: this      !< The diag field object
   logical,                    intent (in)  :: is_masked !< .True. if the field is masked
 
-  this%mask_variant = is_masked
-end subroutine set_mask_variant
+  this%var_is_masked = is_masked
+end subroutine set_var_is_masked
+
+!> @brief Queries a field for the var_is_masked variable
+!! @return var_is_masked
+function get_var_is_masked(this) &
+  result(rslt)
+  class (fmsDiagField_type) , intent(inout):: this      !< The diag field object
+  logical :: rslt !< .True. if the field is masked
+
+  rslt = this%var_is_masked
+end function get_var_is_masked
 
 !> @brief Sets the flag saying that the data buffer is allocated
 subroutine set_data_buffer_is_allocated (this, data_buffer_is_allocated)
@@ -1156,15 +1169,6 @@ subroutine write_field_metadata(this, fms2io_fileobj, file_id, yaml_id, diag_axi
       str_len=len_trim(this%get_interp_method()))
   endif
 
-  if (.not. this%static) then
-    select case (field_yaml%get_var_reduction())
-    case (time_average, time_max, time_min, time_diurnal, time_power, time_rms, time_sum)
-      call register_variable_attribute(fms2io_fileobj, var_name, "time_avg_info", &
-        trim(avg_name)//'_T1,'//trim(avg_name)//'_T2,'//trim(avg_name)//'_DT', &
-        str_len=len(trim(avg_name)//'_T1,'//trim(avg_name)//'_T2,'//trim(avg_name)//'_DT'))
-    end select
-  endif
-
   cell_methods = ""
   !< Check if any of the attributes defined via a "diag_field_add_attribute" call
   !! are the cell_methods, if so add to the "cell_methods" variable:
@@ -1770,6 +1774,34 @@ function get_field_file_name(this) &
 
   res = this%diag_field(1)%get_var_fname()
 end function get_field_file_name
+
+!> @brief Generate the associated files attribute
+subroutine generate_associated_files_att(this, att, start_time)
+  class(fmsDiagField_type)        ,  intent(in)            :: this       !< diag_field_object for the area/volume field
+  character(len=*),                  intent(inout)         :: att        !< associated_files_att
+  type(time_type),                   intent(in)            :: start_time !< The start_time for the field's file
+
+  character(len=:), allocatable :: field_name !< Name of the area/volume field
+  character(len=MAX_STR_LEN) :: file_name !< Name of the file the area/volume field is in!
+  character(len=128) :: start_date !< Start date to append to the begining of the filename
+
+  integer :: year, month, day, hour, minute, second
+  field_name = this%get_varname(to_write = .true.)
+
+  ! Check if the field is already in the associated files attribute (i.e the area can be associated with multiple
+  ! fields in the file, but it only needs to be added once)
+  if (index(att, field_name) .ne. 0) return
+
+  file_name = this%get_field_file_name()
+
+  if (prepend_date) then
+    call get_date(start_time, year, month, day, hour, minute, second)
+    write (start_date, '(1I20.4, 2I2.2)') year, month, day
+    file_name = TRIM(adjustl(start_date))//'.'//TRIM(file_name)
+  endif
+
+  att = trim(att)//" "//trim(field_name)//": "//trim(file_name)//".nc"
+end subroutine generate_associated_files_att
 
 #endif
 end module fms_diag_field_object_mod
