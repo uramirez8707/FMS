@@ -1546,6 +1546,7 @@ subroutine write_axis_metadata(this, diag_axis)
         edges_in_file = .true.
      else
         call diag_axis(edges_id)%axis%write_axis_metadata(fms2io_fileobj, .true.)
+        call diag_file%add_new_axis(edges_id)
       endif
     endif
 
