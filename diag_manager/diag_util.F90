@@ -67,7 +67,7 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
        & domainUG, null_domainUG
   USE time_manager_mod,ONLY: time_type, OPERATOR(==), OPERATOR(>), NO_CALENDAR, increment_date,&
        & increment_time, get_calendar_type, get_date, get_time, leap_year, OPERATOR(-),&
-       & OPERATOR(<), OPERATOR(>=), OPERATOR(<=), OPERATOR(==)
+       & OPERATOR(<), OPERATOR(>=), OPERATOR(<=), OPERATOR(==), set_date
   USE mpp_mod, ONLY: mpp_npes
   USE constants_mod, ONLY: SECONDS_PER_DAY, SECONDS_PER_HOUR, SECONDS_PER_MINUTE
   USE fms2_io_mod
@@ -1277,6 +1277,13 @@ END SUBROUTINE check_bounds_are_exact_dynamic
                                                        !! An empty string indicates the next output
                                                        !! time was found successfully.
 
+    integer :: cyear   !< The current year stored in the time type
+    integer :: cmonth  !< The current month stored in the time type
+    integer :: cday    !< The current day stored in the time type
+    integer :: chour   !< The current hour stored in the time type
+    integer :: cmin    !< The current minute stored in the time type
+    integer :: csecond !< The current second stored in the time type
+
     CHARACTER(len=128) :: error_message_local
 
     IF ( PRESENT(err_msg) ) err_msg = ''
@@ -1326,7 +1333,14 @@ END SUBROUTINE check_bounds_are_exact_dynamic
        IF ( get_calendar_type() == NO_CALENDAR ) THEN
           error_message_local = 'output units of years NOT allowed with no calendar'
        ELSE
-          diag_time_inc = increment_date(time, output_freq, 0, 0, 0, 0, 0, err_msg=error_message_local)
+          call get_date(Time, cyear, cmonth, cday, chour, cmin, csecond)
+          if (cmonth .eq. 2 .and. cday .eq. 29) then
+            ! This is a leap year, so increment the date from 2/28 instead
+            diag_time_inc = increment_date(set_date(cyear, cmonth, 28, chour, cmin, csecond), &
+              output_freq, 0, 0, 0, 0, 0, err_msg=error_message_local)
+          else
+            diag_time_inc = increment_date(time, output_freq, 0, 0, 0, 0, 0, err_msg=error_message_local)
+          endif
        END IF
     ELSE
        error_message_local = 'illegal output units'
