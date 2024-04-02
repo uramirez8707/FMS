@@ -963,12 +963,9 @@ end subroutine define_new_subaxis
 !> @brief adds the start time to the fileobj
 !! @note This should be called from the register field calls. It can be called multiple times (one for each variable)
 !! So it needs to make sure that the start_time is the same for each variable. The initial value is the base_time
-subroutine add_start_time(this, start_time, model_time)
+subroutine add_start_time(this, start_time)
   class(fmsDiagFile_type), intent(inout)       :: this           !< The file object
   TYPE(time_type),         intent(in)          :: start_time     !< Start time to add to the fileobj
-  TYPE(time_type),         intent(out)         :: model_time     !< The current model time
-                                                                 !! this will be set to the start_time
-                                                                 !! at the begining of the run
 
   !< If the start_time sent in is equal to the base_time return because
   !! this%start_time was already set to the base_time
@@ -983,7 +980,6 @@ subroutine add_start_time(this, start_time, model_time)
   else
     !> If the this%start_time is equal to the base_time,
     !! simply update it with the start_time and set up the *_output variables
-    model_time = start_time
     this%start_time = start_time
     this%last_output = start_time
     this%next_output = diag_time_inc(start_time, this%get_file_freq(), this%get_file_frequnit())

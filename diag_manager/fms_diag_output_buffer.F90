@@ -74,6 +74,7 @@ type :: fmsDiagOutputBuffer_type
   procedure :: get_yaml_id
   procedure :: init_buffer_time
   procedure :: set_next_output
+  procedure :: get_buffer_time
   procedure :: update_buffer_time
   procedure :: is_there_data_to_write
   procedure :: is_time_to_finish_reduction
@@ -370,6 +371,14 @@ subroutine set_next_output(this, time, is_static)
     if (is_static) this%next_output = this%time
   endif
 end subroutine set_next_output
+
+function get_buffer_time(this) &
+  result(rslt)
+  class(fmsDiagOutputBuffer_type), target, intent(in) :: this        !< Buffer object
+  type(time_type), pointer :: rslt
+
+  rslt => this%time
+end function get_buffer_time
 
 !> @brief Update the buffer time if it is a new time
 subroutine update_buffer_time(this, time)
