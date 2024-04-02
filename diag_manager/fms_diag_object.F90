@@ -858,7 +858,7 @@ subroutine fms_diag_do_io(this, end_time)
     else
       finish_writing = diag_file%is_time_to_write(model_time, this%FMS_diag_output_buffers)
     endif
-  
+
     if (finish_writing) then
       call diag_file%write_time_data()
       call diag_file%update_next_write(model_time)
@@ -1477,9 +1477,10 @@ function fms_diag_compare_window(this, field, field_id, &
 #endif
 end function fms_diag_compare_window
 
+!> @brief Sets the current_model_time to the buffer_time if the buffer_time if it is a new time
 subroutine get_model_time(current_model_time, buffer_time)
-  type(time_type), pointer, intent(inout) :: current_model_time
-  type(time_type), target,  intent(in)    :: buffer_time
+  type(time_type), pointer, intent(inout) :: current_model_time !< The current_model_time
+  type(time_type), target,  intent(in)    :: buffer_time        !< The last time data was sent for the buffer
 
   if (.not. associated(current_model_time)) then
     current_model_time => buffer_time

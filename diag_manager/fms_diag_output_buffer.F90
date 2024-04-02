@@ -372,6 +372,8 @@ subroutine set_next_output(this, time, is_static)
   endif
 end subroutine set_next_output
 
+!> @brief Gets the time from the buffer object
+!> @return The last time data was sent for the buffer
 function get_buffer_time(this) &
   result(rslt)
   class(fmsDiagOutputBuffer_type), target, intent(in) :: this        !< Buffer object
