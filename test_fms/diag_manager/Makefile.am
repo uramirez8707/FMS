@@ -33,7 +33,7 @@ check_PROGRAMS = test_diag_manager test_diag_manager_time \
  test_flexible_time test_diag_update_buffer test_reduction_methods check_time_none \
  check_time_min check_time_max check_time_sum check_time_avg test_diag_diurnal check_time_diurnal \
  check_time_pow check_time_rms check_subregional test_cell_measures test_var_masks \
- check_var_masks test_multiple_send_data
+ check_var_masks test_multiple_send_data test_flush_nc_file
 
 # This is the source code for the test.
 test_diag_manager_SOURCES = test_diag_manager.F90
@@ -59,6 +59,7 @@ check_subregional_SOURCES = check_subregional.F90
 test_var_masks_SOURCES = test_var_masks.F90
 check_var_masks_SOURCES = check_var_masks.F90
 test_multiple_send_data_SOURCES = test_multiple_send_data.F90
+test_flush_nc_file_SOURCES = test_flush_nc_file
 
 TEST_EXTENSIONS = .sh
 SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \

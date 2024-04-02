@@ -863,6 +863,7 @@ subroutine fms_diag_do_io(this, end_time)
       call diag_file%update_next_write(model_time)
       call diag_file%update_current_new_file_freq_index(model_time)
       call diag_file%increase_unlim_dimension_level()
+      call diag_file%flush_diag_file() !< Flushes the file to disk if flush_nc_files=.true.
       if (diag_file%is_time_to_close_file(model_time)) call diag_file%close_diag_file()
     else if (force_write) then
       call diag_file%write_time_data()
