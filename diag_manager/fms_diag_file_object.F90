@@ -63,6 +63,7 @@ integer, parameter :: var_string_len = 25
 type :: fmsDiagFile_type
  private
   integer :: id !< The number associated with this file in the larger array of files
+  TYPE(time_type) :: model_time       !< The last time data was sent for any of the buffers in this file object
   TYPE(time_type) :: start_time       !< The start time for the file
   TYPE(time_type) :: last_output      !< Time of the last time output was writen
   TYPE(time_type) :: next_output      !< Time of the next write
@@ -190,6 +191,8 @@ type fmsDiagFileContainer_type
   procedure :: get_next_output
   procedure :: get_next_next_output
   procedure :: close_diag_file
+  procedure :: set_model_time
+  procedure :: get_model_time
 end type fmsDiagFileContainer_type
 
 !type(fmsDiagFile_type), dimension (:), allocatable, target :: FMS_diag_file !< The array of diag files
@@ -980,6 +983,7 @@ subroutine add_start_time(this, start_time)
   else
     !> If the this%start_time is equal to the base_time,
     !! simply update it with the start_time and set up the *_output variables
+    this%model_time = start_time
     this%start_time = start_time
     this%last_output = start_time
     this%next_output = diag_time_inc(start_time, this%get_file_freq(), this%get_file_frequnit())
@@ -1705,6 +1709,24 @@ subroutine close_diag_file(this, output_buffers, diag_fields)
 
   if (this%FMS_diag_file%has_send_data_been_called(output_buffers, .True., diag_fields)) return
 end subroutine close_diag_file
+
+!> \brief Set the model time for the diag file object
+subroutine set_model_time(this, model_time)
+  class(fmsDiagFileContainer_type), intent(inout)       :: this            !< The file object
+  type(time_type),         intent(in)          :: model_time      !< Model time to add
+
+  if (model_time > this%FMS_diag_file%model_time) this%FMS_diag_file%model_time = model_time
+end subroutine
+
+!> \brief Get the model time from the file object
+!! \result A pointer to the model time
+function get_model_time(this) &
+  result(rslt)
+  class(fmsDiagFileContainer_type), intent(inout), target   :: this              !< The file object
+  type(time_type), pointer :: rslt
+
+  rslt => this%FMS_diag_file%model_time
+end function get_model_time
 
 !> \brief Gets the buffer_id list from the file object
 pure function get_buffer_ids (this)

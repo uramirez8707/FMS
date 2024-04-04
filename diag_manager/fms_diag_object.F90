@@ -806,6 +806,8 @@ subroutine fms_diag_do_io(this, end_time)
     if (present (end_time)) then
       force_write = .true.
       model_time => end_time
+    else
+      model_time => diag_file%get_model_time()
     endif
 
     call diag_file%open_diag_file(model_time, file_is_opened_this_time_step)
@@ -947,6 +949,8 @@ function fms_diag_do_reduction(this, field_data, diag_field_id, oor_mask, weight
 
     !< Go away if finished doing math for this buffer
     if (buffer_ptr%is_done_with_math()) cycle
+
+    if (present(time)) call file_ptr%set_model_time(time)
 
     bounds_out = bounds
     if (.not. using_blocking) then
