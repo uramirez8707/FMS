@@ -794,6 +794,7 @@ subroutine fms_diag_do_io(this, end_time)
   class(*), allocatable :: missing_val !< netcdf missing value for a given field
   real(r8_kind) :: mval !< r8 copy of missing value
   character(len=128) :: error_string !< outputted error string from reducti
+  logical :: unlim_dim_was_increased
 
   force_write = .false.
 
@@ -812,12 +813,14 @@ subroutine fms_diag_do_io(this, end_time)
 
     call diag_file%open_diag_file(model_time, file_is_opened_this_time_step)
     if (file_is_opened_this_time_step) then
+      ! Initialize unlimited dimension in file and the buffer to 0
+      call diag_file%init_unlim_dim(this%FMS_diag_output_buffers)
+
       call diag_file%write_global_metadata()
       call diag_file%write_axis_metadata(this%diag_axis)
       call diag_file%write_time_metadata()
       call diag_file%write_field_metadata(this%FMS_diag_fields, this%diag_axis)
       call diag_file%write_axis_data(this%diag_axis)
-      call diag_file%increase_unlim_dimension_level()
     endif
 
     finish_writing = diag_file%is_time_to_write(model_time, this%FMS_diag_output_buffers)
@@ -845,7 +848,7 @@ subroutine fms_diag_do_io(this, end_time)
                                    mval, diag_field%get_var_is_masked(), diag_field%get_mask_variant())
           endif
         endif
-        call diag_file%write_field_data(diag_field, diag_buff)
+        call diag_file%write_field_data(diag_field, diag_buff, unlim_dim_was_increased)
         call diag_buff%set_next_output(diag_file%get_next_next_output())
       endif
       nullify(diag_buff)
@@ -853,11 +856,13 @@ subroutine fms_diag_do_io(this, end_time)
     enddo buff_loop
     deallocate(buff_ids)
 
-    if (finish_writing) then
+    if (unlim_dim_was_increased) then
       call diag_file%write_time_data()
       call diag_file%update_next_write(model_time)
+    endif
+
+    if (finish_writing) then      
       call diag_file%update_current_new_file_freq_index(model_time)
-      call diag_file%increase_unlim_dimension_level()
       if (diag_file%is_time_to_close_file(model_time)) call diag_file%close_diag_file(this%FMS_diag_output_buffers, &
         diag_fields = this%FMS_diag_fields)
     else if (force_write) then

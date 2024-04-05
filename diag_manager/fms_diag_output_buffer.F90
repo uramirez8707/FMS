@@ -62,6 +62,7 @@ type :: fmsDiagOutputBuffer_type
   integer               :: diurnal_section= -1 !< the diurnal section (ie 5th index) calculated from the current model
                                               !! time and sample size if using a diurnal reduction
   logical, allocatable  :: send_data_called   !< .True. if send_data has been called
+  integer               :: unlmited_dimension !< Unlimited dimension index of the last write for this output buffer
   type(time_type)       :: time               !< The last time the data was received
   type(time_type)       :: next_output        !< The next time to output the data
 
@@ -81,6 +82,9 @@ type :: fmsDiagOutputBuffer_type
   procedure :: is_done_with_math
   procedure :: set_done_with_math
   procedure :: write_buffer
+  procedure :: init_buffer_unlim_dim
+  procedure :: increase_unlim_dim
+  procedure :: get_unlim_dim
   !! These are needed because otherwise the write_data calls will go into the wrong interface
   procedure :: write_buffer_wrapper_netcdf
   procedure :: write_buffer_wrapper_domain
@@ -409,6 +413,26 @@ function get_yaml_id(this) &
 
   res = this%yaml_id
 end function get_yaml_id
+
+function get_unlim_dim(this) &
+  result(res)
+  class(fmsDiagOutputBuffer_type), intent(in) :: this            !< buffer object to write
+  integer :: res
+
+  res = this%unlmited_dimension
+end function get_unlim_dim
+
+subroutine increase_unlim_dim(this)
+  class(fmsDiagOutputBuffer_type), intent(inout) :: this            !< buffer object to write
+
+  this%unlmited_dimension = this%unlmited_dimension + 1
+end subroutine increase_unlim_dim
+
+subroutine init_buffer_unlim_dim(this)
+  class(fmsDiagOutputBuffer_type), intent(inout) :: this            !< buffer object to write
+
+  this%unlmited_dimension = 0
+end subroutine
 
 !> @brief Write the buffer to the file
 subroutine write_buffer(this, fms2io_fileobj, unlim_dim_level, is_diurnal)

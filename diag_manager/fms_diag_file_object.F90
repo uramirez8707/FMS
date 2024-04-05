@@ -185,6 +185,7 @@ type fmsDiagFileContainer_type
   procedure :: is_time_to_close_file
   procedure :: write_time_data
   procedure :: update_next_write
+  procedure :: init_unlim_dim
   procedure :: update_current_new_file_freq_index
   procedure :: increase_unlim_dimension_level
   procedure :: get_unlim_dimension_level
@@ -1296,10 +1297,11 @@ subroutine write_time_metadata(this)
 end subroutine write_time_metadata
 
 !> \brief Write out the field data to the file
-subroutine write_field_data(this, field_obj, buffer_obj)
+subroutine write_field_data(this, field_obj, buffer_obj, unlim_dim_was_increased)
   class(fmsDiagFileContainer_type),        intent(in),    target :: this           !< The diag file object to write to
   type(fmsDiagField_type),                 intent(in),    target :: field_obj      !< The field object to write from
   type(fmsDiagOutputBuffer_type),          intent(inout), target :: buffer_obj     !< The buffer object with the data
+  logical, intent(out) :: unlim_dim_was_increased
 
   class(fmsDiagFile_type), pointer     :: diag_file      !< Diag_file object to open
   class(FmsNetcdfFile_t),  pointer     :: fms2io_fileobj !< Fileobj to write to
@@ -1307,6 +1309,15 @@ subroutine write_field_data(this, field_obj, buffer_obj)
 
   diag_file => this%FMS_diag_file
   fms2io_fileobj => diag_file%fms2io_fileobj
+  unlim_dim_was_increased = .false.
+
+  !< Increase the unlim dimension index for the output buffer and update the output buffer for the file
+  !! if haven't already
+  call buffer_obj%increase_unlim_dim()
+  if (buffer_obj%get_unlim_dim() > diag_file%unlim_dimension_level) then
+    diag_file%unlim_dimension_level = buffer_obj%get_unlim_dim()
+    unlim_dim_was_increased = .true.
+  endif
 
   !TODO This may be offloaded in the future
   if (diag_file%is_static) then
@@ -1317,7 +1328,7 @@ subroutine write_field_data(this, field_obj, buffer_obj)
   else
     if (field_obj%is_static()) then
       !< If the variable is static, only write it the first time
-      if (diag_file%unlim_dimension_level .eq. 1) then
+      if (buffer_obj%get_unlim_dim() .eq. 1) then
         call buffer_obj%write_buffer(fms2io_fileobj)
         diag_file%data_has_been_written = .true.
       endif
@@ -1325,7 +1336,7 @@ subroutine write_field_data(this, field_obj, buffer_obj)
      diag_file%data_has_been_written = .true.
      has_diurnal = buffer_obj%get_diurnal_sample_size() .gt. 1
       call buffer_obj%write_buffer(fms2io_fileobj, &
-                        unlim_dim_level=diag_file%unlim_dimension_level, is_diurnal=has_diurnal)
+                        unlim_dim_level=buffer_obj%get_unlim_dim(), is_diurnal=has_diurnal)
     endif
   endif
 
@@ -1487,6 +1498,22 @@ subroutine update_next_write(this, time_step)
   endif
 
 end subroutine update_next_write
+
+subroutine init_unlim_dim(this, output_buffers)
+  class(fmsDiagFileContainer_type), intent(inout), target   :: this            !< The file object
+  type(fmsDiagOutputBuffer_type),   intent(in),    target   :: output_buffers(:) !< Array of output buffer.
+
+  class(fmsDiagFile_type), pointer     :: diag_file      !< Diag_file object to open
+  type(fmsDiagOutputBuffer_type), pointer :: output_buffer_obj
+  integer :: i
+
+  diag_file => this%FMS_diag_file
+  diag_file%unlim_dimension_level = 0
+  do i = 1, diag_file%number_of_buffers
+    output_buffer_obj => output_buffers(diag_file%buffer_ids(i))
+    call output_buffer_obj%init_buffer_unlim_dim()
+  enddo
+end subroutine init_unlim_dim
 
 !> \brief Increase the unlimited dimension level that the file is currently being written to
 subroutine increase_unlim_dimension_level(this)
