@@ -26,7 +26,7 @@ use diag_data_mod,  only: diag_null, diag_not_found, diag_not_registered, diag_r
 
   USE time_manager_mod, ONLY: set_time, set_date, get_time, time_type, OPERATOR(>=), OPERATOR(>),&
        & OPERATOR(<), OPERATOR(==), OPERATOR(/=), OPERATOR(/), OPERATOR(+), ASSIGNMENT(=), get_date, &
-       & get_ticks_per_second
+       & get_ticks_per_second, date_to_string
 #ifdef use_yaml
 use fms_diag_file_object_mod, only: fmsDiagFileContainer_type, fmsDiagFile_type, fms_diag_files_object_init
 use fms_diag_field_object_mod, only: fmsDiagField_type, fms_diag_fields_object_init, get_default_missing_value, &
@@ -824,6 +824,7 @@ subroutine fms_diag_do_io(this, end_time)
     endif
 
     finish_writing = diag_file%is_time_to_write(model_time, this%FMS_diag_output_buffers)
+    unlim_dim_was_increased = .false.
 
     ! finish reduction method if its time to write
     buff_ids = diag_file%FMS_diag_file%get_buffer_ids()

@@ -1301,7 +1301,7 @@ subroutine write_field_data(this, field_obj, buffer_obj, unlim_dim_was_increased
   class(fmsDiagFileContainer_type),        intent(in),    target :: this           !< The diag file object to write to
   type(fmsDiagField_type),                 intent(in),    target :: field_obj      !< The field object to write from
   type(fmsDiagOutputBuffer_type),          intent(inout), target :: buffer_obj     !< The buffer object with the data
-  logical, intent(out) :: unlim_dim_was_increased
+  logical, intent(inout) :: unlim_dim_was_increased
 
   class(fmsDiagFile_type), pointer     :: diag_file      !< Diag_file object to open
   class(FmsNetcdfFile_t),  pointer     :: fms2io_fileobj !< Fileobj to write to
@@ -1309,7 +1309,6 @@ subroutine write_field_data(this, field_obj, buffer_obj, unlim_dim_was_increased
 
   diag_file => this%FMS_diag_file
   fms2io_fileobj => diag_file%fms2io_fileobj
-  unlim_dim_was_increased = .false.
 
   !< Increase the unlim dimension index for the output buffer and update the output buffer for the file
   !! if haven't already
