@@ -1367,10 +1367,11 @@ logical function is_time_to_write(this, time_step, output_buffers)
       if (this%FMS_diag_file%num_registered_fields .eq. 0) then
         !! If no variables have been registered, write a dummy time dimension for the first level
         !! At least one time level is needed for the combiner to work ...
-        if (this%FMS_diag_file%unlim_dimension_level .eq. 1) then
+        if (this%FMS_diag_file%unlim_dimension_level .eq. 0) then
           call mpp_error(NOTE, this%FMS_diag_file%get_file_fname()//&
             ": diag_manager_mod: This file does not have any variables registered. Fill values will be written")
           this%FMS_diag_file%data_has_been_written = .true.
+          this%FMS_diag_file%unlim_dimension_level = 1
         endif
         is_time_to_write =.false.
       else
