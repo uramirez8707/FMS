@@ -362,16 +362,24 @@ subroutine init_buffer_time(this, time)
 end subroutine init_buffer_time
 
 !> @brief Sets the next output
-subroutine set_next_output(this, time, is_static)
+subroutine set_next_output(this, next_output, next_next_output, is_static)
   class(fmsDiagOutputBuffer_type), intent(inout) :: this        !< Buffer object
-  type(time_type),                 intent(in)    :: time        !< time to add to the buffer
+  type(time_type),                 intent(in)    :: next_output !< time to add to the buffer
+  type(time_type),                 intent(in)    :: next_next_output
   logical, optional,               intent(in)    :: is_static   !< .True. if the field is static
 
-  this%next_output = time
   if (present(is_static)) then
     !< If the field is static set the next_output to be equal to time
     !! this should only be used in the init, so next_output will be equal to the the init time
     if (is_static) this%next_output = this%time
+    return
+  endif
+
+  !TODO documentation #WUT
+  if (next_output > this%next_output) then
+    this%next_output = next_output
+  else
+    this%next_output = next_next_output
   endif
 end subroutine set_next_output
 

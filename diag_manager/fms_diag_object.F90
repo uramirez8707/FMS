@@ -301,7 +301,8 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
       call bufferptr%set_diurnal_sample_size(yamlfptr%get_n_diurnal())
     endif
     call bufferptr%init_buffer_time(init_time)
-    call bufferptr%set_next_output(this%FMS_diag_files(file_ids(i))%get_next_output(), fieldptr%is_static())
+    call bufferptr%set_next_output(this%FMS_diag_files(file_ids(i))%get_next_output(), &
+    this%FMS_diag_files(file_ids(i))%get_next_next_output(), is_static=fieldptr%is_static())
   enddo
 
   nullify (fileptr)
@@ -850,7 +851,7 @@ subroutine fms_diag_do_io(this, end_time)
           endif
         endif
         call diag_file%write_field_data(diag_field, diag_buff, unlim_dim_was_increased)
-        call diag_buff%set_next_output(diag_file%get_next_next_output())
+        call diag_buff%set_next_output(diag_file%get_next_output(), diag_file%get_next_next_output())
       endif
       nullify(diag_buff)
       nullify(field_yaml)
