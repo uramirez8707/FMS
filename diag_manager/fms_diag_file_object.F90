@@ -187,7 +187,6 @@ type fmsDiagFileContainer_type
   procedure :: update_next_write
   procedure :: init_unlim_dim
   procedure :: update_current_new_file_freq_index
-  procedure :: increase_unlim_dimension_level
   procedure :: get_unlim_dimension_level
   procedure :: get_next_output
   procedure :: get_next_next_output
@@ -1447,7 +1446,6 @@ subroutine write_time_data(this)
     endif
   endif
 
-  diag_file%unlim_dimension_level = diag_file%unlim_dimension_level + 1
   diag_file%data_has_been_written = .false.
 end subroutine write_time_data
 
@@ -1500,13 +1498,14 @@ subroutine update_next_write(this, time_step)
 
 end subroutine update_next_write
 
+!> \brief Initialize the unlim dimension in the file and in its buffer objects to 0
 subroutine init_unlim_dim(this, output_buffers)
   class(fmsDiagFileContainer_type), intent(inout), target   :: this            !< The file object
   type(fmsDiagOutputBuffer_type),   intent(in),    target   :: output_buffers(:) !< Array of output buffer.
 
-  class(fmsDiagFile_type), pointer     :: diag_file      !< Diag_file object to open
-  type(fmsDiagOutputBuffer_type), pointer :: output_buffer_obj
-  integer :: i
+  class(fmsDiagFile_type),        pointer :: diag_file         !< Diag_file object
+  type(fmsDiagOutputBuffer_type), pointer :: output_buffer_obj !< Buffer object
+  integer :: i !< For looping through buffers
 
   diag_file => this%FMS_diag_file
   diag_file%unlim_dimension_level = 0
@@ -1515,14 +1514,6 @@ subroutine init_unlim_dim(this, output_buffers)
     call output_buffer_obj%init_buffer_unlim_dim()
   enddo
 end subroutine init_unlim_dim
-
-!> \brief Increase the unlimited dimension level that the file is currently being written to
-subroutine increase_unlim_dimension_level(this)
-  class(fmsDiagFileContainer_type), intent(inout), target   :: this            !< The file object
-
-  this%FMS_diag_file%unlim_dimension_level = this%FMS_diag_file%unlim_dimension_level + 1
-  this%FMS_diag_file%data_has_been_written = .false.
-end subroutine increase_unlim_dimension_level
 
 !> \brief Get the unlimited dimension level that is in the file
 !! \return The unlimited dimension

@@ -795,7 +795,7 @@ subroutine fms_diag_do_io(this, end_time)
   class(*), allocatable :: missing_val !< netcdf missing value for a given field
   real(r8_kind) :: mval !< r8 copy of missing value
   character(len=128) :: error_string !< outputted error string from reducti
-  logical :: unlim_dim_was_increased
+  logical :: unlim_dim_was_increased !< .True. if the unlimited dimension index was increased for any of the buffers
 
   force_write = .false.
 
@@ -863,7 +863,7 @@ subroutine fms_diag_do_io(this, end_time)
       call diag_file%update_next_write(model_time)
     endif
 
-    if (finish_writing) then      
+    if (finish_writing) then
       call diag_file%update_current_new_file_freq_index(model_time)
       if (diag_file%is_time_to_close_file(model_time)) call diag_file%close_diag_file(this%FMS_diag_output_buffers, &
         diag_fields = this%FMS_diag_fields)

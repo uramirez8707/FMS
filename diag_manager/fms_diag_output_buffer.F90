@@ -363,10 +363,10 @@ end subroutine init_buffer_time
 
 !> @brief Sets the next output
 subroutine set_next_output(this, next_output, next_next_output, is_static)
-  class(fmsDiagOutputBuffer_type), intent(inout) :: this        !< Buffer object
-  type(time_type),                 intent(in)    :: next_output !< time to add to the buffer
-  type(time_type),                 intent(in)    :: next_next_output
-  logical, optional,               intent(in)    :: is_static   !< .True. if the field is static
+  class(fmsDiagOutputBuffer_type), intent(inout) :: this             !< Buffer object
+  type(time_type),                 intent(in)    :: next_output      !< The current next_output in the file obj
+  type(time_type),                 intent(in)    :: next_next_output !< The current next_next_output in the file obj
+  logical, optional,               intent(in)    :: is_static        !< .True. if the field is static
 
   if (present(is_static)) then
     !< If the field is static set the next_output to be equal to time
@@ -377,7 +377,10 @@ subroutine set_next_output(this, next_output, next_next_output, is_static)
     endif
   endif
 
-  !TODO documentation #WUT
+  !< If the file's next_output is greater than the buffer's next output set
+  !! the buffer's next output to the file's next_ouput, otherwise use the file's
+  !! next_next_output
+  !! This is needed for when file have fields that get data send data sent at different frequencies
   if (next_output > this%next_output) then
     this%next_output = next_output
   else
@@ -424,6 +427,8 @@ function get_yaml_id(this) &
   res = this%yaml_id
 end function get_yaml_id
 
+!> @brief Get the unlim dimension index of the buffer object
+!! @return The unlim dimension index of the buffer object
 function get_unlim_dim(this) &
   result(res)
   class(fmsDiagOutputBuffer_type), intent(in) :: this            !< buffer object to write
@@ -432,12 +437,14 @@ function get_unlim_dim(this) &
   res = this%unlmited_dimension
 end function get_unlim_dim
 
+!> @brief Increase the unlim dimension index of the buffer object
 subroutine increase_unlim_dim(this)
   class(fmsDiagOutputBuffer_type), intent(inout) :: this            !< buffer object to write
 
   this%unlmited_dimension = this%unlmited_dimension + 1
 end subroutine increase_unlim_dim
 
+!> @brief Init the unlim dimension index of the buffer object to 0
 subroutine init_buffer_unlim_dim(this)
   class(fmsDiagOutputBuffer_type), intent(inout) :: this            !< buffer object to write
 
