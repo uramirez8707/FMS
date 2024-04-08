@@ -255,6 +255,7 @@ logical function fms_diag_files_object_init (files_array)
      obj%done_writing_data = .false.
      obj%start_time = get_base_time()
      obj%last_output = get_base_time()
+     obj%model_time = get_base_time()
      obj%next_output = diag_time_inc(obj%start_time, obj%get_file_freq(), obj%get_file_frequnit())
      obj%next_next_output = diag_time_inc(obj%next_output, obj%get_file_freq(), obj%get_file_frequnit())
 
@@ -1349,7 +1350,11 @@ logical function is_time_to_close_file (this, time_step)
   if (time_step >= this%FMS_diag_file%next_close) then
     is_time_to_close_file = .true.
   else
-    is_time_to_close_file = .false.
+    if (this%FMS_diag_file%is_static) then
+      is_time_to_close_file = .true.
+    else
+      is_time_to_close_file = .false.
+    endif
   endif
 end function
 
@@ -1475,6 +1480,8 @@ subroutine update_current_new_file_freq_index(this, time_step)
        diag_file%next_close = diag_file%no_more_data
     endif
   endif
+
+  if (diag_file%is_static) diag_file%done_writing_data = .true.
 end subroutine update_current_new_file_freq_index
 
 !> \brief Set up the next_output and next_next_output variable in a file obj

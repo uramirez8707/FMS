@@ -804,6 +804,7 @@ subroutine fms_diag_do_io(this, end_time)
 
     !< Go away if the file is a subregional file and the current PE does not have any data for it
     if (.not. diag_file%writing_on_this_pe()) cycle
+    if (diag_file%FMS_diag_file%is_done_writing_data()) cycle
 
     if (present (end_time)) then
       force_write = .true.
