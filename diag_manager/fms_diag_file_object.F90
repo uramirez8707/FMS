@@ -1447,6 +1447,8 @@ subroutine write_time_data(this)
     endif
   endif
 
+  diag_file%unlim_dimension_level = diag_file%unlim_dimension_level + 1
+  diag_file%data_has_been_written = .false.
 end subroutine write_time_data
 
 !> \brief Updates the current_new_file_freq_index if using a new_file_freq
