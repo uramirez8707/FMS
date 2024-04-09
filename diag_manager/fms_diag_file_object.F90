@@ -1332,7 +1332,7 @@ subroutine write_field_data(this, field_obj, buffer_obj, unlim_dim_was_increased
         diag_file%data_has_been_written = .true.
       endif
     else
-     diag_file%data_has_been_written = .true.
+     if (unlim_dim_was_increased) diag_file%data_has_been_written = .true.
      has_diurnal = buffer_obj%get_diurnal_sample_size() .gt. 1
       call buffer_obj%write_buffer(fms2io_fileobj, &
                         unlim_dim_level=buffer_obj%get_unlim_dim(), is_diurnal=has_diurnal)
