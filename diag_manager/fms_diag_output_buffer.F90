@@ -356,8 +356,10 @@ subroutine init_buffer_time(this, time)
 
   if (present(time)) then
     this%time = time
+    this%next_output = time
   else
     this%time = get_base_time()
+    this%next_output = this%time
   endif
 end subroutine init_buffer_time
 
