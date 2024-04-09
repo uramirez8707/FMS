@@ -185,6 +185,7 @@ type fmsDiagFileContainer_type
   procedure :: is_time_to_close_file
   procedure :: write_time_data
   procedure :: update_next_write
+  procedure :: prepare_for_force_write
   procedure :: init_unlim_dim
   procedure :: update_current_new_file_freq_index
   procedure :: get_unlim_dimension_level
@@ -1505,6 +1506,16 @@ subroutine update_next_write(this, time_step)
   endif
 
 end subroutine update_next_write
+
+!> \brief Prepare the diag file for the force_write
+subroutine prepare_for_force_write(this)
+  class(fmsDiagFileContainer_type), intent(inout), target   :: this            !< The file object
+
+  if (this%FMS_diag_file%unlim_dimension_level .eq. 0) then
+    this%FMS_diag_file%unlim_dimension_level = 1
+    this%FMS_diag_file%data_has_been_written = .true.
+  endif
+end subroutine prepare_for_force_write
 
 !> \brief Initialize the unlim dimension in the file and in its buffer objects to 0
 subroutine init_unlim_dim(this, output_buffers)

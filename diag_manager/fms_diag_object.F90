@@ -869,6 +869,7 @@ subroutine fms_diag_do_io(this, end_time)
       if (diag_file%is_time_to_close_file(model_time)) call diag_file%close_diag_file(this%FMS_diag_output_buffers, &
         diag_fields = this%FMS_diag_fields)
     else if (force_write) then
+      call diag_file%prepare_for_force_write()
       call diag_file%write_time_data()
       call diag_file%close_diag_file(this%FMS_diag_output_buffers, diag_fields = this%FMS_diag_fields)
     endif
