@@ -49,6 +49,7 @@ use fms_diag_field_object_mod, only: fmsDiagField_type
 use fms_diag_output_buffer_mod, only: fmsDiagOutputBuffer_type
 use mpp_mod, only: mpp_get_current_pelist, mpp_npes, mpp_root_pe, mpp_pe, mpp_error, FATAL, stdout, &
                    uppercase, lowercase, NOTE
+use mpp_domains_mod, only: mpp_get_compute_domain
 
 implicit none
 private
@@ -1314,8 +1315,16 @@ subroutine write_field_data(this, field_obj, buffer_obj, unlim_dim_was_increased
   class(FmsNetcdfFile_t),  pointer     :: fms2io_fileobj !< Fileobj to write to
   logical                              :: has_diurnal    !< indicates if theres a diurnal axis to adjust for
 
+  integer :: is, ie, js, je
+
   diag_file => this%FMS_diag_file
   fms2io_fileobj => diag_file%fms2io_fileobj
+
+  select type(wut=>diag_file%domain)
+  type is(diagDomain2d_t)
+    call mpp_get_compute_domain(wut%Domain2, is, ie, js, je)
+    write(mpp_pe()+100, *) "indices::", is, ie, js, je
+  end select
 
   !< Increase the unlim dimension index for the output buffer and update the output buffer for the file
   !! if haven't already
