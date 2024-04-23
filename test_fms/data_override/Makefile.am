@@ -36,12 +36,14 @@ check_PROGRAMS = \
   test_data_override_r4 \
   test_data_override_r8 \
   test_data_override_ongrid_r4 \
-  test_data_override_ongrid_r8
+  test_data_override_ongrid_r8 \
+  test_data_override_LOW
 
 # This is the source code for the test.
 test_data_override_init_SOURCES = test_data_override_init.F90
 test_data_override_r4_SOURCES = test_data_override.F90
 test_data_override_r8_SOURCES = test_data_override.F90
+test_data_override_LOW_SOURCES = test_data_override_LOW.F90
 
 test_data_override_ongrid_r4_SOURCES = test_data_override_ongrid.F90
 test_data_override_ongrid_r8_SOURCES = test_data_override_ongrid.F90
