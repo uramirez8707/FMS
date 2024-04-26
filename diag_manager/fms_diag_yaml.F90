@@ -449,7 +449,7 @@ subroutine diag_yaml_object_init(diag_subset_output)
     file_var_count = 0
     allocate(diag_yaml%diag_files(file_count)%file_varlist(get_total_num_vars(diag_yaml_id, diag_file_ids(i))))
     allocate(diag_yaml%diag_files(file_count)%file_outlist(get_total_num_vars(diag_yaml_id, diag_file_ids(i))))
-    allow_averages = .not. any(diag_yaml%diag_files(file_count)%file_freq < 1)
+    allow_averages = .not. diag_yaml%diag_files(file_count)%file_freq(1) < 1
     nvars_loop: do j = 1, nvars
       write_var = .true.
       call get_value_from_key(diag_yaml_id, var_ids(j), "write_var", write_var, is_optional=.true.)
