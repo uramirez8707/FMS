@@ -371,6 +371,7 @@ subroutine diag_yaml_object_init(diag_subset_output)
   logical              :: allow_averages   !< .True. if averages are allowed (the file is not static of you are
                                            !! outputing data at every frequency)
   character(len=:), allocatable :: filename!< Diag file name (for error messages)
+  logical              :: is_instantaneous !< .True. if the file is instantaneous (i.e no averaging)
 
   if (diag_yaml_module_initialized) return
 
@@ -450,6 +451,7 @@ subroutine diag_yaml_object_init(diag_subset_output)
     allocate(diag_yaml%diag_files(file_count)%file_varlist(get_total_num_vars(diag_yaml_id, diag_file_ids(i))))
     allocate(diag_yaml%diag_files(file_count)%file_outlist(get_total_num_vars(diag_yaml_id, diag_file_ids(i))))
     allow_averages = .not. diag_yaml%diag_files(file_count)%file_freq(1) < 1
+    is_instantaneous = .false.
     nvars_loop: do j = 1, nvars
       write_var = .true.
       call get_value_from_key(diag_yaml_id, var_ids(j), "write_var", write_var, is_optional=.true.)
@@ -465,7 +467,8 @@ subroutine diag_yaml_object_init(diag_subset_output)
       diag_yaml%diag_fields(var_count)%var_axes_names = ""
       diag_yaml%diag_fields(var_count)%var_file_is_subregional = diag_yaml%diag_files(file_count)%has_file_sub_region()
 
-      call fill_in_diag_fields(diag_yaml_id, var_ids(j), diag_yaml%diag_fields(var_count), allow_averages)
+      call fill_in_diag_fields(diag_yaml_id, var_ids(j), diag_yaml%diag_fields(var_count), allow_averages, &
+        j .eq. 1, is_instantaneous)
 
       !> Save the variable name in the diag_file type
       diag_yaml%diag_files(file_count)%file_varlist(file_var_count) = diag_yaml%diag_fields(var_count)%var_varname
@@ -605,11 +608,16 @@ end subroutine
 
 !> @brief Fills in a diagYamlFilesVar_type with the contents of a variable block in
 !! diag_table.yaml
-subroutine fill_in_diag_fields(diag_file_id, var_id, field, allow_averages)
+subroutine fill_in_diag_fields(diag_file_id, var_id, field, allow_averages, first_variable_in_file, &
+                               is_instantaneous)
   integer,                        intent(in)  :: diag_file_id !< Id of the file block in the yaml file
   integer,                        intent(in)  :: var_id       !< Id of the variable block in the yaml file
   type(diagYamlFilesVar_type), intent(inout)  :: field        !< diagYamlFilesVar_type obj to read the contents into
   logical,                        intent(in)  :: allow_averages !< .True. if averages are allowed for this file
+  logical,                        intent(in)  :: first_variable_in_file !< .True. if this is the first variable
+                                                                        !! in the file
+  logical,                     intent(inout)  :: is_instantaneous !< .True. if the file is instantaneous, so averaged
+                                                                  !! fields are not allowed
 
   integer :: natt          !< Number of attributes in variable
   integer :: var_att_id(1) !< Id of the variable attribute block
@@ -628,6 +636,20 @@ subroutine fill_in_diag_fields(diag_file_id, var_id, field, allow_averages)
       call mpp_error(FATAL, "The file "//field%var_fname//" can only have variables that have none as "//&
         "the reduction method because the frequency is either -1 or 0. "//&
         "Check your diag_table.yaml for the field:"//trim(field%var_varname))
+  endif
+
+  !! This is to prevent mixing instantaneous and averaged fields in the same file
+  if (first_variable_in_file) then
+    if (field%var_reduction .eq. time_none) then
+      is_instantaneous = .true.
+    else
+      is_instantaneous = .false.
+    endif
+  else
+    if ((is_instantaneous .and. field%var_reduction .ne. time_none) &
+      .or. (.not. is_instantaneous .and. field%var_reduction .eq. time_none)) &
+      call mpp_error(FATAL, "The file "//field%var_fname//" is mixing instantaneous and non-instantaneous "//&
+        "fields which is not allowed as it will cause the times in your file to be wrong.")
   endif
 
   call diag_get_value_from_key(diag_file_id, var_id, "module", field%var_module)
