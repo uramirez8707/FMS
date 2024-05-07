@@ -385,10 +385,17 @@ subroutine set_file_time_ops(this, VarYaml, is_static)
     endif
   else
     var_reduct = VarYaml%get_var_reduction()
-    select case (var_reduct)
-      case (time_average, time_rms, time_max, time_min, time_sum, time_diurnal, time_power)
-        this%time_ops = .true.
-    end select
+    if (this%num_registered_fields .eq. 1) then
+      select case (var_reduct)
+        case (time_average, time_rms, time_max, time_min, time_sum, time_diurnal, time_power)
+          this%time_ops = .true.
+      end select
+    else
+      if (var_reduct .ne. time_none .and. .not. is_static) &
+        call mpp_error(FATAL, "The file: "//this%get_file_fname()//&
+                              " has variables that are time averaged and instantaneous")
+    endif
+
   endif
 
 end subroutine set_file_time_ops
