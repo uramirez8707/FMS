@@ -39,7 +39,7 @@ use platform_mod
        & fms_error_handler, FATAL, NOTE
   USE diag_data_mod, ONLY: diag_axis_type, max_subaxes, max_axes,&
        & max_num_axis_sets, max_axis_attributes, debug_diag_manager,&
-       & first_send_data_call, diag_atttype, use_modern_diag
+       & first_send_data_call, diag_atttype, use_modern_diag, diag_manger_clock
   use fms_diag_object_mod, only:fms_diag_object
   USE netcdf, ONLY: NF90_INT, NF90_FLOAT, NF90_CHAR
 
@@ -131,6 +131,7 @@ CONTAINS
     INTEGER :: isc, iec, isg, ieg
     CHARACTER(len=128) :: emsg
 
+    call diag_manger_clock%start_register_axis_clock()
     IF ( .NOT.module_is_initialized ) THEN
        CALL write_version_number("DIAG_AXIS_MOD", version)
     ENDIF
@@ -141,6 +142,7 @@ CONTAINS
       diag_axis_init = fms_diag_object%fms_diag_axis_init(name, array_data, units, cart_name, size(array_data(:)),  &
        & long_name=long_name, direction=direction, set_name=set_name, edges=edges, Domain=Domain, Domain2=Domain2, &
        & DomainU=DomainU, aux=aux, req=req, tile_count=tile_count, domain_position=domain_position)
+       call diag_manger_clock%end_register_axis_clock()
       return
     endif
     IF ( PRESENT(tile_count)) THEN
@@ -367,6 +369,7 @@ CONTAINS
 
     ! Module is now initialized
     module_is_initialized = .TRUE.
+    call diag_manger_clock%end_register_axis_clock()
 
   END FUNCTION diag_axis_init
 

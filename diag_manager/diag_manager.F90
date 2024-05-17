@@ -234,8 +234,8 @@ use platform_mod
        & use_cmor, issue_oor_warnings, oor_warnings_fatal, oor_warning, pack_size,&
        & max_out_per_in_field, flush_nc_files, region_out_use_alt_value, max_field_attributes, output_field_type,&
        & max_file_attributes, max_axis_attributes, prepend_date, DIAG_FIELD_NOT_FOUND, diag_init_time, diag_data_init,&
-       & use_mpp_io, use_refactored_send, &
-       & use_modern_diag, use_clock_average, diag_null, pack_size_str
+       & use_mpp_io, use_refactored_send, timed_diag_manager, &
+       & use_modern_diag, use_clock_average, diag_null, pack_size_str, diag_manger_clock
   USE diag_data_mod, ONLY:  fileobj, fileobjU, fnum_for_domain, fileobjND
   USE diag_table_mod, ONLY: parse_diag_table
   USE diag_output_mod, ONLY: get_diag_global_att, set_diag_global_att
@@ -408,6 +408,7 @@ CONTAINS
        END IF
     END IF
     if (use_modern_diag) then
+      call diag_manger_clock%start_register_field_clock()
       if( do_diag_field_log) then
          if ( PRESENT(do_not_log) ) THEN
              if(.not. do_not_log) call log_diag_field_info(module_name, field_name, (/NULL_AXIS_ID/), long_name,&
@@ -422,6 +423,7 @@ CONTAINS
       & missing_value=missing_value, var_range=range, standard_name=standard_name, &
       & do_not_log=do_not_log, err_msg=err_msg, area=area, volume=volume, realm=realm, &
       multiple_send_data=multiple_send_data)
+      call diag_manger_clock%end_register_field_clock()
     else
       register_diag_field_scalar = register_diag_field_scalar_old(module_name, field_name, init_time, &
       & long_name=long_name, units=units, missing_value=missing_value, range=range, standard_name=standard_name, &
@@ -458,6 +460,7 @@ CONTAINS
     LOGICAL,          OPTIONAL, INTENT(in) :: multiple_send_data !< .True. if send data is called, multiple times
                                                                  !! for the same time
 
+    call diag_manger_clock%start_register_field_clock()
     if (use_modern_diag) then
       if( do_diag_field_log) then
          if ( PRESENT(do_not_log) ) THEN
@@ -480,6 +483,7 @@ CONTAINS
        & standard_name=standard_name, verbose=verbose, do_not_log=do_not_log, err_msg=err_msg, &
        & interp_method=interp_method, tile_count=tile_count, area=area, volume=volume, realm=realm)
     endif
+    call diag_manger_clock%end_register_field_clock()
 end function register_diag_field_array
 
  !> @brief Return field index for subsequent call to send_data.
@@ -1665,6 +1669,7 @@ END FUNCTION register_static_field
     CLASS(*), DIMENSION(:,:,:), INTENT(in), OPTIONAL :: rmask
     CHARACTER(len=*), INTENT(out), OPTIONAL :: err_msg
 
+    call diag_manger_clock%start_send_data_clock()
     if (present(mask) .and. present(rmask)) then
       send_data_3d = diag_send_data(diag_field_id, field, time=time, is_in=is_in, js_in=js_in, ks_in=ks_in, &
                                mask=mask, rmask=rmask, ie_in=ie_in, je_in=je_in, ke_in=ke_in, weight=weight, &
@@ -1679,6 +1684,7 @@ END FUNCTION register_static_field
       send_data_3d = diag_send_data(diag_field_id, field, time=time, is_in=is_in, js_in=js_in, ks_in=ks_in, &
                                ie_in=ie_in, je_in=je_in, ke_in=ke_in, weight=weight, err_msg=err_msg)
     endif
+    call diag_manger_clock%end_send_data_clock()
   END FUNCTION send_data_3d
 
   !> @return true if send is successful
@@ -3906,6 +3912,7 @@ END FUNCTION register_static_field
     logical            :: local_output, need_compute
     CHARACTER(len=128) :: error_string
 
+    call diag_manger_clock%start_diag_send_complete_clock()
     IF ( Time_end == Time_zero ) THEN
        ! <ERROR STATUS="FATAL">
        !   diag_manager_set_time_end must be called before diag_send_complete
@@ -3916,6 +3923,7 @@ END FUNCTION register_static_field
 
     if (use_modern_diag) then
        call fms_diag_object%fms_diag_send_complete(time_step)
+       call diag_manger_clock%end_diag_send_complete_clock()
        return
     endif
 
@@ -3962,6 +3970,7 @@ END FUNCTION register_static_field
        END DO
     END DO
 
+    call diag_manger_clock%end_diag_send_complete_clock()
   END SUBROUTINE diag_send_complete
 
   !> @brief Flushes diagnostic buffers where necessary. Close diagnostics files.
@@ -3971,6 +3980,7 @@ END FUNCTION register_static_field
 
     INTEGER :: file
 
+    call diag_manger_clock%start_diag_manager_end_clock()
     IF ( do_diag_field_log ) THEN
        close (diag_log_unit)
     END IF
@@ -3985,6 +3995,7 @@ END FUNCTION register_static_field
     if (use_modern_diag) then
       call fms_diag_object%diag_end(time)
     endif
+    call diag_manger_clock%end_diag_manager_end_clock()
   END SUBROUTINE diag_manager_end
 
   !> @brief Replaces diag_manager_end; close just one file: files(file)
@@ -4084,7 +4095,7 @@ END FUNCTION register_static_field
          & max_num_axis_sets, max_files, use_cmor, issue_oor_warnings,&
          & oor_warnings_fatal, max_out_per_in_field, flush_nc_files, region_out_use_alt_value, max_field_attributes,&
          & max_file_attributes, max_axis_attributes, prepend_date, use_modern_diag, use_clock_average, &
-         & field_log_separator, use_refactored_send
+         & field_log_separator, use_refactored_send, timed_diag_manager
 
     ! If the module was already initialized do nothing
     IF ( module_is_initialized ) RETURN
@@ -4209,6 +4220,7 @@ END FUNCTION register_static_field
        END IF
     END IF
 
+    call diag_manger_clock%init_clocks()
     if (use_modern_diag) then
       CALL fms_diag_object%init(diag_subset_output)
     endif

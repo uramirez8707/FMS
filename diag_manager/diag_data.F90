@@ -54,6 +54,7 @@ use platform_mod
   USE fms_mod, ONLY: write_version_number
   USE fms_diag_bbox_mod, ONLY: fmsDiagIbounds_type
   use mpp_mod, ONLY: mpp_error, FATAL, WARNING, mpp_pe, mpp_root_pe, stdlog
+  use mpp_mod, ONLY: mpp_clock_begin, mpp_clock_id, mpp_clock_end
 
   ! NF90_FILL_REAL has value of 9.9692099683868690e+36.
   USE netcdf, ONLY: NF_FILL_REAL => NF90_FILL_REAL
@@ -130,6 +131,29 @@ use platform_mod
   INTEGER, PARAMETER :: is_x_axis = 1 !< integer indicating that it is a x axis
   INTEGER, PARAMETER :: is_y_axis = 2 !< integer indicating that it is a y axis
   !> @}
+
+  TYPE :: diagManagerClock_type
+    integer :: register_axis_clock
+    integer :: register_field_clock
+    integer :: send_data_clock
+    integer :: diag_send_complete_clock
+    integer :: diag_manager_end_clock
+
+    contains
+    procedure :: init_clocks
+    procedure :: start_register_axis_clock
+    procedure :: start_register_field_clock
+    procedure :: start_send_data_clock
+    procedure :: start_diag_send_complete_clock
+    procedure :: start_diag_manager_end_clock
+    procedure :: end_register_axis_clock
+    procedure :: end_register_field_clock
+    procedure :: end_send_data_clock
+    procedure :: end_diag_send_complete_clock
+    procedure :: end_diag_manager_end_clock
+  END TYPE diagManagerClock_type
+
+  type(diagManagerClock_type) :: diag_manger_clock
 
   !> @brief Contains the coordinates of the local domain to output.
   !> @ingroup diag_data_mod
@@ -388,6 +412,7 @@ use platform_mod
                                    !! routine is called with the optional time_init parameter.
   LOGICAL :: use_mpp_io = .false. !< false is fms2_io (default); true is mpp_io
   LOGICAL :: use_refactored_send = .false. !< Namelist flag to use refactored send_data math funcitons.
+  LOGICAL :: timed_diag_manager = .false.
   LOGICAL :: use_modern_diag = .false. !< Namelist flag to use the modernized diag_manager code
   LOGICAL :: use_clock_average = .false. !< .TRUE. if the averaging of variable is done based on the clock
                                          !! For example, if doing daily averages and your start the simulation in
@@ -647,6 +672,77 @@ CONTAINS
     end select
 
   end subroutine write_metadata
+
+  subroutine init_clocks(this)
+    class(diagManagerClock_type), intent(inout) :: this
+
+    if (.not. timed_diag_manager) return
+    this%register_axis_clock = mpp_clock_id("register_axis_clock")
+    this%register_field_clock = mpp_clock_id("register_field_clock")
+    this%send_data_clock = mpp_clock_id("send_data_clock")
+    this%diag_send_complete_clock = mpp_clock_id("diag_send_complete_clock")
+    this%diag_manager_end_clock = mpp_clock_id("diag_manager_end_clock")
+  end subroutine init_clocks
+
+  subroutine start_register_axis_clock(this)
+    class(diagManagerClock_type), intent(inout) :: this
+    if (.not. timed_diag_manager) return
+    call mpp_clock_begin(this%register_axis_clock)
+  end subroutine start_register_axis_clock
+
+  subroutine start_register_field_clock(this)
+    class(diagManagerClock_type), intent(inout) :: this
+    if (.not. timed_diag_manager) return
+    call mpp_clock_begin(this%register_field_clock)
+  end subroutine start_register_field_clock
+
+  subroutine start_send_data_clock(this)
+    class(diagManagerClock_type), intent(inout) :: this
+    if (.not. timed_diag_manager) return
+    call mpp_clock_begin(this%send_data_clock)
+  end subroutine start_send_data_clock
+
+  subroutine start_diag_send_complete_clock(this)
+    class(diagManagerClock_type), intent(inout) :: this
+    if (.not. timed_diag_manager) return
+    call mpp_clock_begin(this%diag_send_complete_clock)
+  end subroutine start_diag_send_complete_clock
+
+  subroutine start_diag_manager_end_clock(this)
+    class(diagManagerClock_type), intent(inout) :: this
+    if (.not. timed_diag_manager) return
+    call mpp_clock_begin(this%diag_manager_end_clock)
+  end subroutine start_diag_manager_end_clock
+
+  subroutine end_register_axis_clock(this)
+    class(diagManagerClock_type), intent(inout) :: this
+    if (.not. timed_diag_manager) return
+    call mpp_clock_end(this%register_axis_clock)
+  end subroutine end_register_axis_clock
+
+  subroutine end_register_field_clock(this)
+    class(diagManagerClock_type), intent(inout) :: this
+    if (.not. timed_diag_manager) return
+    call mpp_clock_end(this%register_field_clock)
+  end subroutine end_register_field_clock
+
+  subroutine end_send_data_clock(this)
+    class(diagManagerClock_type), intent(inout) :: this
+    if (.not. timed_diag_manager) return
+    call mpp_clock_end(this%send_data_clock)
+  end subroutine end_send_data_clock
+
+  subroutine end_diag_send_complete_clock(this)
+    class(diagManagerClock_type), intent(inout) :: this
+    if (.not. timed_diag_manager) return
+    call mpp_clock_end(this%diag_send_complete_clock)
+  end subroutine end_diag_send_complete_clock
+
+  subroutine end_diag_manager_end_clock(this)
+    class(diagManagerClock_type), intent(inout) :: this
+    if (.not. timed_diag_manager) return
+    call mpp_clock_end(this%diag_manager_end_clock)
+  end subroutine end_diag_manager_end_clock
 END MODULE diag_data_mod
 !> @}
 ! close documentation grouping
