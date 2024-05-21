@@ -23,8 +23,8 @@
 
 use platform_mod, only: r4_kind, r8_kind
 use yaml_parser_mod
-use constants_mod, only: DEG_TO_RAD
-use mpp_mod, only : mpp_error, FATAL, WARNING, NOTE, stdout, stdlog, mpp_max
+use constants_mod, only: DEG_TO_RAD, RAD_TO_DEG
+use mpp_mod, only : mpp_error, FATAL, WARNING, NOTE, stdout, stdlog, mpp_max, mpp_pe
 use mpp_mod, only : input_nml_file
 use horiz_interp_mod, only : horiz_interp_init, horiz_interp_new, horiz_interp_type, &
                              assignment(=)
@@ -43,9 +43,7 @@ use mpp_domains_mod, only : domain2d, mpp_get_compute_domain, NULL_DOMAIN2D,oper
 use mpp_domains_mod, only : mpp_get_global_domain, mpp_get_data_domain
 use mpp_domains_mod, only : domainUG, mpp_pass_SG_to_UG, mpp_get_UG_SG_domain, NULL_DOMAINUG
 use time_manager_mod, only: time_type, OPERATOR(>), OPERATOR(<)
-use fms2_io_mod,     only : FmsNetcdfFile_t, open_file, close_file, &
-                            read_data, fms2_io_init, variable_exists, &
-                            get_mosaic_tile_file, file_exists
+use fms2_io_mod
 use get_grid_version_mod, only: get_grid_version_1, get_grid_version_2
 use fms_string_utils_mod, only: string
 
@@ -152,6 +150,7 @@ subroutine DATA_OVERRIDE_INIT_IMPL_(Atm_domain_in, Ocean_domain_in, Ice_domain_i
   type (domain2d), intent(in), optional :: Land_domain_in   !> Land domain
   type(domainUG) , intent(in), optional :: Land_domainUG_in !> Land domain, unstructured grid
 
+type(FmsNetcdfFile_t) :: fileobj_grid
   character(len=128)    :: grid_file = 'INPUT/grid_spec.nc'
   integer               :: is,ie,js,je,use_get_grid_version
   integer               :: i, iunit, io_status, ierr
@@ -344,6 +343,30 @@ end if
  if(use_get_grid_version .EQ. 2) then
    call close_file(fileobj)
  end if
+
+ if (present(atm_domain_in)) then
+  if (open_file(fileobj_grid, "grid_read_in_atm.nc", "overwrite")) then
+    call register_axis(fileobj_grid, "nlon", size(lat_local_atm, 1))
+    call register_axis(fileobj_grid, "nlat", size(lat_local_atm, 2))
+    call register_field(fileobj_grid, "lat", "float", (/"nlon", "nlat"/))
+    call register_field(fileobj_grid, "lon", "float", (/"nlon", "nlat"/))
+    call write_data(fileobj_grid, "lat", lat_local_atm * RAD_TO_DEG)
+    call write_data(fileobj_grid, "lon", lon_local_atm * RAD_TO_DEG)
+    call close_file(fileobj_grid)
+  endif
+ endif
+
+ if (present(ocean_domain_in)) then
+  if (open_file(fileobj_grid, "grid_read_in_ocn.nc", "overwrite")) then
+    call register_axis(fileobj_grid, "nlon", size(lat_local_ocn, 1))
+    call register_axis(fileobj_grid, "nlat", size(lat_local_ocn, 2))
+    call register_field(fileobj_grid, "lat", "float", (/"nlon", "nlat"/))
+    call register_field(fileobj_grid, "lon", "float", (/"nlon", "nlat"/))
+    call write_data(fileobj_grid, "lat", lat_local_ocn * RAD_TO_DEG)
+    call write_data(fileobj_grid, "lon", lon_local_ocn * RAD_TO_DEG)
+    call close_file(fileobj_grid)
+  endif
+ endif
 end subroutine DATA_OVERRIDE_INIT_IMPL_
 
 !> @brief Implementation of the following truth table:
@@ -1275,14 +1298,14 @@ subroutine DATA_OVERRIDE_3D_(gridname,fieldname_code,return_data,time,override,d
         ie_src = axis_sizes(1)
         js_src = 1
         je_src = axis_sizes(2)
-        ! do j = 1, axis_sizes(2)+1
-        !    if( override_array(curr_position)%lat_in(j) > lat_min ) exit
-        !    js_src = j
-        ! enddo
-        ! do j = 1, axis_sizes(2)+1
-        !    je_src = j
-        !    if( override_array(curr_position)%lat_in(j) > lat_max ) exit
-        ! enddo
+        do j = 1, axis_sizes(2)+1
+           if( override_array(curr_position)%lat_in(j) > lat_min ) exit
+           js_src = j
+        enddo
+        do j = 1, axis_sizes(2)+1
+           je_src = j
+           if( override_array(curr_position)%lat_in(j) > lat_max ) exit
+        enddo
 
         !--- bicubic interpolation need one extra point in each direction. Also add
         !--- one more point for because lat_in is in the corner but the interpolation
