@@ -722,8 +722,8 @@ endif
 clim_type%r4_type%is_allocated=.false.
 clim_type%r8_type%is_allocated=.false.
 if (.not. clim_type%need_to_define_pressure_weights) then
-  deallocate(clim_type%npweights)
-  deallocate(clim_type%pindices)
+  if (allocated(clim_type%npweights)) deallocate(clim_type%npweights)
+  if (allocated(clim_type%pindices))  deallocate(clim_type%pindices)
   clim_type%need_to_define_pressure_weights = .true.
 endif
 
