@@ -99,7 +99,8 @@ public interpolator_init, &
        interpolator_end,  &
        init_clim_diag,    &
        query_interpolator,&
-       read_data
+       read_data,         &
+       interp_weighted_scalar
 
 !> Interpolates a field to a model grid
 !!
@@ -266,6 +267,7 @@ real(r4_kind) :: tweight      !< No description
 real(r4_kind) :: tweight1     !< The time weight between the climatology years
 real(r4_kind) :: tweight2     !< No description
 real(r4_kind) :: tweight3     !< The time weight between the month
+real(r4_kind), allocatable :: pweights(:,:)
 end type interpolate_r4_type
 
 type, private :: interpolate_r8_type
@@ -285,6 +287,7 @@ real(r8_kind) :: tweight          !< No description
 real(r8_kind) :: tweight1     !< The time weight between the climatology years
 real(r8_kind) :: tweight2     !< No description
 real(r8_kind) :: tweight3     !< The time weight between the month
+real(r8_kind), allocatable :: pweights(:,:)
 end type interpolate_r8_type
 
 type, public  :: interpolate_type
@@ -323,7 +326,9 @@ type(time_type), allocatable :: clim_times(:,:) !< No description
 logical :: separate_time_vary_calc              !< No description
 integer :: itaum     !< No description
 integer :: itaup     !< No description
-
+integer, allocatable :: npweights(:)
+integer, allocatable :: pindices(:,:)
+logical :: need_to_define_pressure_weights
 end type interpolate_type
 
 !> @addtogroup interpolator_mod
@@ -672,6 +677,7 @@ if(clim_type%r4_type%is_allocated) then
    if (allocated (clim_type%r4_type%levs    )) deallocate(clim_type%r4_type%levs)
    if (allocated (clim_type%r4_type%halflevs)) deallocate(clim_type%r4_type%halflevs)
    if (allocated (clim_type%r4_type%data5d  )) deallocate(clim_type%r4_type%data5d)
+   if (allocated (clim_type%r4_type%pweights)) deallocate(clim_type%r4_type%pweights)
 else if(clim_type%r8_type%is_allocated) then
    if (allocated (clim_type%r8_type%lat     )) deallocate(clim_type%r8_type%lat)
    if (allocated (clim_type%r8_type%lon     )) deallocate(clim_type%r8_type%lon)
@@ -680,6 +686,7 @@ else if(clim_type%r8_type%is_allocated) then
    if (allocated (clim_type%r8_type%levs    )) deallocate(clim_type%r8_type%levs)
    if (allocated (clim_type%r8_type%halflevs)) deallocate(clim_type%r8_type%halflevs)
    if (allocated (clim_type%r8_type%data5d))   deallocate(clim_type%r8_type%data5d)
+   if (allocated (clim_type%r8_type%pweights)) deallocate(clim_type%r8_type%pweights)
 end if
 
 if (allocated (clim_type%time_slice)) deallocate(clim_type%time_slice)
@@ -714,6 +721,11 @@ endif
 
 clim_type%r4_type%is_allocated=.false.
 clim_type%r8_type%is_allocated=.false.
+if (.not. clim_type%need_to_define_pressure_weights) then
+  deallocate(clim_type%npweights)
+  deallocate(clim_type%pindices)
+  clim_type%need_to_define_pressure_weights = .true.
+endif
 
 !! RSH mod
 if( .not.(clim_type%TIME_FLAG .eq. LINEAR  .and. read_all_on_init) &

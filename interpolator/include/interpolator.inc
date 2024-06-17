@@ -844,6 +844,7 @@ if (present (single_year_file)) then
   single_year_file = clim_type%climatological_year
 endif
 
+clim_type%need_to_define_pressure_weights = .true.
 end subroutine FMS2IO_INTERPOLATOR_INIT_
 
 subroutine GET_AXIS_LATLON_DATA_(fileobj, name, latlon_data)
@@ -2276,7 +2277,7 @@ do j = 1, size(phalf,2)
       endif
       select case(clim_type%vert_interp(i))
          case(INTERP_WEIGHTED_P)
-            call interp_weighted_scalar(pclim, phalf(ilon,j,:),hinterp_data(ilon,j,:),interp_data(ilon,j,:))
+            call interp_weighted_scalar(pclim, phalf(ilon,j,:),hinterp_data(ilon,j,:),interp_data(ilon,j,:), clim_type)
          case(INTERP_LINEAR_P)
             call interp_linear(pclim, phalf(ilon,j,:),hinterp_data(ilon,j,:),interp_data(ilon,j,:))
 !        case(INTERP_LOG)
@@ -2976,7 +2977,7 @@ do j = 1, size(phalf,2)
       endif
       select case(clim_type%vert_interp(i))
          case(INTERP_WEIGHTED_P)
-            call interp_weighted_scalar(pclim, phalf(ilon,j,:),hinterp_data(ilon,j,:),interp_data(ilon,j,:))
+            call interp_weighted_scalar(pclim, phalf(ilon,j,:),hinterp_data(ilon,j,:),interp_data(ilon,j,:), clim_type)
          case(INTERP_LINEAR_P)
             call interp_linear(pclim, phalf(ilon,j,:),hinterp_data(ilon,j,:),interp_data(ilon,j,:))
       end select
@@ -3338,52 +3339,68 @@ end subroutine INTERP_WEIGHTED_SCALAR_2D_
 !! @param [in] <grdout> No description
 !! @param [in] <datin> No description
 !! @param [out] <datout> No description
-subroutine INTERP_WEIGHTED_SCALAR_1D_ (grdin, grdout, datin, datout )
+subroutine INTERP_WEIGHTED_SCALAR_1D_ (grdin, grdout, datin, datout, clim_type)
 real(FMS_INTP_KIND_), intent(in),  dimension(:) :: grdin, grdout, datin
 real(FMS_INTP_KIND_), intent(out), dimension(:) :: datout
+type(interpolate_type), intent(inout) :: clim_type
 
-integer :: j, k
+integer :: j, k, m
 integer, parameter :: lkind=FMS_INTP_KIND_
 
-if (size(grdin(:)).ne. (size(datin(:))+1)) &
+if (size(grdin(:)).ne. (size(datin)+1)) &
  call mpp_error(FATAL,'interp_weighted_scalar : input data and pressure do not have the same number of levels')
-if (size(grdout(:)).ne. (size(datout(:))+1)) &
+if (size(grdout(:)).ne. (size(datout)+1)) &
  call  mpp_error(FATAL,'interp_weighted_scalar : output data and pressure do not have the same number of levels')
 
-  do k = 1, size(datout(:))
-   datout(k) = 0.0_lkind
+!$omp critical
+if (clim_type%need_to_define_pressure_weights) then
+  allocate(clim_type%npweights(size(datout))) !< Number of weights for each pressure level
+  allocate(clim_type%pindices(size(datout), 10)) !< The indices of the data to use for each pressure level
+  allocate(clim_type%FMS_INTP_TYPE_%pweights(size(datout(:)), 10)) !< The weights for each pressure level
 
-     do j = 1, size(datin(:))
-
-        if ( grdin(j)   <= grdout(k) .and. &
-             grdin(j+1) >= grdout(k) .and. &
-             grdin(j+1) <= grdout(k+1) ) then
-
-           datout(k) = datout(k) + datin(j)*(grdin(j+1)-grdout(k))
-
-        else if ( grdin(j)   >= grdout(k)   .and. &
-                  grdin(j)   <= grdout(k+1) .and. &
-                  grdin(j+1) >= grdout(k+1) ) then
-
-           datout(k) = datout(k) + datin(j)*(grdout(k+1)-grdin(j))
-
-        else if ( grdin(j)   >= grdout(k)   .and. &
-                  grdin(j+1) <= grdout(k+1) ) then
-
-           datout(k) = datout(k) + datin(j)*(grdin(j+1)-grdin(j))
-
-        else if ( grdin(j)   <= grdout(k)   .and. &
-                  grdin(j+1) >= grdout(k+1) ) then
-
-           datout(k) = datout(k) + datin(j)*(grdout(k+1)-grdout(k))
-
+  clim_type%npweights = 0
+  do k = 1, size(datout)
+    do j = 1, size(datin)
+      if ( grdin(j)   <= grdout(k)) then
+        if (grdin(j+1) >= grdout(k) .and. grdin(j+1) <= grdout(k+1) ) then
+          clim_type%npweights(k) = clim_type%npweights(k) + 1
+          m = clim_type%npweights(k)
+          clim_type%FMS_INTP_TYPE_%pweights(k,m) = grdin(j+1)-grdout(k)
+          clim_type%pindices(k,m) = j
+        else if (grdin(j+1) >= grdout(k+1) ) then
+          clim_type%npweights(k) = clim_type%npweights(k) + 1
+          m = clim_type%npweights(k)
+          clim_type%FMS_INTP_TYPE_%pweights(k,m) = grdout(k+1)-grdout(k)
+          clim_type%pindices(k,m) = j
         endif
-
-     enddo
-
-     datout(k) = datout(k)/(grdout(k+1)-grdout(k))
-
+      else if ( grdin(j)   >= grdout(k)) then
+        if (grdin(j)   <= grdout(k+1) .and. grdin(j+1) >= grdout(k+1) ) then
+          clim_type%npweights(k) = clim_type%npweights(k) + 1
+          m = clim_type%npweights(k)
+          clim_type%FMS_INTP_TYPE_%pweights(k,m) = grdout(k+1)-grdin(j)
+          clim_type%pindices(k,m) = j
+        elseif (grdin(j+1) <= grdout(k+1)) then
+          clim_type%npweights(k) = clim_type%npweights(k) + 1
+          m = clim_type%npweights(k)
+          clim_type%FMS_INTP_TYPE_%pweights(k,m) = grdin(j+1)-grdin(j)
+          clim_type%pindices(k,m) = j
+        endif
+      endif
+    enddo
   enddo
+  print *, "WUT:::", clim_type%npweights
+  clim_type%need_to_define_pressure_weights = .false.
+endif
+!$omp end critical
+
+do k = 1, size(datout)
+  datout(k) = 0.0
+  do j = 1, clim_type%npweights(k)
+    m = clim_type%pindices(k, j)
+    datout(k) = datout(k) + datin(m) * clim_type%FMS_INTP_TYPE_%pweights(k, j)
+  enddo
+  datout(k) = datout(k)/(grdout(k+1)-grdout(k))
+enddo
 
 end subroutine INTERP_WEIGHTED_SCALAR_1D_
 !
