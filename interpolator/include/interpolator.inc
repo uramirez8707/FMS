@@ -3388,7 +3388,6 @@ if (clim_type%need_to_define_pressure_weights) then
       endif
     enddo
   enddo
-  print *, "WUT:::", clim_type%npweights
   clim_type%need_to_define_pressure_weights = .false.
 endif
 !$omp end critical
