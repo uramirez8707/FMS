@@ -31,7 +31,10 @@ use mpp_mod,           only : mpp_error, &
                               mpp_npes,  &
                               WARNING,   &
                               NOTE,      &
-                              input_nml_file
+                              input_nml_file, &
+                              mpp_clock_id, &
+                              mpp_clock_begin, &
+                              mpp_clock_end
 use mpp_domains_mod,   only : mpp_domains_init,      &
                               mpp_update_domains,    &
                               mpp_define_domains,    &
@@ -401,6 +404,8 @@ real(r8_kind) ::  missing_value = -1.e10_r8_kind                        !< No de
 ! 64-bit precision (kind=8)
  integer, parameter:: f_p = r8_kind     !< 64-bit precision (kind=8)
 #endif
+
+integer :: my_beautiful_clock
 
 logical :: read_all_on_init = .false.          !< No description
 integer :: verbose = 0                         !< No description

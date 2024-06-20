@@ -110,6 +110,7 @@ call fms2io_interpolator_init(clim_type, file_name, lonb_mod, latb_mod, &
                               data_names, data_out_of_bounds,           &
                               vert_interp, clim_units, single_year_file)
 
+my_beautiful_clock = mpp_clock_id( 'Interpolator clock' )
 end subroutine INTERPOLATOR_INIT_
 
 subroutine FMS2IO_INTERPOLATOR_INIT_(clim_type, file_name, lonb_mod, latb_mod, &
@@ -3345,6 +3346,8 @@ real(FMS_INTP_KIND_), intent(out), dimension(:) :: datout
 integer :: j, k
 integer, parameter :: lkind=FMS_INTP_KIND_
 
+call mpp_clock_begin(my_beautiful_clock)
+
 if (size(grdin(:)).ne. (size(datin(:))+1)) &
  call mpp_error(FATAL,'interp_weighted_scalar : input data and pressure do not have the same number of levels')
 if (size(grdout(:)).ne. (size(datout(:))+1)) &
@@ -3384,6 +3387,7 @@ if (size(grdout(:)).ne. (size(datout(:))+1)) &
      datout(k) = datout(k)/(grdout(k+1)-grdout(k))
 
   enddo
+call mpp_clock_end(my_beautiful_clock)
 
 end subroutine INTERP_WEIGHTED_SCALAR_1D_
 !
