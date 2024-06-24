@@ -1464,18 +1464,22 @@ subroutine DATA_OVERRIDE_3D_(gridname,fieldname_code,return_data,time,override,d
         call mpp_error(FATAL,'error: gridname not recognized in data_override')
      end select
 
-     select case (data_table(index1)%interpol_method)
-     case ('bilinear')
+     if (data_table(index1)%ext_weights) then
+      call mpp_error(FATAL, "The external weight capability has not been implemented yet")
+     else
+      select case (data_table(index1)%interpol_method)
+      case ('bilinear')
         call horiz_interp_new (override_array(curr_position)%horz_interp(window_id), &
              override_array(curr_position)%lon_in(is_src:ie_src+1),                  &
              override_array(curr_position)%lat_in(js_src:je_src+1),                  &
              lon_local(isw:iew,jsw:jew), lat_local(isw:iew,jsw:jew), interp_method="bilinear")
-     case ('bicubic')
+      case ('bicubic')
         call horiz_interp_new (override_array(curr_position)%horz_interp(window_id), &
              override_array(curr_position)%lon_in(is_src:ie_src+1),                  &
              override_array(curr_position)%lat_in(js_src:je_src+1),                  &
              lon_local(isw:iew,jsw:jew), lat_local(isw:iew,jsw:jew), interp_method="bicubic")
-     end select
+      end select
+    endif
      override_array(curr_position)%need_compute(window_id) = .false.
   endif
 
