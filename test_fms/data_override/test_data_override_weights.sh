@@ -59,7 +59,7 @@ cp /home/Uriel.Ramirez/DEV/WEIGHTS/INPUT . -r
 
 #The test only runs with yaml
 if [ -z $parser_skip ]; then
-  for KIND in r4
+  for KIND in r4 r8
   do
     test_expect_success "test_data_override with and without yaml  -yaml (${KIND})" '
       mpirun -n 1 ../test_data_override_weights_${KIND}
