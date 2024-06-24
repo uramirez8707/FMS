@@ -97,10 +97,19 @@ type override_type
    integer                          :: is_src, ie_src, js_src, je_src
 end type override_type
 
+!> Private type for holding horiz_interp_type for a weight file
+!> @ingroup data_override_mod
+type fmsExternalWeights_type
+  character(len=:), allocatable :: weight_filename
+  type(horiz_interp_type), pointer :: horiz_interp
+end type fmsExternalWeights_type
+
 integer, parameter :: lkind = FMS_DATA_OVERRIDE_KIND_
 integer, parameter :: max_table=100, max_array=100
 
 integer            :: table_size !< actual size of data table
+integer            :: nweight_files !< Number of weight files that have been used
+type(fmsExternalWeights_type), allocatable, target :: external_weights(:) !< External weights types
 logical            :: module_is_initialized = .FALSE.
 
 type(domain2D) :: ocn_domain,atm_domain,lnd_domain, ice_domain
@@ -220,6 +229,8 @@ end if
        if (file_exists("data_table")) &
          call mpp_error(FATAL, "You cannot have the legacy data_table if use_data_table_yaml=.true.")
        call read_table_yaml(data_table)
+       allocate(external_weights(table_size))
+       nweight_files = 0
     else
        if (file_exists("data_table.yaml"))&
          call mpp_error(FATAL, "You cannot have the yaml data_table if use_data_table_yaml=.false.")
@@ -1466,6 +1477,42 @@ subroutine DATA_OVERRIDE_3D_(gridname,fieldname_code,return_data,time,override,d
 
      if (data_table(index1)%ext_weights) then
       call mpp_error(FATAL, "The external weight capability has not been implemented yet")
+      !TODO Loop through nweight_files, check if external_weights%weight_filename is the same as
+      !data_table(index1)%ext_weights_file_name
+      !If it is point external_weights%horiz_interp to override_array(curr_position)%horz_interp(window_id)
+      !otherwise create it
+
+      !open the file to weight file to read
+      !check if the size of the weights is the same as the global domain, if it is not crash
+
+      !call horiz_interp_with_external_weights(override_array(curr_position)%horz_interp(window_id), &
+      !lon_local(isw:iew,jsw:jew), lat_local(isw:iew,jsw:jew), &
+      !fileobj, data_table(index1)%weight_file_type, &
+      !data_table(index1)%interpol_method, isw, iew, jsw, jew
+
+      !inside horiz_interp_with_external_weights for bilinear
+      !allocate a variable to be the size of x (iew-isw+1), size of y (jew-jsw+1), 3
+      !the 3 is for x, y and tile
+      !read the "index" to that variable and fill in the horiz_interp type
+      ! call read_data(fileobj, "index", var, corner=(/isw, jsw, 1/), edge_lengths=(/iew-isw+1, jew-jsw+1, 3/))
+      ! Interp % i_lon (:,:,1) = var(:,:,1)
+      ! Interp % i_lon (:,:,2) = Interp % i_lon (:,:,1) + 1
+      ! where (Interp % i_lon (:,:,2) > nlon_in) Interp % i_lon (:,:,2) = 1
+
+      ! Interp % j_lat (:,:,1) = var(:,:,2)
+      ! Interp % j_lat (:,:,2) = Interp % j_lat (:,:,1) + 1
+      ! where (Interp % j_lat (:,:,2) > nlat_in) Interp % j_lat (:,:,2) = 1
+      ! deallocate(var)
+
+      !allocate a variable to be the size of x (iew-isw+1), size of y (jew-jsw+1), 4
+      !the 4 if for the 4 corners
+      ! call read_data(fileobj, "weight", var, corner=(/isw, jsw, 1/), edge_lengths=(/iew-isw+1, jew-jsw+1, 4/))
+      ! Interp % HI_KIND_TYPE_ % wti = var(:,:,1:2)
+      ! Interp % HI_KIND_TYPE_ % wtj = var(:,:,3:4)
+      ! deallocate(var)
+
+      ! save the horiz_interp and the external filename to the external_weights
+      !close the file
      else
       select case (data_table(index1)%interpol_method)
       case ('bilinear')
