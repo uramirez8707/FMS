@@ -37,7 +37,7 @@ use mpp_domains_mod,  only : mpp_define_layout, mpp_define_domains, mpp_get_comp
 use mpp_domains_mod,  only : mpp_domains_init, domain2d
 use fms_mod,          only : check_nml_error, fms_init
 use horiz_interp_mod, only : horiz_interp_init, horiz_interp_new, horiz_interp_del
-use horiz_interp_mod, only : horiz_interp, horiz_interp_type
+use horiz_interp_mod, only : horiz_interp, horiz_interp_type, assignment(=)
 use horiz_interp_type_mod, only: SPHERICAL
 use constants_mod,    only : constants_init, PI
 use horiz_interp_bilinear_mod,  only: horiz_interp_bilinear_new
@@ -205,7 +205,7 @@ implicit none
     real(HI_TEST_KIND_), parameter :: D2R = real(PI,lkind)/180._lkind
     real(HI_TEST_KIND_), parameter :: R2D = 180._lkind/real(PI,lkind)
 
-    type(horiz_interp_type) :: interp
+    type(horiz_interp_type) :: interp, interp_copy
 
     if (decreasing_lat) then
         lon_src_beg = 360.0_lkind
@@ -255,6 +255,7 @@ implicit none
     call mpp_clock_begin(id1)
     if (.not. test_solo) then
         call horiz_interp_new(interp, lon1D_src, lat1D_src, lon1D_dst, lat1D_dst, interp_method = "bilinear")
+        interp_copy = interp
         call horiz_interp(interp, data_src, data_dst)
     else
         call horiz_interp(data_src, lon1D_src, lat1D_src, lon1D_dst, lat1D_dst, data_dst, interp_method = "bilinear")
