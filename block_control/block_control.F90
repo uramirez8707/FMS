@@ -108,6 +108,8 @@ contains
     integer :: i, j, nblks, ix, ii, jj
     integer :: non_uniform_blocks !< Number of non uniform blocks
 
+    print *, mpp_pe(), " is the block control"
+    call mpp_sync()
     if (message) then
       non_uniform_blocks = 0
       if ((mod(iec-isc+1,nx_block) .ne. 0) .or. (mod(jec-jsc+1,ny_block) .ne. 0)) then
