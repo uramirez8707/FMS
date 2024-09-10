@@ -23,7 +23,8 @@
 
 module block_control_mod
 
-use mpp_mod,         only: mpp_error, NOTE, WARNING, FATAL, mpp_sum, mpp_npes
+use mpp_mod,         only: mpp_error, NOTE, WARNING, FATAL, mpp_sum, mpp_npes, &
+                           mpp_pe, mpp_sync
 use mpp_domains_mod, only: mpp_compute_extent
 use fms_string_utils_mod, only: string
 implicit none
@@ -112,7 +113,10 @@ contains
       if ((mod(iec-isc+1,nx_block) .ne. 0) .or. (mod(jec-jsc+1,ny_block) .ne. 0)) then
         non_uniform_blocks = 1
       endif
+      print *, mpp_pe(), "Before mpp_sum"
+      call mpp_sync()
       call mpp_sum(non_uniform_blocks)
+      print *, mpp_pe(), "After mpp_sum"
       if (non_uniform_blocks > 0 ) then
         call mpp_error(NOTE, string(non_uniform_blocks)//" out of "//string(mpp_npes())//" total domains "//&
                        "have non-uniform blocks for block size ("//string(nx_block)//","//string(ny_block)//")")
