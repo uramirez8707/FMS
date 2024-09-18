@@ -334,6 +334,7 @@ int open_and_parse_file_wrap(char *filename, int *file_id)
 
   if(!yaml_parser_initialize(&parser)) return -2;
 
+  my_files.files[j].nkeys = 0;
   my_files.files[j].keys = (key_value_pairs*)calloc(1, sizeof(key_value_pairs));
 
   parent[0]=0;
