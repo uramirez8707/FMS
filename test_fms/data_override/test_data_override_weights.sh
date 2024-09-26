@@ -58,6 +58,7 @@ cat <<_EOF > input_base.nml
   nlon = 5
   nlat = 6
   layout = 1, 2
+  write_only = .False.
 /
 _EOF
 
@@ -68,7 +69,7 @@ if [ -z $parser_skip ]; then
     rm -rf INPUT/.
     sed 's/write_only = .False./write_only = .True./g' input_base.nml > input.nml
     test_expect_success "Creating input files (${KIND})" '
-      mpirun -n 6 ../test_data_override_ongrid_${KIND}
+      mpirun -n 2 ../test_data_override_ongrid_${KIND}
     '
 
     cp input_base.nml input.nml
