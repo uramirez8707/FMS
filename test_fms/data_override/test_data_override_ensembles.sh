@@ -68,10 +68,15 @@ if [ -z $parser_skip ]; then
   for KIND in r4 r8
   do
     rm -rf INPUT/.
+    sed 's/write_only = .False./write_only = .True./g' input_base.nml > input.nml
+    test_expect_success "Creating input files (${KIND})" '
+      mpirun -n 6 ../test_data_override_ongrid_${KIND}
+    '
+
+    cp input_base.nml input.nml
     test_expect_success "test_data_override with two ensembles  -yaml (${KIND})" '
       mpirun -n 12 ../test_data_override_ongrid_${KIND}
       '
-    sync
   done
 
 cat <<_EOF > data_table.yaml
