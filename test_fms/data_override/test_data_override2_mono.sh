@@ -44,6 +44,7 @@ do
   test_expect_success "test_data_override with monotonically increasing and decreasing data sets (${KIND})" '
     mpirun -n 6 ../test_data_override_ongrid_${KIND}
     '
+  sync
 done
 
 rm -rf data_table
@@ -83,6 +84,7 @@ if [ -z $parser_skip ]; then
     test_expect_success "test_data_override with monotonically increasing and decreasing data sets  -yaml (${KIND})" '
       mpirun -n 6 ../test_data_override_ongrid_${KIND}
       '
+    sync
   done
 fi
 

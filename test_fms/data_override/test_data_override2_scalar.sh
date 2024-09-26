@@ -65,7 +65,7 @@ rm -rf INPUT/*
 test_expect_success "data_override scalar field (${KIND})" '
   mpirun -n 6 ../test_data_override_ongrid_${KIND}
 '
-
+sync
 done
 rm -rf INPUT *.nc # remove any leftover files to reduce size
 

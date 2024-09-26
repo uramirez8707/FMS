@@ -71,6 +71,7 @@ if [ -z $parser_skip ]; then
     test_expect_success "test_data_override with two ensembles  -yaml (${KIND})" '
       mpirun -n 12 ../test_data_override_ongrid_${KIND}
       '
+    sync
   done
 
 cat <<_EOF > data_table.yaml

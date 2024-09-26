@@ -69,6 +69,7 @@ if [ -z $parser_skip ]; then
     test_expect_success "test_data_override with and without weight files  -yaml (${KIND})" '
       mpirun -n 2 ../test_data_override_ongrid_${KIND}
       '
+    sync
   done
 fi
 
