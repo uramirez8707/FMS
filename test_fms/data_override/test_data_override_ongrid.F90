@@ -118,7 +118,6 @@ if (write_only) then
   call mpp_error(NOTE, "Finished creating INPUT Files")
 
 else
-  call mpp_error(FATAL, "WUT")
   select case (test_case)
   case (ensemble_case)
     !< Go back to the ensemble pelist
