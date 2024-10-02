@@ -70,6 +70,8 @@ private
   logical, private :: fields_initialized=.false. !< True if the fmsDiagObject is initialized
   logical, private :: buffers_initialized=.false. !< True if the fmsDiagObject is initialized
   logical, private :: axes_initialized=.false. !< True if the fmsDiagObject is initialized
+  type(time_type) :: model_end_time !< The time that the simulation is going to end
+                                    !! (set by calling diag_manager_set_time_end)
 #endif
   contains
     procedure :: init => fms_diag_object_init
@@ -94,6 +96,7 @@ private
     procedure :: fms_diag_field_add_cell_measures
     procedure :: allocate_diag_field_output_buffers
     procedure :: fms_diag_compare_window
+    procedure :: set_time_end
 #ifdef use_yaml
     procedure :: get_diag_buffer
 #endif
@@ -846,6 +849,7 @@ subroutine fms_diag_do_io(this, end_time)
       call diag_file%write_axis_data(this%diag_axis)
     endif
 
+    !TODO this can be clean up and better documented
     finish_writing = diag_file%is_time_to_write(model_time, this%FMS_diag_output_buffers, &
       this%FMS_diag_fields, do_not_write)
     unlim_dim_was_increased = .false.
@@ -885,16 +889,14 @@ subroutine fms_diag_do_io(this, end_time)
       call diag_file%write_time_data()
       call diag_file%flush_diag_file()
       call diag_file%update_next_write(model_time)
-    endif
-
-    if (finish_writing) then
       call diag_file%update_current_new_file_freq_index(model_time)
       if (diag_file%is_time_to_close_file(model_time)) call diag_file%close_diag_file(this%FMS_diag_output_buffers, &
-        diag_fields = this%FMS_diag_fields)
+        this%model_end_time, diag_fields = this%FMS_diag_fields)
     else if (force_write) then
       call diag_file%prepare_for_force_write()
       call diag_file%write_time_data()
-      call diag_file%close_diag_file(this%FMS_diag_output_buffers, diag_fields = this%FMS_diag_fields)
+      call diag_file%close_diag_file(this%FMS_diag_output_buffers, &
+        this%model_end_time, diag_fields = this%FMS_diag_fields)
     endif
   enddo
 #endif
@@ -1506,5 +1508,14 @@ function fms_diag_compare_window(this, field, field_id, &
     "you can not use the modern diag manager without compiling with -Duse_yaml")
 #endif
 end function fms_diag_compare_window
+
+!> @brief Set the model_end_time in a diag object
+subroutine set_time_end(this, time_end_in)
+  class(fmsDiagObject_type), intent(inout) :: this        !< Diag Object
+  type(time_type),           intent(in)    :: time_end_in !< Time at the end of the simulation
+#ifdef use_yaml
+  this%model_end_time = time_end_in
+#endif
+end subroutine
 
 end module fms_diag_object_mod

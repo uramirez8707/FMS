@@ -1776,10 +1776,11 @@ subroutine write_axis_data(this, diag_axis)
 end subroutine write_axis_data
 
 !< @brief Closes the diag_file
-subroutine close_diag_file(this, output_buffers, diag_fields)
+subroutine close_diag_file(this, output_buffers, model_end_time, diag_fields)
   class(fmsDiagFileContainer_type), intent(inout), target   :: this              !< The file object
   type(fmsDiagOutputBuffer_type),   intent(in)              :: output_buffers(:) !< Array of output buffers
                                                                                  !! This is needed for error checking
+  type(time_type),                  intent(in)              :: model_end_time    !< Time that simulation ends
   type(fmsDiagField_type),          intent(in),    optional :: diag_fields(:)    !< Array of diag fields
                                                                                  !! This is needed for error checking
 
@@ -1808,6 +1809,8 @@ subroutine close_diag_file(this, output_buffers, diag_fields)
     this%FMS_diag_file%next_close = diag_time_inc(this%FMS_diag_file%next_close, VERY_LARGE_FILE_FREQ, DIAG_DAYS)
   endif
 
+  if (this%FMS_diag_file%model_time >= model_end_time) &
+    this%FMS_diag_file%done_writing_data = .true.
   if (this%FMS_diag_file%has_send_data_been_called(output_buffers, .True., diag_fields)) return
 end subroutine close_diag_file
 
