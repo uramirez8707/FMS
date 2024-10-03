@@ -78,8 +78,8 @@ diag_files:
 _EOF
 
 cat <<_EOF > input.nml
-&diag_manager_nml 
- use_modern_diag=.true. 
+&diag_manager_nml
+ use_modern_diag=.true.
 /
 &test_multi_file_nml
  test_case = 2
@@ -111,8 +111,8 @@ diag_files:
 _EOF
 
 cat <<_EOF > input.nml
-&diag_manager_nml 
- use_modern_diag=.true. 
+&diag_manager_nml
+ use_modern_diag=.true.
 /
 &test_multi_file_nml
  test_case = 3
@@ -146,8 +146,8 @@ diag_files:
 _EOF
 
 cat <<_EOF > input.nml
-&diag_manager_nml 
- use_modern_diag=.true. 
+&diag_manager_nml
+ use_modern_diag=.true.
 /
 &test_multi_file_nml
  test_case = 4

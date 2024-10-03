@@ -1595,7 +1595,8 @@ subroutine dump_diag_yaml_obj( filename )
       if(files(i)%has_file_new_file_freq()) write(unit_num, *) 'new_file_freq:', files(i)%get_file_new_file_freq()
       if(files(i)%has_file_new_file_freq_units()) write(unit_num, *) 'new_file_freq_units:', &
                                                          & files(i)%get_file_new_file_freq_units()
-      if(files(i)%has_file_start_time()) write(unit_num, *) 'start_time:', date_to_string(files(i)%get_file_start_time())
+      if(files(i)%has_file_start_time()) write(unit_num, *) 'start_time:', &
+                                                         & date_to_string(files(i)%get_file_start_time())
       if(files(i)%has_file_duration()) write(unit_num, *) 'duration:', files(i)%get_file_duration()
       if(files(i)%has_file_duration_units()) write(unit_num, *) 'duration_units:', files(i)%get_file_duration_units()
       if(files(i)%has_file_varlist()) write(unit_num, *) 'varlist:', files(i)%get_file_varlist()
