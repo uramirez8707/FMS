@@ -828,7 +828,6 @@ subroutine fms_diag_do_io(this, end_time)
 
     !< Go away if the file is a subregional file and the current PE does not have any data for it
     if (.not. diag_file%writing_on_this_pe()) cycle
-    if (diag_file%FMS_diag_file%is_done_writing_data()) cycle
 
     if (present (end_time)) then
       force_write = .true.
@@ -836,6 +835,7 @@ subroutine fms_diag_do_io(this, end_time)
     else
       model_time => diag_file%get_model_time()
     endif
+    if (diag_file%FMS_diag_file%is_done_writing_data()) cycle
 
     call diag_file%open_diag_file(model_time, file_is_opened_this_time_step)
     if (file_is_opened_this_time_step) then
@@ -849,8 +849,7 @@ subroutine fms_diag_do_io(this, end_time)
       call diag_file%write_axis_data(this%diag_axis)
     endif
 
-    !TODO this can be clean up and better documented
-    finish_writing = diag_file%is_time_to_write(model_time, this%FMS_diag_output_buffers, &
+    call diag_file%check_file_times(model_time, this%FMS_diag_output_buffers, &
       this%FMS_diag_fields, do_not_write)
     unlim_dim_was_increased = .false.
 
@@ -985,6 +984,7 @@ function fms_diag_do_reduction(this, field_data, diag_field_id, oor_mask, weight
     if (buffer_ptr%is_done_with_math()) cycle
 
     if (present(time)) call file_ptr%set_model_time(time)
+    if (.not. file_ptr%time_to_start_doing_math()) cycle
 
     bounds_out = bounds
     if (.not. using_blocking) then
