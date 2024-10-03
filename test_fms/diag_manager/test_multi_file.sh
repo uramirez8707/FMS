@@ -55,8 +55,8 @@ test_expect_success "Running diag_manager (test $my_test_count)" '
 '
 
 ###########################################################################
-# CASE 2: In this example, a file is going to be created 
-
+# CASE 2: In this example, a file is going to be created starting from [2 1 1 12 0 0],
+# every 4 hours, for 8 hours (so 2 files!)
 rm -f *.nc
 cat <<_EOF > diag_table.yaml
 title: test_diag_manager_01
@@ -90,8 +90,8 @@ test_expect_success "Running diag_manager (test $my_test_count)" '
 '
 
 ###########################################################################
-# CASE 3: In this example, a file is going to be created
-
+# CASE 3: In this example, a file is going to be created using data from [2 1 12 0 0]
+# to [2 1 1 20 0 0] (8 hours!)
 rm -f *.nc
 cat <<_EOF > diag_table.yaml
 title: test_diag_manager_01
@@ -123,8 +123,9 @@ test_expect_success "Running diag_manager (test $my_test_count)" '
 '
 
 ###########################################################################
-# CASE 3: In this example, a file is going to be created
-
+# CASE 4: In this example, a file is going to be created every 4 hours for 8 hours
+# (so 2 files), then every 2 hours for 2 hours (so 1 file), then every 12 hours for 12 hours
+# (so 1 file)
 rm -f *.nc
 cat <<_EOF > diag_table.yaml
 title: test_diag_manager_01
