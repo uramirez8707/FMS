@@ -76,6 +76,7 @@ module fms_diag_axis_object_mod
   !> @brief Type to hold the 2d domain
   type, extends(diagDomain_t) :: diagDomain2d_t
     type(domain2d) :: Domain2 !< 2d Domain of an "X" or "Y" axis
+    integer :: nx, ny
   end type
 
   !> @brief Type to hold the unstructured domain
@@ -250,17 +251,17 @@ module fms_diag_axis_object_mod
         "The presence of Domain with any other domain type is prohibited. "//&
         "Check you diag_axis_init call for axis_name:"//trim(axis_name))
       allocate(diagDomain1d_t :: this%axis_domain)
-      call this%axis_domain%set(Domain=Domain)
+      call this%axis_domain%set(Domain=Domain, domain_position=domain_position)
     else if (present(Domain2)) then
         if (present(DomainU)) call mpp_error(FATAL, &
         "The presence of Domain2 with any other domain type is prohibited. "//&
         "Check you diag_axis_init call for axis_name:"//trim(axis_name))
       allocate(diagDomain2d_t :: this%axis_domain)
-      call this%axis_domain%set(Domain2=Domain2)
+      call this%axis_domain%set(Domain2=Domain2, domain_position=domain_position)
       this%type_of_domain = TWO_D_DOMAIN
     else if (present(DomainU)) then
       allocate(diagDomainUg_t :: this%axis_domain)
-      call this%axis_domain%set(DomainU=DomainU)
+      call this%axis_domain%set(DomainU=DomainU, domain_position=domain_position)
       this%type_of_domain = UG_DOMAIN
     endif
 
@@ -606,7 +607,7 @@ module fms_diag_axis_object_mod
 
   !> @brief Get the length of the axis
   !> @return axis length
-  function get_axis_length(this) &
+  pure function get_axis_length(this) &
   result (axis_length)
     class(fmsDiagFullAxis_type), intent(in) :: this !< diag_axis obj
     integer                                 :: axis_length
@@ -870,7 +871,7 @@ module fms_diag_axis_object_mod
 
   !> @brief Get the axis length of a subaxis
   !> @return the axis length
-  function axis_length(this) &
+  pure function axis_length(this) &
     result(res)
       class(fmsDiagSubAxis_type)  , INTENT(IN) :: this             !< diag_sub_axis obj
       integer :: res
@@ -918,7 +919,7 @@ module fms_diag_axis_object_mod
 
   !> @brief Get the length of a 2D domain
   !> @return Length of the 2D domain
-  function get_length(this, cart_axis, domain_position, global_length) &
+  pure function get_length(this, cart_axis, domain_position, global_length) &
   result (length)
     class(diagDomain_t), INTENT(IN)    :: this       !< diag_axis obj
     character(len=*),    INTENT(IN)    :: cart_axis !< cart_axis of the axis
@@ -929,8 +930,8 @@ module fms_diag_axis_object_mod
 
     select type (this)
     type is(diagDomain2d_t)
-      if (trim(cart_axis) == "X") call mpp_get_compute_domain(this%Domain2, xsize=length, position=domain_position)
-      if (trim(cart_axis) == "Y") call mpp_get_compute_domain(this%Domain2, ysize=length, position=domain_position)
+      if (trim(cart_axis) == "X") length = this%nx
+      if (trim(cart_axis) == "Y") length = this%ny
     class default
       !< If domain is 1D or UG, just set it to the global length
       length = global_length
@@ -940,17 +941,20 @@ module fms_diag_axis_object_mod
   !!!!!!!!!!!!!!!!! FMS_DOMAIN PROCEDURES !!!!!!!!!!!!!!!!!
 
   !> @brief Set the axis domain
-  subroutine set_axis_domain(this, Domain, Domain2, DomainU)
+  subroutine set_axis_domain(this, Domain, Domain2, DomainU, domain_position)
     class(diagDomain_t) :: this !< fms_domain obj
     TYPE(domain1d),     INTENT(in),  OPTIONAL :: Domain  !< 1d domain
     TYPE(domain2d),     INTENT(in),  OPTIONAL :: Domain2 !< 2d domain
     TYPE(domainUG),     INTENT(in),  OPTIONAL :: DomainU !< Unstructured domain
+    integer,            INTENT(in),  OPTIONAL :: domain_position
 
     select type(this)
     type is (diagDomain1d_t)
       this%Domain = Domain
     type is (diagDomain2d_t)
       this%Domain2 = Domain2
+      call mpp_get_compute_domain(this%Domain2, xsize=this%nx, position=domain_position)
+      call mpp_get_compute_domain(this%Domain2, xsize=this%ny, position=domain_position)
     type is (diagDomainUg_t)
       this%DomainUG = DomainU
     end select

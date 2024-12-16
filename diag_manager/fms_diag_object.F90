@@ -740,10 +740,10 @@ subroutine do_buffer_math(this)
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   !! In the future, this may be parallelized for offloading
   ! loop through each field
-  field_loop: do ifield = 1, size(this%FMS_diag_fields)
+  field_loop: do concurrent (ifield = 1:size(this%FMS_diag_fields))
     diag_field => this%FMS_diag_fields(ifield)
     if(.not. diag_field%is_registered()) cycle
-    if(DEBUG_SC) call mpp_error(NOTE, "fms_diag_send_complete:: var: "//diag_field%get_varname())
+   ! if(DEBUG_SC) call mpp_error(NOTE, "fms_diag_send_complete:: var: "//diag_field%get_varname())
     ! get files the field is in
     allocate (file_ids(size(diag_field%get_file_ids() )))
     file_ids = diag_field%get_file_ids()
@@ -761,10 +761,10 @@ subroutine do_buffer_math(this)
                               diag_field%get_mask(), diag_field%get_weight(), &
                               bounds, .False., Time=diag_field%get_send_data_time())
         call diag_field%init_data_buffer()
-        if (trim(error_string) .ne. "") call mpp_error(FATAL, "Field:"//trim(diag_field%get_varname()//&
-                                                       " -"//trim(error_string)))
+        !if (trim(error_string) .ne. "") call mpp_error(FATAL, "Field:"//trim(diag_field%get_varname()//&
+        !                                               " -"//trim(error_string)))
       else
-        call mpp_error(FATAL, "diag_send_complete:: no input buffer allocated for field"//diag_field%get_longname())
+        !call mpp_error(FATAL, "diag_send_complete:: no input buffer allocated for field"//diag_field%get_longname())
       endif has_input_buff
     endif doing_math
     call diag_field%set_math_needs_to_be_done(.False.)
@@ -1281,18 +1281,18 @@ END FUNCTION fms_get_domain2d
 
  !> @brief Gets the length of the axis based on the axis_id
  !> @return Axis_length
- integer function fms_get_axis_length(this, axis_id)
+ integer pure function fms_get_axis_length(this, axis_id)
   class(fmsDiagObject_type), intent (in) :: this !< The diag object
   INTEGER, INTENT(in) :: axis_id !< Axis ID of the axis to the length of
 
 #ifndef use_yaml
-CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling with -Duse_yaml")
+!CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling with -Duse_yaml")
 fms_get_axis_length = 0
 #else
 fms_get_axis_length = 0
 
-  if (axis_id < 0 .and. axis_id > this%registered_axis) &
-    call mpp_error(FATAL, "fms_get_axis_length: The axis_id is not valid")
+!  if (axis_id < 0 .and. axis_id > this%registered_axis) &
+!    call mpp_error(FATAL, "fms_get_axis_length: The axis_id is not valid")
 
   select type (axis => this%diag_axis(axis_id)%axis)
   type is (fmsDiagFullAxis_type)
@@ -1388,7 +1388,7 @@ end subroutine
 
 !> @brief Allocates the output buffers of the fields corresponding to the registered variable
 !! Input arguments are the field and its ID passed to routine fms_diag_accept_data()
-subroutine allocate_diag_field_output_buffers(this, field_data, field_id)
+pure subroutine allocate_diag_field_output_buffers(this, field_data, field_id)
   class(fmsDiagObject_type), target, intent(inout) :: this !< diag object
   class(*), dimension(:,:,:,:), intent(in) :: field_data !< field data
   integer, intent(in) :: field_id !< Id of the field data
@@ -1434,8 +1434,8 @@ subroutine allocate_diag_field_output_buffers(this, field_data, field_id)
 
     yaml_id = this%FMS_diag_output_buffers(buffer_id)%get_yaml_id()
 
-    ptr_diag_field_yaml => diag_yaml%diag_fields(yaml_id)
-    num_diurnal_samples = ptr_diag_field_yaml%get_n_diurnal() !< Get number of diurnal samples
+    !ptr_diag_field_yaml => diag_yaml%diag_fields(yaml_id)
+    num_diurnal_samples = diag_yaml%diag_fields(yaml_id)%get_n_diurnal() !< Get number of diurnal samples
 
     axes_length = 1
     do j = 1, ndims
@@ -1446,18 +1446,15 @@ subroutine allocate_diag_field_output_buffers(this, field_data, field_id)
       ndims = ndims + 1 !< Add one more dimension for the diurnal axis
     endif
 
-    ptr_diag_buffer_obj => this%FMS_diag_output_buffers(buffer_id)
-    call ptr_diag_buffer_obj%allocate_buffer(field_data(1, 1, 1, 1), ndims, axes_length(1:4), &
+    !ptr_diag_buffer_obj => this%FMS_diag_output_buffers(buffer_id)
+    call this%FMS_diag_output_buffers(buffer_id)%allocate_buffer(field_data(1, 1, 1, 1), ndims, axes_length(1:4), &
       this%FMS_diag_fields(field_id)%get_mask_variant(), var_name, num_diurnal_samples)
-    call ptr_diag_buffer_obj%initialize_buffer(ptr_diag_field_yaml%get_var_reduction(), var_name)
+    call this%FMS_diag_output_buffers(buffer_id)%initialize_buffer(ptr_diag_field_yaml%get_var_reduction(), var_name)
 
   enddo
   nullify(axis_ids)
 
   this%FMS_diag_fields(field_id)%buffer_allocated = .true.
-#else
-  call mpp_error( FATAL, "allocate_diag_field_output_buffers: "//&
-    "you can not use the modern diag manager without compiling with -Duse_yaml")
 #endif
 end subroutine allocate_diag_field_output_buffers
 

@@ -594,7 +594,7 @@ CONTAINS
 
   !> @brief gets the type of a variable
   !> @return the type of the variable (r4,r8,i4,i8,string)
-  function get_var_type(var) &
+  pure function get_var_type(var) &
   result(var_type)
     class(*), intent(in) :: var      !< Variable to get the type for
     integer              :: var_type !< The variable's type
@@ -610,9 +610,9 @@ CONTAINS
       var_type = i8
     type is (character(len=*))
       var_type = string
-    class default
-      call mpp_error(FATAL, "get_var_type:: The variable does not have a supported type. &
-                            &The supported types are r4, r8, i4, i8 and string.")
+    !class default
+    !  call mpp_error(FATAL, "get_var_type:: The variable does not have a supported type. &
+    !                        &The supported types are r4, r8, i4, i8 and string.")
     end select
   end function get_var_type
 

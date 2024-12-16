@@ -257,14 +257,16 @@ subroutine DO_TIME_SUM_UPDATE_(data_out, weight_sum, data_in, mask, is_masked, m
       ! Mask changes over time so the weight is an array
       call sum_mask_variant(data_out, data_in, weight_sum, bounds_in, bounds_out, mask, diurnal, weight_scale, pow)
     else
-      call sum_mask(data_out, data_in, weight_sum, bounds_in, bounds_out, mask, diurnal, weight_scale, pow)
+      call sum_mask(data_out, data_in, weight_sum, bounds_in, bounds_out, mask, diurnal, &
+        missing_value, weight_scale, pow)
     endif
   else
     call sum_no_mask(data_out, data_in, weight_sum, bounds_in, bounds_out, diurnal, weight_scale, pow)
   endif
 end subroutine DO_TIME_SUM_UPDATE_
 
-subroutine SUM_MASK_(data_out, data_in, weight_sum, bounds_in, bounds_out, mask, diurnal, weight_scale, pow)
+subroutine SUM_MASK_(data_out, data_in, weight_sum, bounds_in, bounds_out, mask, diurnal, missing_value, &
+  weight_scale, pow)
   real(FMS_TRM_KIND_),       intent(inout) :: data_out(:,:,:,:,:) !< output data
   real(FMS_TRM_KIND_),       intent(in)    :: data_in(:,:,:,:)    !< data to update the buffer with
   real(r8_kind),             intent(inout) :: weight_sum(:,:,:,:) !< Sum of weights from the output buffer object
@@ -275,6 +277,7 @@ subroutine SUM_MASK_(data_out, data_in, weight_sum, bounds_in, bounds_out, mask,
   logical,                   intent(in)    :: mask(:,:,:,:)       !< mask
   integer,                   intent(in)    :: diurnal             !< diurnal index to indicate which daily section is
                                                                   !! updated will be 1 unless using a diurnal reduction
+  real(FMS_TRM_KIND_),       intent(in)    :: missing_value       !< Missing_value for data points that are masked
   real(FMS_TRM_KIND_),       intent(in)    :: weight_scale        !< weight scale to use
   integer ,optional,         intent(in)    :: pow                 !< Used for pow(er) reduction,
                                                                   !! calculates field_data^pow before adding to buffer
@@ -309,6 +312,8 @@ subroutine SUM_MASK_(data_out, data_in, weight_sum, bounds_in, bounds_out, mask,
             data_out(is_out + i, js_out + j, ks_out + k, :, diurnal) =           &
                    data_out(is_out + i, js_out + j, ks_out + k, :, diurnal)  &
                  + (data_in(is_in +i, js_in + j, ks_in + k, :) * weight_scale) ** pow
+          elsewhere
+            data_out(is_out + i, js_out + j, ks_out + k, :, diurnal) = missing_value
           endwhere
         enddo
       enddo
@@ -321,6 +326,8 @@ subroutine SUM_MASK_(data_out, data_in, weight_sum, bounds_in, bounds_out, mask,
             data_out(is_out + i, js_out + j, ks_out + k, :, diurnal) =           &
                    data_out(is_out + i, js_out + j, ks_out + k, :, diurnal)  &
                  + (data_in(is_in +i, js_in + j, ks_in + k, :) * weight_scale)
+          elsewhere
+            data_out(is_out + i, js_out + j, ks_out + k, :, diurnal) = missing_value
           endwhere
         enddo
       enddo

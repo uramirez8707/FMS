@@ -479,7 +479,7 @@ function get_send_data_time(this) &
 end function get_send_data_time
 
 !> @brief Prepare the input_data_buffer to do the reduction method
-subroutine prepare_data_buffer(this)
+pure subroutine prepare_data_buffer(this)
   class (fmsDiagField_type) , intent(inout):: this                !< The field object
 
   if (.not. this%multiple_send_data) return
@@ -488,7 +488,7 @@ subroutine prepare_data_buffer(this)
 end subroutine prepare_data_buffer
 
 !> @brief Initialize the input_data_buffer
-subroutine init_data_buffer(this)
+pure subroutine init_data_buffer(this)
   class (fmsDiagField_type) , intent(inout):: this                !< The field object
 
   if (.not. this%multiple_send_data) return
@@ -542,7 +542,7 @@ logical function allocate_data_buffer(this, input_data, diag_axis)
   allocate_data_buffer = .true.
 end function allocate_data_buffer
 !> Sets the flag saying that the math functions need to be done
-subroutine set_math_needs_to_be_done (this, math_needs_to_be_done)
+pure subroutine set_math_needs_to_be_done (this, math_needs_to_be_done)
   class (fmsDiagField_type) , intent(inout):: this
   logical, intent (in) :: math_needs_to_be_done !< Flag saying that the math functions need to be done
   this%math_needs_to_be_done = math_needs_to_be_done
@@ -714,7 +714,7 @@ end function diag_obj_is_static
 
 !> @brief Determine if the field is a scalar
 !! @return .True. if the field is a scalar
-function is_scalar (this) result (rslt)
+pure function is_scalar (this) result (rslt)
   class(fmsDiagField_type), intent(in) :: this !< diag_field object
   logical                              :: rslt
   rslt = this%scalar

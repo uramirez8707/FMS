@@ -344,7 +344,7 @@ end function determine_if_block_is_in_region
    end function set_bounds
    !> @brief Reset the instance bounding box with the bounds determined from the
    !! first three dimensions of the 5D "array" argument
-   SUBROUTINE reset_bounds_from_array_4D(this, array)
+   pure SUBROUTINE reset_bounds_from_array_4D(this, array)
       CLASS (fmsDiagIbounds_type), INTENT(inout) :: this !< The instance of the bounding box.
       class(*), INTENT( in), DIMENSION(:,:,:,:) :: array !< The 4D input array.
       this%imin = LBOUND(array,1)

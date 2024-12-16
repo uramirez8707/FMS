@@ -156,7 +156,7 @@ subroutine flush_buffer(this)
 end subroutine flush_buffer
 
 !> Allocates a 5D buffer to given buff_type.
-subroutine allocate_buffer(this, buff_type, ndim, buff_sizes, mask_variant, field_name, diurnal_samples)
+pure subroutine allocate_buffer(this, buff_type, ndim, buff_sizes, mask_variant, field_name, diurnal_samples)
   class(fmsDiagOutputBuffer_type), intent(inout), target :: this            !< 5D buffer object
   class(*),                        intent(in)            :: buff_type       !< allocates to the type of buff_type
   integer,                         intent(in)            :: ndim            !< Number of dimension
@@ -171,8 +171,8 @@ subroutine allocate_buffer(this, buff_type, ndim, buff_sizes, mask_variant, fiel
   call this%set_diurnal_sample_size(n_samples)
 
   this%ndim =ndim
-  if(allocated(this%buffer)) call mpp_error(FATAL, "allocate_buffer: buffer already allocated for field:" // &
-                                                   field_name)
+  !if(allocated(this%buffer)) call mpp_error(FATAL, "allocate_buffer: buffer already allocated for field:" // &
+  !                                                 field_name)
   select type (buff_type)
     type is (integer(kind=i4_kind))
       allocate(integer(kind=i4_kind) :: this%buffer(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4),  &
@@ -190,10 +190,10 @@ subroutine allocate_buffer(this, buff_type, ndim, buff_sizes, mask_variant, fiel
       allocate(real(kind=r8_kind) :: this%buffer(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4), &
                                                & n_samples))
       this%buffer_type = r8
-    class default
-       call mpp_error("allocate_buffer", &
-           "The buff_type value passed to allocate a buffer is not a r8, r4, i8, or i4" // &
-           "for field:" // field_name, FATAL)
+  !  class default
+  !     call mpp_error("allocate_buffer", &
+  !         "The buff_type value passed to allocate a buffer is not a r8, r4, i8, or i4" // &
+  !         "for field:" // field_name, FATAL)
   end select
   if (mask_variant) then
     allocate(this%weight_sum(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4)))
@@ -252,13 +252,13 @@ subroutine get_buffer (this, buff_out, field_name)
 end subroutine
 
 !> @brief Initializes a buffer based on the reduction method
-subroutine initialize_buffer (this, reduction_method, field_name)
+pure subroutine initialize_buffer (this, reduction_method, field_name)
   class(fmsDiagOutputBuffer_type), intent(inout) :: this             !< allocated 5D buffer object
   integer,                         intent(in)    :: reduction_method !< The reduction method for the field
   character(len=*),                intent(in)    :: field_name       !< field name for error output
 
-  if(.not. allocated(this%buffer)) call mpp_error(FATAL, 'initialize_buffer: field:'// field_name // &
-      'buffer not yet allocated, allocate_buffer() must be called on this object first.')
+  !if(.not. allocated(this%buffer)) call mpp_error(FATAL, 'initialize_buffer: field:'// field_name // &
+  !    'buffer not yet allocated, allocate_buffer() must be called on this object first.')
 
   select type(buff => this%buffer)
   type is(real(r8_kind))
@@ -297,8 +297,8 @@ subroutine initialize_buffer (this, reduction_method, field_name)
     case default
       buff = int(EMPTY, kind=i4_kind)
     end select
-  class default
-    call mpp_error(FATAL, 'initialize buffer_5d: buffer allocated to invalid data type, this shouldnt happen')
+  !class default
+  !  call mpp_error(FATAL, 'initialize buffer_5d: buffer allocated to invalid data type, this shouldnt happen')
   end select
 
 end subroutine initialize_buffer
@@ -324,7 +324,7 @@ end subroutine
 
 !> @brief Get the axis_ids for the buffer
 !! @return Axis_ids, if the buffer doesn't have axis ids it returns diag_null
-subroutine get_axis_ids(this, res)
+pure subroutine get_axis_ids(this, res)
   class(fmsDiagOutputBuffer_type), target, intent(inout) :: this        !< Buffer object
   integer, pointer, intent(out) :: res(:)
 
@@ -443,7 +443,7 @@ end subroutine set_done_with_math
 
 !> @brief Get the yaml id of the buffer
 !! @return the yaml id of the buffer
-function get_yaml_id(this) &
+pure function get_yaml_id(this) &
   result(res)
 
   class(fmsDiagOutputBuffer_type), intent(in) :: this        !< Buffer object
@@ -809,7 +809,7 @@ pure integer function get_diurnal_sample_size(this)
 end function get_diurnal_sample_size
 
 !> Set diurnal sample size (amount of diurnal sections)
-subroutine set_diurnal_sample_size(this, sample_size)
+pure subroutine set_diurnal_sample_size(this, sample_size)
   class(fmsDiagOutputBuffer_type), intent(inout) :: this !< buffer object to set sample size for
   integer, intent(in)                            :: sample_size !< sample size to used to split daily
                                                                !! data into given amount of sections
