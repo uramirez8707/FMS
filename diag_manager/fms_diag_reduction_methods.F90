@@ -71,6 +71,18 @@ module fms_diag_reduction_methods_mod
     module procedure sum_update_done_r4, sum_update_done_r8
   end interface
 
+  interface sum_mask
+    module procedure sum_mask_r4, sum_mask_r8
+  end interface
+
+  interface sum_mask_variant
+    module procedure sum_mask_variant_r4, sum_mask_variant_r8
+  end interface sum_mask_variant
+
+  interface sum_no_mask
+    module procedure sum_no_mask_r4, sum_no_mask_r8
+  end interface sum_no_mask
+
   contains
 
   !> @brief Checks improper combinations of is, ie, js, and je.
