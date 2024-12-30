@@ -175,6 +175,7 @@ module fms_diag_axis_object_mod
                                                                    !! this is the axis ids of the structured axis
      CHARACTER(len=:), ALLOCATABLE,   private :: set_name        !< Name of the axis set. This is to distinguish
                                                                  !! two axis with the same name
+     integer                        , private :: compute_size    !< Size of the compute domain
 
      contains
 
@@ -191,6 +192,7 @@ module fms_diag_axis_object_mod
      PROCEDURE :: get_set_name
      PROCEDURE :: has_set_name
      PROCEDURE :: is_x_or_y_axis
+     PROCEDURE :: set_compute_domain
      ! TO DO:
      ! Get/has/is subroutines as needed
   END TYPE fmsDiagFullAxis_type
@@ -244,6 +246,10 @@ module fms_diag_axis_object_mod
                           &  Currently only r4 and r8 data is supported.")
     end select
 
+    this%domain_position = CENTER
+    if (present(domain_position)) this%domain_position = domain_position
+    call check_if_valid_domain_position(this%domain_position)
+
     this%type_of_domain = NO_DOMAIN
     if (present(Domain)) then
       if (present(Domain2) .or. present(DomainU)) call mpp_error(FATAL, &
@@ -257,6 +263,7 @@ module fms_diag_axis_object_mod
         "Check you diag_axis_init call for axis_name:"//trim(axis_name))
       allocate(diagDomain2d_t :: this%axis_domain)
       call this%axis_domain%set(Domain2=Domain2)
+      call this%set_compute_domain(Domain2)
       this%type_of_domain = TWO_D_DOMAIN
     else if (present(DomainU)) then
       allocate(diagDomainUg_t :: this%axis_domain)
@@ -266,10 +273,6 @@ module fms_diag_axis_object_mod
 
     this%tile_count = 1
     if (present(tile_count)) this%tile_count = tile_count
-
-    this%domain_position = CENTER
-    if (present(domain_position)) this%domain_position = domain_position
-    call check_if_valid_domain_position(this%domain_position)
 
     this%direction = 0
     if (present(direction)) this%direction = direction
@@ -606,16 +609,15 @@ module fms_diag_axis_object_mod
 
   !> @brief Get the length of the axis
   !> @return axis length
-  function get_axis_length(this) &
+  pure function get_axis_length(this) &
   result (axis_length)
     class(fmsDiagFullAxis_type), intent(in) :: this !< diag_axis obj
     integer                                 :: axis_length
 
     !< If the axis is domain decomposed axis_length will be set to the length for the current PE:
+    axis_length = this%length
     if (allocated(this%axis_domain)) then
-      axis_length = this%axis_domain%length(this%cart_name, this%domain_position, this%length)
-    else
-      axis_length = this%length
+      if (this%cart_name .eq. "X" .or. this%cart_name .eq. "Y") axis_length = this%compute_size
     endif
 
   end function
@@ -870,13 +872,13 @@ module fms_diag_axis_object_mod
 
   !> @brief Get the axis length of a subaxis
   !> @return the axis length
-  function axis_length(this) &
+  pure function axis_length(this) &
     result(res)
       class(fmsDiagSubAxis_type)  , INTENT(IN) :: this             !< diag_sub_axis obj
       integer :: res
 
       res = this%ending_index - this%starting_index + 1
-    end function
+  end function
 
    !> @brief Accesses its member starting_index
   !! @return a copy of the starting_index
@@ -915,6 +917,15 @@ module fms_diag_axis_object_mod
       ntiles = mpp_get_ntile_count(this%domain2)
     end select
   end function get_ntiles
+
+  subroutine set_compute_domain(this, Domain)
+    class(fmsDiagFullAxis_type),INTENT(inout):: this            !< Diag_axis obj
+    type(domain2d), intent(in) :: Domain
+
+    if (trim(this%cart_name) == "X") call mpp_get_compute_domain(domain, xsize=this%compute_size, position=this%domain_position)
+    if (trim(this%cart_name) == "Y") call mpp_get_compute_domain(domain, ysize=this%compute_size, position=this%domain_position)
+
+  end subroutine
 
   !> @brief Get the length of a 2D domain
   !> @return Length of the 2D domain

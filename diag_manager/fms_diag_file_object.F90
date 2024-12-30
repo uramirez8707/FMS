@@ -1455,7 +1455,7 @@ logical function is_time_to_write(this, time_step, output_buffers, diag_fields, 
 end function is_time_to_write
 
 !> \brief Determine if the current PE has data to write
-logical function writing_on_this_pe(this)
+pure logical function writing_on_this_pe(this)
   class(fmsDiagFileContainer_type), intent(in), target   :: this            !< The file object
 
   select type(diag_file => this%FMS_diag_file)

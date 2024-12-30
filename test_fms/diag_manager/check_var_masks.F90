@@ -73,8 +73,10 @@ program check_var_masks
   do i = 1, nx
     do j = 1, ny
       if (i .eq. 1 .and. j .eq. 1) then
-        if (vardata(i,j) .ne. ans_var_mask) &
+        if (vardata(i,j) .ne. ans_var_mask) then
+          print *, mpp_pe(), " -- ", vardata(i,j), ans_var_mask
           call mpp_error(FATAL, "ua is not the expected result for the masked point")
+        endif
       else
         if (vardata(i,j) .ne. ans_var) &
           call mpp_error(FATAL, "ua is not the expected result")

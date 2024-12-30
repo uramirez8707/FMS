@@ -727,7 +727,7 @@ subroutine do_buffer_math(this)
   logical :: math !< True if the math functions need to be called using the data buffer,
   !! False if the math functions were done in accept_data
   integer, dimension(:), allocatable :: file_field_ids !< Array of field IDs for a file
-  class(*), pointer :: input_data_buffer(:,:,:,:)
+  class(*), allocatable :: input_data_buffer(:,:,:,:)
   character(len=128) :: error_string
   type(fmsDiagIbounds_type) :: bounds
   integer, dimension(:), allocatable :: file_ids !< Array of file IDs for a field
@@ -736,31 +736,39 @@ subroutine do_buffer_math(this)
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   !! In the future, this may be parallelized for offloading
   ! loop through each field
-  field_loop: do ifield = 1, size(this%FMS_diag_fields)
+
+  field_loop: do concurrent (ifield = 1:size(this%FMS_diag_fields))
     diag_field => this%FMS_diag_fields(ifield)
+
+    ! Skip this field if it was never registered
     if(.not. diag_field%is_registered()) cycle
-    if(DEBUG_SC) call mpp_error(NOTE, "fms_diag_send_complete:: var: "//diag_field%get_varname())
-    ! get files the field is in
-    allocate (file_ids(size(diag_field%get_file_ids() )))
+
+    ! Get the the file ids of the file the field is in
     file_ids = diag_field%get_file_ids()
     math = diag_field%get_math_needs_to_be_done()
-    ! if doing math loop through each file for given field
+
+    ! If doing math loop through each file the field is in
     doing_math: if (size(file_ids) .ge. 1 .and. math) then
-      ! Check if buffer alloc'd
       has_input_buff: if (diag_field%has_input_data_buffer()) then
+        ! If the buffer was registered with multiple_send_data calls, prepare the input buffer data
         call diag_field%prepare_data_buffer()
-        input_data_buffer => diag_field%get_data_buffer()
-        ! reset bounds, allocate output buffer, and update it with reduction
+
+        ! Get the input data buffer
+        input_data_buffer = diag_field%get_data_buffer()
+
         call bounds%reset_bounds_from_array_4D(input_data_buffer)
         call this%allocate_diag_field_output_buffers(input_data_buffer, ifield)
         error_string = this%fms_diag_do_reduction(input_data_buffer, ifield, &
                               diag_field%get_mask(), diag_field%get_weight(), &
                               bounds, .False., Time=diag_field%get_send_data_time())
         call diag_field%init_data_buffer()
-        if (trim(error_string) .ne. "") call mpp_error(FATAL, "Field:"//trim(diag_field%get_varname()//&
-                                                       " -"//trim(error_string)))
+
+        !TODO Better error handling
+        !if (trim(error_string) .ne. "") call mpp_error(FATAL, "Field:"//trim(diag_field%get_varname()//&
+        !                                               " -"//trim(error_string)))
       else
-        call mpp_error(FATAL, "diag_send_complete:: no input buffer allocated for field"//diag_field%get_longname())
+        !TODO Better error handling
+        ! call mpp_error(FATAL, "diag_send_complete:: no input buffer allocated for field"//diag_field%get_longname())
       endif has_input_buff
     endif doing_math
     call diag_field%set_math_needs_to_be_done(.False.)
@@ -1277,7 +1285,7 @@ END FUNCTION fms_get_domain2d
 
  !> @brief Gets the length of the axis based on the axis_id
  !> @return Axis_length
- integer function fms_get_axis_length(this, axis_id)
+ pure integer function fms_get_axis_length(this, axis_id)
   class(fmsDiagObject_type), intent (in) :: this !< The diag object
   INTEGER, INTENT(in) :: axis_id !< Axis ID of the axis to the length of
 
@@ -1287,8 +1295,9 @@ fms_get_axis_length = 0
 #else
 fms_get_axis_length = 0
 
-  if (axis_id < 0 .and. axis_id > this%registered_axis) &
-    call mpp_error(FATAL, "fms_get_axis_length: The axis_id is not valid")
+  !TODO Better error handling
+  !if (axis_id < 0 .and. axis_id > this%registered_axis) &
+  !  call mpp_error(FATAL, "fms_get_axis_length: The axis_id is not valid")
 
   select type (axis => this%diag_axis(axis_id)%axis)
   type is (fmsDiagFullAxis_type)
@@ -1384,7 +1393,7 @@ end subroutine
 
 !> @brief Allocates the output buffers of the fields corresponding to the registered variable
 !! Input arguments are the field and its ID passed to routine fms_diag_accept_data()
-subroutine allocate_diag_field_output_buffers(this, field_data, field_id)
+pure subroutine allocate_diag_field_output_buffers(this, field_data, field_id)
   class(fmsDiagObject_type), target, intent(inout) :: this !< diag object
   class(*), dimension(:,:,:,:), intent(in) :: field_data !< field data
   integer, intent(in) :: field_id !< Id of the field data
@@ -1395,7 +1404,7 @@ subroutine allocate_diag_field_output_buffers(this, field_data, field_id)
   integer :: axes_length(4) !< Length of each axis
   integer :: i, j !< For looping
   class(fmsDiagOutputBuffer_type), pointer :: ptr_diag_buffer_obj !< Pointer to the buffer class
-  class(DiagYamlFilesVar_type), pointer :: ptr_diag_field_yaml !< Pointer to a field from yaml fields
+  class(DiagYamlFilesVar_type), allocatable :: ptr_diag_field_yaml !< Pointer to a field from yaml fields
   integer, pointer :: axis_ids(:) !< Pointer to indices of axes of the field variable
   integer :: var_type !< Stores type of the field data (r4, r8, i4, i8, and string) represented as an integer.
   character(len=:), allocatable :: var_name !< Field name to initialize output buffers
@@ -1430,7 +1439,7 @@ subroutine allocate_diag_field_output_buffers(this, field_data, field_id)
 
     yaml_id = this%FMS_diag_output_buffers(buffer_id)%get_yaml_id()
 
-    ptr_diag_field_yaml => diag_yaml%diag_fields(yaml_id)
+    ptr_diag_field_yaml = diag_yaml%diag_fields(yaml_id)
     num_diurnal_samples = ptr_diag_field_yaml%get_n_diurnal() !< Get number of diurnal samples
 
     axes_length = 1

@@ -69,12 +69,12 @@ module fms_diag_input_buffer_mod
 
   !> @brief Get the buffer from the input buffer object
   !! @return a pointer to the buffer
-  function get_buffer(this) &
+  pure function get_buffer(this) &
     result(buffer)
     class(fmsDiagInputBuffer_t), target, intent(in) :: this !< input buffer object
-    class(*), pointer :: buffer(:,:,:,:)
+    class(*), allocatable :: buffer(:,:,:,:)
 
-    buffer => this%buffer
+    buffer = this%buffer
   end function get_buffer
 
 
@@ -144,7 +144,7 @@ module fms_diag_input_buffer_mod
   end function allocate_input_buffer_object
 
   !> @brief Initiliazes an input data buffer and the counter
-  subroutine init_input_buffer_object(this)
+  pure subroutine init_input_buffer_object(this)
     class(fmsDiagInputBuffer_t), intent(inout) :: this                !< input buffer object
 
     select type(buffer=>this%buffer)
@@ -205,7 +205,7 @@ module fms_diag_input_buffer_mod
 
   !> @brief Prepare the input data buffer to do the reduction methods (i.e divide by the number of times
   !! send data has been called)
-  subroutine prepare_input_buffer_object(this, field_info)
+  pure subroutine prepare_input_buffer_object(this, field_info)
     class(fmsDiagInputBuffer_t), intent(inout) :: this                !< input buffer object
     character(len=*),            intent(in)    :: field_info          !< Field info to append to error message
 
@@ -215,8 +215,7 @@ module fms_diag_input_buffer_mod
     type is (real(kind=r8_kind))
       input_data = input_data / this%counter(1,1,1,1)
     class default
-      call mpp_error(FATAL, "prepare_input_buffer_object::"//trim(field_info)//&
-                            " has only been implemented for real variables. Contact developers.")
+      !TODO very error handling
     end select
   end subroutine prepare_input_buffer_object
 
