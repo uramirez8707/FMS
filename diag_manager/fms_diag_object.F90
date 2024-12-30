@@ -730,7 +730,6 @@ subroutine do_buffer_math(this)
   class(*), allocatable :: input_data_buffer(:,:,:,:)
   character(len=128) :: error_string
   type(fmsDiagIbounds_type) :: bounds
-  integer, dimension(:), allocatable :: file_ids !< Array of file IDs for a field
   logical, parameter :: DEBUG_SC = .false. !< turn on output for debugging
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -742,38 +741,34 @@ subroutine do_buffer_math(this)
 
     ! Skip this field if it was never registered
     if(.not. diag_field%is_registered()) cycle
+    if (diag_field%get_nfiles() .eq. 0) cycle
 
-    ! Get the the file ids of the file the field is in
-    file_ids = diag_field%get_file_ids()
     math = diag_field%get_math_needs_to_be_done()
+    if (.not. math) cycle
 
-    ! If doing math loop through each file the field is in
-    doing_math: if (size(file_ids) .ge. 1 .and. math) then
-      has_input_buff: if (diag_field%has_input_data_buffer()) then
-        ! If the buffer was registered with multiple_send_data calls, prepare the input buffer data
-        call diag_field%prepare_data_buffer()
+    has_input_buff: if (diag_field%has_input_data_buffer()) then
+      ! If the buffer was registered with multiple_send_data calls, prepare the input buffer data
+      call diag_field%prepare_data_buffer()
 
-        ! Get the input data buffer
-        input_data_buffer = diag_field%get_data_buffer()
+      ! Get the input data buffer
+      input_data_buffer = diag_field%get_data_buffer()
 
-        call bounds%reset_bounds_from_array_4D(input_data_buffer)
-        call this%allocate_diag_field_output_buffers(input_data_buffer, ifield)
-        error_string = this%fms_diag_do_reduction(input_data_buffer, ifield, &
+      call bounds%reset_bounds_from_array_4D(input_data_buffer)
+      call this%allocate_diag_field_output_buffers(input_data_buffer, ifield)
+      error_string = this%fms_diag_do_reduction(input_data_buffer, ifield, &
                               diag_field%get_mask(), diag_field%get_weight(), &
                               bounds, .False., Time=diag_field%get_send_data_time())
-        call diag_field%init_data_buffer()
+      call diag_field%init_data_buffer()
 
-        !TODO Better error handling
-        !if (trim(error_string) .ne. "") call mpp_error(FATAL, "Field:"//trim(diag_field%get_varname()//&
-        !                                               " -"//trim(error_string)))
-      else
-        !TODO Better error handling
-        ! call mpp_error(FATAL, "diag_send_complete:: no input buffer allocated for field"//diag_field%get_longname())
-      endif has_input_buff
-    endif doing_math
+      !TODO Better error handling
+      !if (trim(error_string) .ne. "") call mpp_error(FATAL, "Field:"//trim(diag_field%get_varname()//&
+      !                                               " -"//trim(error_string)))
+    else
+      !TODO Better error handling
+      ! call mpp_error(FATAL, "diag_send_complete:: no input buffer allocated for field"//diag_field%get_longname())
+    endif has_input_buff
     call diag_field%set_math_needs_to_be_done(.False.)
     !> Clean up, clean up, everybody do your share
-    if (allocated(file_ids)) deallocate(file_ids)
     if (associated(diag_field)) nullify(diag_field)
   enddo field_loop
 #endif

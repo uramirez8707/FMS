@@ -176,6 +176,7 @@ type fmsDiagField_type
      procedure :: add_area_volume
      procedure :: append_time_cell_methods
      procedure :: get_file_ids
+     procedure :: get_nfiles
      procedure :: set_mask
      procedure :: allocate_mask
      procedure :: set_halo_present
@@ -1753,13 +1754,23 @@ result(compute_domain)
   enddo axis_loop
 end function get_starting_compute_domain
 
+pure function get_nfiles(this)
+  class(fmsDiagField_type), intent(in) :: this
+  integer :: get_nfiles
+
+  get_nfiles = 0
+  if (allocated(this%file_ids)) get_nfiles = size(this%file_ids)
+end function get_nfiles
+
 !> Get list of field ids
 pure function get_file_ids(this)
   class(fmsDiagField_type), intent(in) :: this
   integer, allocatable :: get_file_ids(:) !< Ids of the FMS_diag_files the variable
 
-  allocate(get_file_ids(size(this%file_ids)))
-  get_file_ids = this%file_ids
+  if (size(this%file_ids) .ge. 0) then
+    allocate(get_file_ids(size(this%file_ids)))
+    get_file_ids = this%file_ids
+  endif
 end function
 
 !> @brief Get the mask from the input buffer object
