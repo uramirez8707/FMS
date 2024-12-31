@@ -104,7 +104,7 @@ subroutine DO_TIME_MIN_ (data_out, data_in, mask, is_masked, bounds_in, bounds_o
   !! then mask will always be .True. so the if (mask) is redudant.
   if (is_masked) then
     do l = 0, size(data_out, 4) - 1
-      do k = 0, ke_out - ks_out
+      do concurrent (k = 0:ke_out - ks_out)
         do j = 0, je_out - js_out
           do i = 0, ie_out - is_out
             if (mask(is_in + i, js_in + j, ks_in + k, l + 1)) then
@@ -122,7 +122,7 @@ subroutine DO_TIME_MIN_ (data_out, data_in, mask, is_masked, bounds_in, bounds_o
     enddo
   else
     do l = 0, size(data_out, 4) - 1
-      do k = 0, ke_out - ks_out
+      do concurrent (k = 0:ke_out - ks_out)
         do j = 0, je_out - js_out
           do i = 0, ie_out - is_out
             if (data_out(is_out + i, js_out + j, ks_out + k, l + 1, 1) .gt. &
@@ -175,7 +175,7 @@ subroutine DO_TIME_MAX_ (data_out, data_in, mask, is_masked, bounds_in, bounds_o
   !! then mask will always be .True. so the if (mask) is redudant.
   if (is_masked) then
     do l = 0, size(data_out, 4) - 1
-      do k = 0, ke_out - ks_out
+      do concurrent (k = 0:ke_out - ks_out)
         do j = 0, je_out - js_out
           do i = 0, ie_out - is_out
             if (mask(is_in + i, js_in + j, ks_in + k, l + 1)) then
@@ -193,7 +193,7 @@ subroutine DO_TIME_MAX_ (data_out, data_in, mask, is_masked, bounds_in, bounds_o
     enddo
   else
     do l = 0, size(data_out, 4) - 1
-      do k = 0, ke_out - ks_out
+      do concurrent (k = 0:ke_out - ks_out)
         do j = 0, je_out - js_out
           do i = 0, ie_out - is_out
             if (data_out(is_out + i, js_out + j, ks_out + k, l + 1, 1) .lt. &
@@ -284,7 +284,7 @@ subroutine DO_TIME_SUM_UPDATE_(data_out, weight_sum, data_in, mask, is_masked, m
   if (is_masked) then
     if (mask_variant) then
       ! Mask changes over time so the weight is an array
-      do k = 0, ke_out - ks_out
+      do concurrent (k = 0:ke_out - ks_out)
         do j = 0, je_out - js_out
           do i = 0, ie_out - is_out
             where (mask(is_in + i, js_in + j, ks_in + k, :))
@@ -300,7 +300,7 @@ subroutine DO_TIME_SUM_UPDATE_(data_out, weight_sum, data_in, mask, is_masked, m
       enddo
     else
       weight_sum = weight_sum + weight_scale
-      do k = 0, ke_out - ks_out
+      do concurrent (k = 0:ke_out - ks_out)
         do j = 0, je_out - js_out
           do i = 0, ie_out - is_out
             where (mask(is_in + i, js_in + j, ks_in + k, :))
@@ -317,7 +317,7 @@ subroutine DO_TIME_SUM_UPDATE_(data_out, weight_sum, data_in, mask, is_masked, m
   else
     weight_sum = weight_sum + weight_scale
     ! doesn't need to loop through l if no mask, just sums the 1d slices
-    do k = 0, ke_out - ks_out
+    do concurrent (k = 0:ke_out - ks_out)
       do j = 0, je_out - js_out
         do i = 0, ie_out - is_out
           data_out(is_out + i, js_out + j, ks_out + k,  :, diurnal) =  &
@@ -372,7 +372,7 @@ subroutine SUM_UPDATE_DONE_(out_buffer_data, weight_sum, reduction_method, missi
       endwhere
     else
       ! The mask changes over time
-      do l = 1, size(out_buffer_data, 4)
+      do concurrent (l = 1:size(out_buffer_data, 4))
         do k = 1, size(out_buffer_data, 3)
           do j = 1, size(out_buffer_data, 2)
             do i = 1, size(out_buffer_data, 1)
