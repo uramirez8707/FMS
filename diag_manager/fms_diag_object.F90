@@ -70,6 +70,8 @@ private
   logical, private :: fields_initialized=.false. !< True if the fmsDiagObject is initialized
   logical, private :: buffers_initialized=.false. !< True if the fmsDiagObject is initialized
   logical, private :: axes_initialized=.false. !< True if the fmsDiagObject is initialized
+  logical, private :: data_was_send !< True if send_data has been successfully called for at least one variable
+                                    !< diag_send_complete does nothing if it is .false.
 #endif
   contains
     procedure :: init => fms_diag_object_init
@@ -142,6 +144,7 @@ subroutine fms_diag_object_init (this,diag_subset_output, time_init)
   this%registered_variables = 0
   this%registered_axis = 0
   this%initialized = .true.
+  this%data_was_send = .false.
 #else
   call mpp_error("fms_diag_object_init",&
     "You must compile with -Duse_yaml to use the option use_modern_diag", FATAL)
@@ -655,6 +658,9 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
 !> Only 1 thread allocates the output buffer and sets set_math_needs_to_be_done
 !$omp critical
 
+    !< Let diag_send_complete that there is new data to procress
+    if (.not. this%data_was_send) this%data_was_send = .true.
+
     !< These set_* calls need to be done inside an omp_critical to avoid any race conditions
     !! and allocation issues
     if(has_halos) call this%FMS_diag_fields(diag_field_id)%set_halo_present()
@@ -682,6 +688,8 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
     call this%FMS_diag_fields(diag_field_id)%set_data_buffer(field_data, oor_mask, field_weight, &
                                                              is, js, ks, ie, je, ke)
   else
+    !< Let diag_send_complete that there is new data to procress
+    if (.not. this%data_was_send) this%data_was_send = .true.
 
     !< At this point if we are no longer in an openmp region or running with 1 thread
     !! so it is safe to have these set_* calls
@@ -780,8 +788,11 @@ subroutine fms_diag_send_complete(this, time_step)
 #ifndef use_yaml
 CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling with -Duse_yaml")
 #else
+  !< Go away if there is no new data
+  if (.not. this%data_was_send) return
   call this%do_buffer_math()
   call this%fms_diag_do_io()
+  this%data_was_send = .false.
 #endif
 
 end subroutine fms_diag_send_complete
