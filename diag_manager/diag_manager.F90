@@ -211,7 +211,7 @@ use platform_mod
        & get_ticks_per_second
   USE mpp_mod, ONLY: mpp_get_current_pelist, mpp_pe, mpp_npes, mpp_root_pe, mpp_sum
 
-  USE mpp_mod, ONLY: input_nml_file, mpp_error
+  USE mpp_mod, ONLY: input_nml_file, mpp_error, mpp_clock_begin, mpp_clock_end, mpp_clock_id
 
   USE fms_mod, ONLY: error_mesg, FATAL, WARNING, NOTE, stdout, stdlog, write_version_number,&
        & fms_error_handler, check_nml_error, lowercase
@@ -372,6 +372,9 @@ use platform_mod
      MODULE PROCEDURE diag_field_add_attribute_1d
      MODULE PROCEDURE diag_field_add_attribute_0d
   END INTERFACE diag_field_add_attribute
+
+  integer :: send_data_clock
+  integer :: diag_send_complete_clock
 
 !> @addtogroup diag_manager_mod
 !> @{
@@ -1745,6 +1748,8 @@ END FUNCTION register_static_field
     ELSE
        diag_send_data = .TRUE.
     END IF
+
+    call mpp_clock_begin(send_data_clock)
 
     IF ( PRESENT(err_msg) ) err_msg = ''
     IF ( .NOT.module_is_initialized ) THEN
@@ -3478,6 +3483,8 @@ END FUNCTION register_static_field
     DEALLOCATE(field_out)
     DEALLOCATE(oor_mask)
   endIF modern_if
+
+  call mpp_clock_end(send_data_clock)
   END FUNCTION diag_send_data
 
   !> @brief Updates the output buffer for a field based on the data for current time step
@@ -3915,8 +3922,10 @@ END FUNCTION register_static_field
             & "diag_manager_set_time_end must be called before diag_send_complete", FATAL)
     END IF
 
+    call mpp_clock_begin(diag_send_complete_clock)
     if (use_modern_diag) then
        call fms_diag_object%fms_diag_send_complete(time_step)
+       call mpp_clock_end(diag_send_complete_clock)
        return
     endif
 
@@ -3963,6 +3972,7 @@ END FUNCTION register_static_field
        END DO
     END DO
 
+    call mpp_clock_end(diag_send_complete_clock)
   END SUBROUTINE diag_send_complete
 
   !> @brief Flushes diagnostic buffers where necessary. Close diagnostics files.
@@ -4092,6 +4102,9 @@ END FUNCTION register_static_field
 
     ! Clear the err_msg variable if contains any residual information
     IF ( PRESENT(err_msg) ) err_msg = ''
+
+    send_data_clock = mpp_clock_id("send_data_clock")
+    diag_send_complete_clock = mpp_clock_id("diag_send_complete_clock")
 
     ! Initialize diag_util_mod and diag_data_mod
     ! These init routine only write out the version number to the log file
