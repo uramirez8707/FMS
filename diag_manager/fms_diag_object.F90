@@ -834,6 +834,8 @@ subroutine fms_diag_do_io(this, end_time)
 
   do i = 1, size(this%FMS_diag_files)
     diag_file => this%FMS_diag_files(i)
+    if (mpp_pe() .eq. mpp_root_pe()) &
+      print *, "Working on file: ", diag_file%FMS_diag_file%get_file_fname()
 
     !< Go away if the file is a subregional file and the current PE does not have any data for it
     if (.not. diag_file%writing_on_this_pe()) cycle
@@ -848,6 +850,8 @@ subroutine fms_diag_do_io(this, end_time)
 
     call diag_file%open_diag_file(model_time, file_is_opened_this_time_step)
     if (file_is_opened_this_time_step) then
+      if (mpp_pe() .eq. mpp_root_pe()) &
+      print *, "WUT -> Opening file: ", diag_file%FMS_diag_file%get_file_fname()
       ! Initialize unlimited dimension in file and the buffer to 0
       call diag_file%init_unlim_dim(this%FMS_diag_output_buffers)
 
@@ -879,12 +883,17 @@ subroutine fms_diag_do_io(this, end_time)
         ! time_average and greater values all involve averaging so need to be "finished" before written
         if( field_yaml%has_var_reduction()) then
           if( field_yaml%get_var_reduction() .ge. time_average) then
+            if (mpp_pe() .eq. mpp_root_pe()) &
+              print *, "WUT -> Finishing Reduction for field ", diag_field%get_varname()
+
             if(DEBUG_REDUCT)call mpp_error(NOTE, "fms_diag_do_io:: finishing reduction for "//diag_field%get_longname())
             error_string = diag_buff%diag_reduction_done_wrapper( &
                                     field_yaml%get_var_reduction(), &
                                    mval, diag_field%get_var_is_masked(), diag_field%get_mask_variant())
           endif
         endif
+        if (mpp_pe() .eq. mpp_root_pe()) &
+              print *, "WUT -> Writting field ", diag_field%get_varname()
         call diag_file%write_field_data(diag_field, diag_buff, unlim_dim_was_increased)
         call diag_buff%set_next_output(diag_file%get_next_output(), diag_file%get_next_next_output())
       endif
@@ -894,14 +903,18 @@ subroutine fms_diag_do_io(this, end_time)
     deallocate(buff_ids)
 
     if (unlim_dim_was_increased) then
+      print *, "WUT -> unlimited dimension was increased: ", diag_file%FMS_diag_file%get_file_fname()
       call diag_file%write_time_data()
       call diag_file%flush_diag_file()
       call diag_file%update_next_write(model_time)
       call diag_file%update_current_new_file_freq_index(model_time)
-      if (diag_file%is_time_to_close_file(model_time, force_write)) &
+      if (diag_file%is_time_to_close_file(model_time, force_write)) then
+        print *, "WUT -> closing file", diag_file%FMS_diag_file%get_file_fname()
         call diag_file%close_diag_file(this%FMS_diag_output_buffers, &
           this%model_end_time, diag_fields = this%FMS_diag_fields)
+      endif
     else if (force_write) then
+      print *, "WUT -> Force writting: ", diag_file%FMS_diag_file%get_file_fname()
       call diag_file%prepare_for_force_write()
       call diag_file%write_time_data()
       call diag_file%close_diag_file(this%FMS_diag_output_buffers, &
