@@ -843,6 +843,7 @@ subroutine fms_diag_do_io(this, end_time)
       model_time => end_time
     else
       model_time => diag_file%get_model_time()
+      if (model_time > this%model_end_time) cycle
     endif
     if (diag_file%FMS_diag_file%is_done_writing_data()) cycle
 
