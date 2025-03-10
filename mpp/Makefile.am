@@ -78,6 +78,7 @@ libmpp_la_SOURCES = \
   include/mpp_error_s_a.fh \
   include/mpp_error_s_s.fh \
   include/mpp_gather.fh \
+  include/mpp_gather_nocomm.fh \
   include/mpp_get_boundary.fh \
   include/mpp_get_boundary_ad.fh \
   include/mpp_global_field.fh \
@@ -102,6 +103,7 @@ libmpp_la_SOURCES = \
   include/mpp_reduce_mpi.fh \
   include/mpp_reduce_nocomm.fh \
   include/mpp_scatter.fh \
+  include/mpp_scatter_nocomm.fh \
   include/mpp_sum.inc \
   include/mpp_sum_ad.inc \
   include/mpp_sum_mpi.fh \
