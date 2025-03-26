@@ -5,6 +5,7 @@ program test_parallel_netcdf_writes
                                FmsNetcdfDomainFile_t, write_data, register_field, read_data, &
                                parse_mask_table, unlimited
   use   fms_mod,         only: fms_init, fms_end, check_nml_error
+  use memutils_mod, only: print_memuse_stats
   use   platform_mod,    only: r4_kind, r8_kind, i4_kind, i8_kind
   use netcdf
 
@@ -19,6 +20,8 @@ program test_parallel_netcdf_writes
   integer               :: ny = 96                    !< Size of the "y" dimension
   integer               :: nz = 65                    !< Size of the "z" dimension
   integer               :: ntimes = 2                 !< Number of time levels
+  integer               :: test_case = 1              !< 1 use fms2io domain writes
+                                                      !! 2 use netcdf collective writes
 
   character(len=10)     :: nc_format = "netcdf4"
 
@@ -48,7 +51,7 @@ program test_parallel_netcdf_writes
   integer                               :: i, j, k
   integer                               :: io_status    !< Status after reading the namelist
 
-  namelist / test_parallel_netcdf_writes_nml / layout, io_layout, nx, ny, nz, ntimes, nc_format
+  namelist / test_parallel_netcdf_writes_nml / layout, io_layout, nx, ny, nz, ntimes, nc_format, test_case
 
   call fms_init()
   read (input_nml_file, test_parallel_netcdf_writes_nml, iostat=io_status)
@@ -75,56 +78,55 @@ program test_parallel_netcdf_writes
   names(3) = "level"
   names(4) = "time"
 
-  fms2_io_writes = mpp_clock_id( 'FMS2io writes' )
-  pnetcdf_writes = mpp_clock_id( 'Parallel netcdf writes' )
-
+  call print_memuse_stats('Begin')
+  fms2_io_writes = mpp_clock_id( 'WriteClock' )
   call mpp_clock_begin(fms2_io_writes)
-  if (open_file(fileobj, "test_domain_io.nc", "overwrite", Domain_write, nc_format=nc_format)) then
-    call register_axis(fileobj, names(1), "x")
-    call register_axis(fileobj, names(2), "y")
-    call register_axis(fileobj, names(3), nz)
-    call register_axis(fileobj, names(4), unlimited)
+  if (test_case .eq. 1) then
+    if (open_file(fileobj, "test_domain_io.nc", "overwrite", Domain_write, nc_format=nc_format)) then
+      call register_axis(fileobj, names(1), "x")
+      call register_axis(fileobj, names(2), "y")
+      call register_axis(fileobj, names(3), nz)
+      call register_axis(fileobj, names(4), unlimited)
 
-    call register_field(fileobj, "sst_3d", "double", names(1:4))
-    do i = 1, ntimes
-      call write_data(fileobj, "sst_3d", sst_in, unlim_dim_level = i)
-    enddo
+      call register_field(fileobj, "sst_3d", "double", names(1:4))
+      do i = 1, ntimes
+        call write_data(fileobj, "sst_3d", sst_in, unlim_dim_level = i)
+      enddo
 
-    call close_file(fileobj)
+      call close_file(fileobj)
+    else
+      call mpp_error(FATAL, "Unable to open the file for writing")
+    endif
   else
-    call mpp_error(FATAL, "Unable to open the file for reading")
-  endif
-  call mpp_sync()
-  call mpp_clock_end(fms2_io_writes)
-
-  call mpp_clock_begin(pnetcdf_writes)
-  call check(nf90_create("test_parallel_netcdf.nc", IOR(NF90_NETCDF4, NF90_MPIIO), ncid, &
+    call check(nf90_create("test_parallel_netcdf.nc", IOR(NF90_NETCDF4, NF90_MPIIO), ncid, &
        comm = mpp_get_domain_tile_commid(Domain_write), info = MPP_INFO_NULL))
 
-  ! Define axis
-  call check(nf90_def_dim(ncid, "lon", nx, x_dimid))
-  call check(nf90_def_dim(ncid, "lat", ny, y_dimid))
-  call check(nf90_def_dim(ncid, "level", nz, z_dimid))
-  call check(nf90_def_dim(ncid, "time", unlimited, t_dimid))
+    ! Define axis
+    call check(nf90_def_dim(ncid, "lon", nx, x_dimid))
+    call check(nf90_def_dim(ncid, "lat", ny, y_dimid))
+    call check(nf90_def_dim(ncid, "level", nz, z_dimid))
+    call check(nf90_def_dim(ncid, "time", unlimited, t_dimid))
 
-  dimids = (/x_dimid, y_dimid, z_dimid, t_dimid/)
-  call check(nf90_def_var(ncid, "sst_3d", NF90_DOUBLE, dimids, varid))
+    dimids = (/x_dimid, y_dimid, z_dimid, t_dimid/)
+    call check(nf90_def_var(ncid, "sst_3d", NF90_DOUBLE, dimids, varid))
 
-  call check(nf90_enddef(ncid))
+    call check(nf90_enddef(ncid))
 
-  corners = (/is, js, 1, 1/)
-  edge_lengths = (/size(sst_in, 1), size(sst_in, 2), size(sst_in, 3), 1/)
+    corners = (/is, js, 1, 1/)
+    edge_lengths = (/size(sst_in, 1), size(sst_in, 2), size(sst_in, 3), 1/)
 
-  call check(nf90_var_par_access(ncid, varid, nf90_collective))
-  do i = 1, ntimes
-    corners(4) = i !< Update the unlimited dimension
-    call check(nf90_put_var(ncid, varid, sst_in, start = corners, &
-       count = edge_lengths))
-  enddo
-  call check(nf90_close(ncid))
+    call check(nf90_var_par_access(ncid, varid, nf90_collective))
+    do i = 1, ntimes
+      corners(4) = i !< Update the unlimited dimension
+      call check(nf90_put_var(ncid, varid, sst_in, start = corners, &
+        count = edge_lengths))
+    enddo
+    call check(nf90_close(ncid))
+  endif
+  call mpp_clock_end(fms2_io_writes)
 
-  call mpp_clock_end(pnetcdf_writes)
-
+  call mpp_sync()
+  call print_memuse_stats('End')
   call fms_end()
 
   contains
@@ -132,8 +134,8 @@ program test_parallel_netcdf_writes
   subroutine check(status)
     integer, intent ( in) :: status
 
-    if(status /= nf90_noerr) then 
+    if(status /= nf90_noerr) then
       call mpp_error(FATAL, trim(nf90_strerror(status)))
     end if
-  end subroutine check  
+  end subroutine check
 end program test_parallel_netcdf_writes
