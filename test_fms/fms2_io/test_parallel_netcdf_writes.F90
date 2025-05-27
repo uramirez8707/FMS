@@ -3,7 +3,7 @@ program test_parallel_netcdf_writes
   use   mpp_mod
   use   fms2_io_mod,     only: open_file, register_axis, register_variable_attribute, close_file, &
                                FmsNetcdfDomainFile_t, write_data, register_field, read_data, &
-                               parse_mask_table, unlimited
+                               parse_mask_table, unlimited, FMSnetcdfFile_t
   use   fms_mod,         only: fms_init, fms_end, check_nml_error
   use memutils_mod, only: print_memuse_stats
   use   platform_mod,    only: r4_kind, r8_kind, i4_kind, i8_kind
@@ -33,6 +33,7 @@ program test_parallel_netcdf_writes
   !< FMS2 io stuff
   character(len=6), dimension(4)        :: names        !< Dimension names for the dummy variables
   type(FmsNetcdfDomainFile_t)           :: fileobj             !< fms2io fileobj for domain decomposed
+  type(FMSnetcdfFile_t)                 :: fileobj2
 
   !< Parallel netcdf stuff
   integer :: ncid
@@ -41,6 +42,8 @@ program test_parallel_netcdf_writes
   integer :: varid
   integer :: corners(4)
   integer :: edge_lengths (4)
+  integer, allocatable :: pelist(:)
+  logical :: is_root
 
   !< Clocks
   integer :: fms2_io_writes
@@ -48,6 +51,7 @@ program test_parallel_netcdf_writes
 
   !< Data
   real, allocatable, dimension(:,:,:)   :: sst_in         !< Data to be written
+  real, allocatable, dimension(:,:,:)   :: sst_global         !< Data to be written
   integer                               :: i, j, k
   integer                               :: io_status    !< Status after reading the namelist
 
@@ -56,6 +60,22 @@ program test_parallel_netcdf_writes
   call fms_init()
   read (input_nml_file, test_parallel_netcdf_writes_nml, iostat=io_status)
   if (io_status > 0) call mpp_error(FATAL,'=>test_parallel_netcdf_writes_nml: Error reading input.nml')
+
+  if (test_case .eq. 3) then
+    ! Hack to test the io new mpp gather routines
+    ! The io_layout is 1, Y  but only 1 file will be created
+
+    ny = ny/ io_layout(2)
+    layout(2) = layout(2) / io_layout(2)
+    io_layout = (/ 1,1 /)
+  endif
+
+  ! Get all of the pes:
+  allocate(pelist(mpp_npes()))
+  call mpp_get_current_pelist(pelist)
+
+  is_root = .false.
+  if (mpp_pe() .eq. mpp_root_pe()) is_root = .true.
 
   ! Create a domain
   call mpp_domains_set_stack_size(17280000)
@@ -97,7 +117,7 @@ program test_parallel_netcdf_writes
     else
       call mpp_error(FATAL, "Unable to open the file for writing")
     endif
-  else
+  else if (test_case .eq. 2) then
     call check(nf90_create("test_parallel_netcdf.nc", IOR(NF90_NETCDF4, NF90_MPIIO), ncid, &
        comm = mpp_get_domain_tile_commid(Domain_write), info = MPP_INFO_NULL))
 
@@ -122,6 +142,39 @@ program test_parallel_netcdf_writes
         count = edge_lengths))
     enddo
     call check(nf90_close(ncid))
+  else
+
+    ! Only the root pe is going to write data!
+    if (mpp_pe() .eq. mpp_root_pe()) then
+      if (open_file(fileobj2, "test_domain_mppgather.nc.0001", "overwrite")) then
+        call register_axis(fileobj2, names(1), nx)
+        call register_axis(fileobj2, names(2), ny)
+        call register_axis(fileobj2, names(3), nz)
+        call register_axis(fileobj2, names(4), unlimited)
+
+        call register_field(fileobj2, "sst_3d", "double", names(1:4))
+      else
+        call mpp_error(FATAL, "Unable to open the file for writing")
+      endif
+    endif
+
+    do i = 1, ntimes
+      ! Root pe is going to collect all of the data
+      if (mpp_pe() .eq. mpp_root_pe()) then
+        ! Allocate a buffer big enough for all of the data
+        allocate(sst_global(nx, ny, nz))
+        sst_global = -999.999
+      endif
+
+      call mpp_gather(is, ie, js, je, nz, pelist, sst_in, sst_global, is_root)
+
+      if (mpp_pe() .eq. mpp_root_pe()) then
+        call write_data(fileobj2, "sst_3d", sst_global, unlim_dim_level = i)
+        deallocate(sst_global)
+      endif
+    enddo
+
+    if (mpp_pe() .eq. mpp_root_pe()) call close_file(fileobj2)
   endif
   call mpp_clock_end(fms2_io_writes)
 
