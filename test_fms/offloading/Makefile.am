@@ -29,12 +29,13 @@ AM_CPPFLAGS = -I${top_srcdir}/include -I$(MODDIR)
 LDADD = ${top_builddir}/libFMS/libFMS.la
 
 # Build this test program.
-check_PROGRAMS = test_io_offloading test_mpp_redistribute test_metadata_transfer
+check_PROGRAMS = test_io_offloading test_mpp_redistribute test_metadata_transfer io_offloading_driver
 
 # This is the source code for the test.
 test_io_offloading_SOURCES = test_io_offloading.F90
 test_mpp_redistribute_SOURCES = test_mpp_redistribute.F90
 test_metadata_transfer_SOURCES= test_metadata_transfer.F90
+io_offloading_driver_SOURCES = io_offloading_driver.F90
 
 # Run the test program.
 TESTS = test_io_offloading.sh
