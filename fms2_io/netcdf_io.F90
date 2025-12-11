@@ -386,7 +386,10 @@ subroutine check_netcdf_code(err, msg)
 
   character(len=80) :: buf
 
-  if (err .ne. nf90_noerr) then
+  if (err .eq. nf90_erange) then
+    buf = nf90_strerror(err)
+    call mpp_error(NOTE, trim(buf)//": "//trim(msg))
+  else if (err .ne. nf90_noerr) then
     buf = nf90_strerror(err)
     call error(trim(buf)//": "//trim(msg))
   endif
