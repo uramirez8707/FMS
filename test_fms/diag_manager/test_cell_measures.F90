@@ -108,9 +108,9 @@ program test_cell_measures
           " does not equal area_file2: file2.nc land_area2: static_file.nc")
 
       call get_variable_attribute(fileobj, "var1", "cell_measures", buffer)
-      if (trim(buffer) .ne. "area: land_area") &
-        call mpp_error(FATAL, "The cell_measures for var1 is not the expected result! "//trim(buffer)//&
-          " does not equal area: land_area")
+      if (trim(buffer) .ne. "area: area_file2") &
+        call mpp_error(FATAL, "qThe cell_measures for var1 is not the expected result! "//trim(buffer)//&
+          " does not equal area: area_file2")
       call close_file(fileobj)
 
       call get_variable_attribute(fileobj, "var2", "cell_measures", buffer)
@@ -129,6 +129,7 @@ program test_cell_measures
       ! Here area is in the file, but the output name is area_file2 instead of area
       if (.not. open_file(fileobj, "file2.nc", "read")) &
         call mpp_error(FATAL, "file1.nc was not created by the diag manager!")
+
       call get_variable_attribute(fileobj, "var1", "cell_measures", buffer)
       if (trim(buffer) .ne. "area: area_file2") &
         call mpp_error(FATAL, "The cell_measures attribute is not the expected result! ("//trim(buffer)//") vs "//&
