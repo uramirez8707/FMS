@@ -36,9 +36,12 @@ program test_cell_measures
   integer                         :: naxis1           !< Size of axis1
   real(kind=r4_kind), allocatable :: axis1_data(:)    !< Data for axis1
   integer                         :: id_var1          !< Id of var1
+  integer                         :: id_var2          !< Id of var2
+  integer                         :: id_var3          !< Id of var3
   real(kind=r4_kind), allocatable :: var1_data(:)     !< Data for "var1"
   real(kind=r4_kind), allocatable :: area_data(:)     !< Data for the "area"
   integer                         :: id_area          !< Id of the "area" field
+  integer                         :: id_area2         !< Id of the "area" field
   logical                         :: used             !< Used for send_data call
 
   naxis1 = 10
@@ -61,7 +64,10 @@ program test_cell_measures
 
   id_axis1  = diag_axis_init('axis1',  axis1_data,  'axis1', 'x')
   id_area = register_static_field ('fun_mod', 'area', (/id_axis1/))
+  id_area2 = register_static_field ('fun_mod', 'area2', (/id_axis1/))
   id_var1 = register_diag_field  ('fun_mod', 'var1', (/id_axis1/), init_time=Time, area=id_area)
+  id_var2 = register_diag_field  ('fun_mod', 'var2', (/id_axis1/), init_time=Time, area=id_area2)
+  id_var3 = register_diag_field  ('fun_mod', 'var3', (/id_axis1/), init_time=Time, area=id_area)
 
   used = send_data(id_area, area_data)
 
@@ -69,6 +75,8 @@ program test_cell_measures
     Time = Time + Time_step
     call diag_send_complete(Time_step)
     used = send_data(id_var1, var1_data, Time)
+    used = send_data(id_var2, var1_data, Time)
+    used = send_data(id_var3, var1_data, Time)
   enddo
   call diag_manager_end(Time)
 
@@ -85,6 +93,8 @@ program test_cell_measures
         call mpp_error(FATAL, "static_file.nc was not created by the diag manager!")
       if (.not. variable_exists(fileobj, "land_area")) &
         call mpp_error(FATAL, "land_area is not in static_file.nc")
+      if (.not. variable_exists(fileobj, "land_area2")) &
+        call mpp_error(FATAL, "land_area2 is not in static_file.nc")
       call close_file(fileobj)
 
       ! Check that file1.nc exists, that it contains the associated files attribute and it is correct,
@@ -93,13 +103,25 @@ program test_cell_measures
         call mpp_error(FATAL, "file1.nc was not created by the diag manager!")
 
       call get_global_attribute(fileobj, "associated_files", buffer)
-      if (trim(buffer) .ne. "land_area: static_file.nc") &
+      if (trim(buffer) .ne. "area_file2: file2.nc land_area2: static_file.nc") &
         call mpp_error(FATAL, "The associated_files global attribute is not the expected result! "//trim(buffer)//&
-          " does not equal land_area: static_file.nc")
+          " does not equal area_file2: file2.nc land_area2: static_file.nc")
 
       call get_variable_attribute(fileobj, "var1", "cell_measures", buffer)
       if (trim(buffer) .ne. "area: land_area") &
-        call mpp_error(FATAL, "The cell_measures attribute is not the expected result! "//trim(buffer)//&
+        call mpp_error(FATAL, "The cell_measures for var1 is not the expected result! "//trim(buffer)//&
+          " does not equal area: land_area")
+      call close_file(fileobj)
+
+      call get_variable_attribute(fileobj, "var2", "cell_measures", buffer)
+      if (trim(buffer) .ne. "area: land_area2") &
+        call mpp_error(FATAL, "The cell_measures for var2 is not the expected result! "//trim(buffer)//&
+          " does not equal area: land_area2")
+      call close_file(fileobj)
+
+      call get_variable_attribute(fileobj, "var3", "cell_measures", buffer)
+      if (trim(buffer) .ne. "area: land_area") &
+        call mpp_error(FATAL, "The cell_measures for var3 is not the expected result! "//trim(buffer)//&
           " does not equal area: land_area")
       call close_file(fileobj)
 
