@@ -2018,6 +2018,9 @@ subroutine generate_associated_files_att(this, att, start_time, var_output_name)
   file_name = this%get_field_file_name()
   field_name = this%get_varname(to_write = .true., filename=file_name)
 
+  ! Save the outputname of the area/volume so it can be added correctly to the cell_measures attribute
+  var_output_name = field_name
+
   ! Check if the field is already in the associated files attribute (i.e the area can be associated with multiple
   ! fields in the file, but it only needs to be added once)
   if (index(att, field_name) .ne. 0) return
