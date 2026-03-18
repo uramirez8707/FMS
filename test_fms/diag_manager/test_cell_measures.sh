@@ -40,6 +40,14 @@ diag_files:
     var_name: var1
     reduction: average
     kind: r4
+  - module: fun_mod
+    var_name: var2
+    reduction: average
+    kind: r4
+  - module: fun_mod
+    var_name: var3
+    reduction: average
+    kind: r4
 - file_name: file2
   freq: 1 hours
   time_units: hours
@@ -59,6 +67,11 @@ diag_files:
   - module: fun_mod
     var_name: area
     output_name: land_area
+    reduction: none
+    kind: r4
+  - module: fun_mod
+    var_name: area2
+    output_name: land_area2
     reduction: none
     kind: r4
 _EOF
