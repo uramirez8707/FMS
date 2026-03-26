@@ -59,6 +59,14 @@ AC_ARG_WITH([mpi],
 AS_IF([test ${with_mpi:-yes} = yes],
   [with_mpi=yes],
   [with_mpi=no])
+
+AC_ARG_WITH([FTorch],
+  [AS_HELP_STRING([--with-FTorch],
+    [Build with FTorch support.  This option will be ignored if --disable-fortran-flag-setting is also given. (Default no)])])
+AS_IF([test ${with_FTorch:-no} = no],
+  [with_ftorch=no],
+  [with_ftorch=yes])
+
 AC_ARG_WITH([yaml],
   [AS_HELP_STRING([--with-yaml],
     [Build with YAML support.  This option will be ignored if --disable-fortran-flag-setting is also given. (Default no)])])
@@ -204,6 +212,42 @@ if test $with_yaml = yes; then
   AM_CONDITIONAL([USING_YAML], true)
 else
   AM_CONDITIONAL([USING_YAML], false)
+fi
+
+# Require FTorch
+if test $with_ftorch = yes; then
+  AC_FC_FREEFORM()
+  AC_LANG_PUSH([Fortran])
+  AC_MSG_CHECKING([for ftorch.mod])
+  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([], [use ftorch])], [
+    AC_MSG_RESULT([yes])
+    AC_MSG_CHECKING([if FTorch library can be linked])
+    AC_LINK_IFELSE(
+      [AC_LANG_PROGRAM([], [[
+      use ftorch
+      use, intrinsic :: iso_c_binding, only: c_int64_t
+
+      type(torch_tensor) :: a
+      integer(c_int64_t), dimension(2), parameter :: tensor_shape = [2, 3]
+
+      call torch_tensor_ones(a, 2, tensor_shape, torch_kFloat32, torch_kCPU)
+  ]])],
+      [AC_MSG_RESULT([yes])],
+      [
+        AC_MSG_RESULT([no])
+        AC_MSG_ERROR([Could not link FTorch library. Please set LDFLAGS="-L/path/to/ftorch -lftorch"])
+      ]
+    )
+  ], [
+    AC_MSG_RESULT([no])
+    AC_MSG_ERROR([Could not find ftorch.mod. Please set FCFLAGS="-I/path/to/ftorch"])
+  ])
+  AC_LANG_POP([Fortran])
+
+  AC_DEFINE([use_FTorch], [1], [This is required to use FTorch])
+  AM_CONDITIONAL([USING_FTORCH], true)
+else
+  AM_CONDITIONAL([USING_FTORCH], false)
 fi
 
 # Require netCDF
