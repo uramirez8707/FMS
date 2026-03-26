@@ -64,6 +64,7 @@ option(ENABLE_QUAD_PRECISION "Enable compiler definition -DENABLE_QUAD_PRECISION
 option(PORTABLE_KINDS        "Enable compiler definition -DPORTABLE_KINDS"        OFF)
 option(GFS_PHYS              "Enable compiler definition -DGFS_PHYS"              OFF)
 option(WITH_YAML             "Enable compiler definition -Duse_yaml"              OFF)
+option(WITH_FTORCH           "Enable compiler definition -Duse_FTorch"            OFF)
 
 if(32BIT)
   list(APPEND kinds "r4")
@@ -93,6 +94,11 @@ endif()
 if (WITH_YAML)
   find_package(PkgConfig REQUIRED)
   pkg_check_modules(YAML REQUIRED IMPORTED_TARGET "yaml-0.1")
+endif ()
+
+if (WITH_FTORCH)
+  find_package(PkgConfig REQUIRED)
+  pkg_check_modules(FTORCH REQUIRED IMPORTED_TARGET "ftorch")
 endif ()
 
 # Enables position independent code (i.e., -fPIC)
@@ -254,6 +260,10 @@ endif()
 
 if(WITH_YAML)
   list(APPEND fms_defs use_yaml)
+endif()
+
+if(WITH_FTORCH)
+  list(APPEND fms_defs use_FTorch)
 endif()
 
 if(USE_DEPRECATED_IO)
@@ -418,6 +428,10 @@ foreach(kind ${kinds})
     target_link_libraries(${libTgt} PRIVATE PkgConfig::YAML)
   endif()
 
+  if(FTORCH_FOUND)
+    target_link_libraries(${libTgt} PRIVATE PkgConfig::FTORCH)
+  endif()
+
   if(OpenMP_Fortran_FOUND)
     target_link_libraries(${libTgt} PRIVATE OpenMP::OpenMP_C OpenMP::OpenMP_Fortran)
   endif()
@@ -557,6 +571,10 @@ if(NOT kinds)
 
     if(YAML_FOUND)
       target_link_libraries(${libTgt} PRIVATE PkgConfig::YAML)
+    endif()
+
+    if(FTORCH_FOUND)
+      target_link_libraries(${libTgt} PRIVATE PkgConfig::FTORCH)
     endif()
 
     if(OpenMP_Fortran_FOUND)
