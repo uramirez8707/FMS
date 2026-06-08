@@ -52,6 +52,7 @@ check_PROGRAMS = test_mpp \
   test_peset \
   test_mpp_update_domains \
   test_mpp_gatscat \
+  test_mpp_pelist_gatscat_gen_ind \
   test_mpp_sum \
   test_update_domains_performance \
   test_minmax \
@@ -70,7 +71,8 @@ check_PROGRAMS = test_mpp \
   test_mpp_clock_begin_end_id \
   test_mpp_nesting \
   test_mpp_chksum \
-  test_stdlog
+  test_stdlog \
+  test_corner_mosaic
 
 # These are the sources for the tests.
 test_mpp_SOURCES = test_mpp.F90
@@ -111,6 +113,7 @@ test_mpp_update_domains_SOURCES = \
   test_mpp_update_domains_int.F90 \
   test_mpp_update_domains.F90
 test_mpp_gatscat_SOURCES = test_mpp_gatscat.F90
+test_mpp_pelist_gatscat_gen_ind_SOURCES = test_mpp_pelist_gatscat_gen_ind.F90
 test_mpp_sendrecv_SOURCES = test_mpp_sendrecv.F90
 test_mpp_sum_SOURCES = test_mpp_sum.F90
 test_update_domains_performance_SOURCES = \
@@ -138,6 +141,7 @@ test_mpp_clock_begin_end_id_SOURCES=test_mpp_clock_begin_end_id.F90
 test_super_grid_SOURCES = test_super_grid.F90
 test_mpp_chksum_SOURCES = test_mpp_chksum.F90
 test_stdlog_SOURCES = test_stdlog.F90
+test_corner_mosaic_SOURCES = test_corner_mosaic.F90
 
 test_mpp_global_field_r4_CPPFLAGS = $(AM_CPPFLAGS) -DFMS_TEST_TYPE_=real    -DFMS_TEST_KIND_=r4_kind
 test_mpp_global_field_r8_CPPFLAGS = $(AM_CPPFLAGS) -DFMS_TEST_TYPE_=real    -DFMS_TEST_KIND_=r8_kind

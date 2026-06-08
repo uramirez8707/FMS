@@ -400,10 +400,9 @@ logical :: read_all_on_init = .false.          !< No description
 integer :: verbose = 0                         !< No description
 logical :: conservative_interp = .true.        !< No description
 logical :: retain_cm3_bug = .false.            !< No description
-logical :: use_mpp_io = .false. !< Set to true to use mpp_io, otherwise fms2io is used
 
 namelist /interpolator_nml/    &
-                             read_all_on_init, verbose, conservative_interp, retain_cm3_bug, use_mpp_io
+                             read_all_on_init, verbose, conservative_interp, retain_cm3_bug
 
 contains
 
@@ -768,6 +767,33 @@ if (string(len:len) == CHAR(0)) len = len -1
 chomp = string(:len)
 
 end function chomp
+
+!> @brief Produce an inverse permutation. For example, transform [2, 3, 1, 4] into [3, 1, 2, 4].
+!!
+!! @param [in] <x> The original permutation vector
+!! @param [out] <x> The inverted permutation vector
+subroutine inverse_permutation(x, y)
+  use fms_string_utils_mod, only: string
+  integer, intent(in) :: x(:)
+  integer, intent(out) :: y(size(x))
+  integer :: i, n
+
+  y = 0
+
+  n = size(x)
+  do i=1,n
+    if (x(i).ge.1 .and. x(i).le.n) then
+      y(x(i)) = i
+    else
+      call mpp_error(FATAL, "interpolator_mod: Invalid dim_order. Values must be in the range from 1 through " &
+                            // string(n) // ".")
+    endif
+  enddo
+
+  if (any(y.eq.0)) then
+    call mpp_error(FATAL, "interpolator_mod: Invalid dim_order. Values must be non-repeating.")
+  endif
+end subroutine inverse_permutation
 !
 !########################################################################
 
