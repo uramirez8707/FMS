@@ -1397,16 +1397,19 @@ function get_chunksizes(this, diag_axis, field_yaml) &
   integer :: specified_chunksizes(MAX_DIMENSIONS) !< Chunksizes specified in the yaml
 
   ndim = size(this%axis_ids)
-  allocate(chunksizes(ndim + 1)) !! Adding 1 because of the unlimited dimension
+  if (.not. this%static) then
+    ndim = ndim + 1
+  endif
+  allocate(chunksizes(ndim))
   chunksizes = 1
   if (field_yaml%has_chunksizes()) then
     specified_chunksizes = field_yaml%get_chunksizes()
-    chunksizes = specified_chunksizes(1:ndim+1)
+    chunksizes = specified_chunksizes(1:ndim)
     return
   endif
 
   ! Determine some default chunksizes to use, based on the compute domain
-  do i = 1, ndim
+  do i = 1, size(this%axis_ids)
     select type (axis => diag_axis(this%axis_ids(i))%axis)
     type is (fmsDiagFullAxis_type)
       if (axis%is_x_or_y_axis()) then
