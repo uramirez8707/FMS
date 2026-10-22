@@ -35,9 +35,10 @@ check_PROGRAMS = test_diag_manager test_diag_manager_time \
  check_var_masks test_multiple_send_data test_diag_out_yaml test_output_every_freq \
  test_dm_weights test_prepend_date test_ens_runs test_diag_multi_file test_diag_attribute_add \
  check_new_file_freq test_zbounds_limits test_multiple_zbounds test_diag_generalized_indices check_diag_generalized_indices \
- test_wildcard_filename
+ test_wildcard_filename test_collective_diag
 
 # This is the source code for the test.
+test_collective_diag_SOURCES = test_collective_diag.F90
 test_output_every_freq_SOURCES = test_output_every_freq.F90
 test_dm_weights_SOURCES = test_dm_weights.F90
 test_diag_manager_SOURCES = test_diag_manager.F90
@@ -86,7 +87,7 @@ TESTS = test_diag_manager2.sh test_time_none.sh test_time_min.sh test_time_max.s
         test_subregional.sh test_var_masks.sh test_multiple_send_data.sh test_output_every_freq.sh \
         test_dm_weights.sh test_flush_nc_file.sh test_prepend_date.sh test_ens_runs.sh test_diag_multi_file.sh \
         test_diag_attribute_add.sh test_time_none_netcdf4.sh test_zbounds_limits.sh test_multiple_zbounds.sh \
-        test_wildcard_filename.sh
+        test_wildcard_filename.sh test_collective_diag.sh
 
 testing_utils.mod: testing_utils.$(OBJEXT)
 
@@ -96,7 +97,7 @@ EXTRA_DIST = test_diag_manager2.sh check_crashes.sh test_time_none.sh test_time_
              test_cell_measures.sh test_subregional.sh test_var_masks.sh test_multiple_send_data.sh \
              test_flush_nc_file.sh test_dm_weights.sh test_output_every_freq.sh test_prepend_date.sh \
              test_ens_runs.sh test_diag_multi_file.sh test_diag_attribute_add.sh test_time_none_netcdf4.sh \
-             test_zbounds_limits.sh test_multiple_zbounds.sh test_wildcard_filename.sh
+             test_zbounds_limits.sh test_multiple_zbounds.sh test_wildcard_filename.sh test_collective_diag.sh
 
 if USING_YAML
   parser_skip=""
