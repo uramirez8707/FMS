@@ -14,8 +14,8 @@ program test_collective_diag_fields
   integer                           :: is, ie, js, je   !< Starting and Ending indices for the x and y dimensions
   real, allocatable                 :: var1(:,:,:)      !< Dummy data for var1
   integer                           :: id_x, id_y, id_z !< Ids of the x, y and z axis
-  integer                           :: id_var1          !< Id for var1
-  integer                           :: id_var2          !< Id for var2
+  integer                           :: id_static        !< Id for the static variable
+  integer, allocatable              :: id_var(:)        !< Id for all the time-dependent variables
   logical                           :: used             !< Set to .True. if the send data call was successful
   integer                           :: io_status        !< Error code when reading the namelist
 
@@ -25,8 +25,9 @@ program test_collective_diag_fields
   integer                           :: ny = 30          !< Number of points in the y axis
   integer                           :: nz = 5           !< Number of points in the z axis
   integer                           :: nt = 24          !< Number of hours to run the simulation
+  integer                           :: nvariables = 1   !< Number of time-dependent variables to run with
   
-  namelist / test_collective_diag_fields_nml / nx, ny, nz, nt, layout
+  namelist / test_collective_diag_fields_nml / nx, ny, nz, nt, layout, nvariables
 
   call fms_init
   call set_calendar_type(JULIAN)
@@ -61,14 +62,20 @@ program test_collective_diag_fields
   id_z  = diag_axis_init('z',  z,  'point_Z', 'z', long_name='point_Z')
 
   ! Register the variables
-  id_var1 = register_static_field ('atm_mod', 'var1', (/id_x, id_y/), "Be static!", "none")
-  id_var2 = register_diag_field   ('atm_mod', 'var2', (/id_x, id_y/), Time, 'Var in a cube sphere domain', 'mullions')
+  id_static = register_static_field ('atm_mod', 'var_static', (/id_x, id_y/), "Dummy static variable", "none")
+  allocate(id_var(nvariables))
+  do i = 1, nvariables
+    id_var(i) = register_diag_field   ('atm_mod', 'var'//string(i), (/id_x, id_y, id_z/), Time, &
+                                       'Dummy variable #'//string(i), 'none')
+  enddo
 
   var1 = 5.43
-  used = send_data(id_var1, var1(:,:,1), Time)
+  used = send_data(id_static, var1(:,:,1), Time)
   do i = 1, nt
     Time = Time + Time_step
-    used = send_data(id_var2, var1(:,:,1), Time)
+    do j =  1, nvariables
+      used = send_data(id_var(j), var1, Time)
+    enddo
     call diag_send_complete(Time)
   enddo
 

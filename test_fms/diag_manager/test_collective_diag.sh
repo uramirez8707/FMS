@@ -37,9 +37,32 @@ diag_files:
   time_units: hours
   unlimdim: time
   use_collective_writes: True
+  reduction: none
+  kind: r4
+  module: atm_mod
+  varlist:
+  - var_name: var1
+_EOF
+
+my_test_count=1
+printf "&diag_manager_nml \n use_modern_diag=.true. \n / \n&test_reduction_methods_nml \n test_case = 0 \n/" | cat > input.nml
+test_expect_success "Running diag_manager with use_collective_writes (test $my_test_count)" '
+  mpirun -n 2 ../test_collective_diag
+'
+
+cat <<_EOF > diag_table.yaml
+title: test_diag_manager
+base_date: 2 1 1 0 0 0
+
+diag_files:
+- file_name: file1
+  freq: 6 hours
+  time_units: hours
+  unlimdim: time
+  use_collective_writes: True
   varlist:
   - module: atm_mod
-    var_name: var1
+    var_name: var_static
     reduction: none
     kind: r4
 _EOF
