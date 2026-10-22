@@ -65,10 +65,10 @@ program test_collective_diag_fields
   id_var2 = register_diag_field   ('atm_mod', 'var2', (/id_x, id_y/), Time, 'Var in a cube sphere domain', 'mullions')
 
   var1 = 5.43
-  used = send_data(id_var1, var1, Time)
+  used = send_data(id_var1, var1(:,:,1), Time)
   do i = 1, nt
     Time = Time + Time_step
-    used = send_data(id_var2, var1, Time)
+    used = send_data(id_var2, var1(:,:,1), Time)
     call diag_send_complete(Time)
   enddo
 
