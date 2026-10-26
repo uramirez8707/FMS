@@ -1414,15 +1414,12 @@ function get_chunksizes(this, diag_axis, field_yaml) &
     type is (fmsDiagFullAxis_type)
       if (axis%is_x_or_y_axis()) then
         call axis%get_dim_size_layout(dim_size, layout)
-        if (mod(dim_size, layout) == 0) then
-          chunksizes(i) = dim_size / layout
-        else
-          call mpp_error(FATAL, "The variable "//field_yaml%get_var_varname()//" has a layout that is not"//&
+        chunksizes(i) = dim_size / layout
+        call mpp_error(NOTE, "The variable "//field_yaml%get_var_varname()//" has a layout that is not"//&
                                 "evenly divisible by dimension size for axis "//axis%get_axis_name()//"."&
                                 "This may lead to poor performance when using collective writes. "//&
                                 "Consider using a different layout, disabling collective writes, "//&
                                 "or specifying chunksizes manually via the diag table yaml")
-        endif
       else if (axis%is_z_axis() .and. field_yaml%has_var_zbounds()) then
           !TODO Handle edge case: chunking for z-axis with layer bounds (not yet implemented)
       else

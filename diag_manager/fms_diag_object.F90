@@ -16,7 +16,8 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 module fms_diag_object_mod
-use mpp_mod, only: fatal, note, warning, mpp_error, mpp_pe, mpp_root_pe, stdout
+use mpp_mod, only: fatal, note, warning, mpp_error, mpp_pe, mpp_root_pe, stdout, mpp_sync, mpp_clock_end, &
+                   mpp_clock_begin, mpp_clock_id
 use diag_data_mod,  only: diag_null, diag_not_found, diag_not_registered, diag_registered_id, &
                          &DIAG_FIELD_NOT_FOUND, diag_not_registered, max_axes, TWO_D_DOMAIN, &
                          &get_base_time, NULL_AXIS_ID, get_var_type, diag_not_registered, &
@@ -73,6 +74,8 @@ private
   logical, private :: axes_initialized=.false. !< True if the fmsDiagObject is initialized
   type(time_type) :: model_end_time !< The time that the simulation is going to end
                                     !! (set by calling diag_manager_set_time_end)
+  integer, private :: clock_id
+
 #endif
   contains
     procedure :: init => fms_diag_object_init
@@ -148,6 +151,7 @@ subroutine fms_diag_object_init (this,diag_subset_output, time_init)
   this%registered_axis = 0
   this%data_was_send = .false.
   this%initialized = .true.
+  this%clock_id = mpp_clock_id('fms_diag_do_io')
 #else
   call mpp_error("fms_diag_object_init",&
     "You must compile with -Duse_yaml to use the option use_modern_diag", FATAL)
@@ -198,7 +202,12 @@ subroutine fms_diag_object_end (this, time)
   if (.not. this%initialized) return
 
   call this%do_buffer_math()
+
+  call mpp_clock_begin(this%clock_id)
+  call mpp_sync()
   call this%fms_diag_do_io(end_time=time)
+  call mpp_sync()
+  call mpp_clock_end(this%clock_id)
 
   call this%write_diag_manifest()
 

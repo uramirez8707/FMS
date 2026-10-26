@@ -65,7 +65,7 @@ program test_collective_diag_fields
   id_static = register_static_field ('atm_mod', 'var_static', (/id_x, id_y/), "Dummy static variable", "none")
   allocate(id_var(nvariables))
   do i = 1, nvariables
-    id_var(i) = register_diag_field   ('atm_mod', 'var'//string(i), (/id_x, id_y, id_z/), Time, &
+    id_var(i) = register_diag_field   ('atm_mod', 'var'//string(i), (/id_x, id_y/), Time, &
                                        'Dummy variable #'//string(i), 'none')
   enddo
 
@@ -74,7 +74,7 @@ program test_collective_diag_fields
   do i = 1, nt
     Time = Time + Time_step
     do j =  1, nvariables
-      used = send_data(id_var(j), var1, Time)
+      used = send_data(id_var(j), var1(:,:,1), Time)
     enddo
     call diag_send_complete(Time)
   enddo
