@@ -202,13 +202,7 @@ subroutine fms_diag_object_end (this, time)
   if (.not. this%initialized) return
 
   call this%do_buffer_math()
-
-  call mpp_clock_begin(this%clock_id)
-  call mpp_sync()
   call this%fms_diag_do_io(end_time=time)
-  call mpp_sync()
-  call mpp_clock_end(this%clock_id)
-
   call this%write_diag_manifest()
 
   !TODO: Deallocate diag object arrays and clean up all memory
@@ -834,7 +828,10 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
   if (.not. this%data_was_send) return
 
   call this%do_buffer_math()
+  call mpp_sync()
+  call mpp_clock_begin(this%clock_id)
   call this%fms_diag_do_io()
+  call mpp_clock_end(this%clock_id)
 
   this%data_was_send = .false.
 #endif
@@ -873,7 +870,6 @@ subroutine fms_diag_do_io(this, end_time)
 
   do i = 1, size(this%FMS_diag_files)
     diag_file => this%FMS_diag_files(i)
-
     !< Go away if the file is a subregional file and the current PE does not have any data for it
     if (.not. diag_file%writing_on_this_pe()) cycle
 
@@ -884,6 +880,9 @@ subroutine fms_diag_do_io(this, end_time)
       model_time => diag_file%get_model_time()
     endif
     if (diag_file%FMS_diag_file%is_done_writing_data()) cycle
+
+    call mpp_sync()
+    call mpp_clock_begin(diag_file%clock_id)
 
     call diag_file%open_diag_file(model_time, file_is_opened_this_time_step)
     if (file_is_opened_this_time_step) then
@@ -947,6 +946,7 @@ subroutine fms_diag_do_io(this, end_time)
       call diag_file%close_diag_file(this%FMS_diag_output_buffers, &
         this%model_end_time, diag_fields = this%FMS_diag_fields)
     endif
+    call mpp_clock_end(diag_file%clock_id)
   enddo
 #endif
 end subroutine fms_diag_do_io

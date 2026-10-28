@@ -48,7 +48,7 @@ use fms_diag_axis_object_mod, only: diagDomain_t, get_domain_and_domain_type, fm
 use fms_diag_field_object_mod, only: fmsDiagField_type
 use fms_diag_output_buffer_mod, only: fmsDiagOutputBuffer_type
 use mpp_mod, only: mpp_get_current_pelist, mpp_npes, mpp_root_pe, mpp_pe, mpp_error, FATAL, stdout, &
-                   uppercase, lowercase, NOTE, mpp_max
+                   uppercase, lowercase, NOTE, mpp_max, mpp_clock_id
 use platform_mod, only: FMS_FILE_LEN
 use mpp_domains_mod, only: mpp_get_ntile_count, mpp_get_UG_domain_ntiles, mpp_get_io_domain_layout, &
                            mpp_get_io_domain_UG_layout
@@ -176,6 +176,7 @@ end type subRegionalFile_type
 !> \brief A container for fmsDiagFile_type.  This is used to create the array of files
 type fmsDiagFileContainer_type
   class (fmsDiagFile_type),allocatable :: FMS_diag_file !< The individual file object
+  integer :: clock_id
 
   contains
   procedure :: is_regional
@@ -244,6 +245,7 @@ logical function fms_diag_files_object_init (files_array)
      endif
      !!
      obj%diag_yaml_file => diag_yaml%diag_files(i)
+     files_array(i)%clock_id = mpp_clock_id(obj%diag_yaml_file%get_file_fname())
      obj%id = i
      allocate(obj%field_ids(diag_yaml%diag_files(i)%size_file_varlist()))
      allocate(obj%buffer_ids(diag_yaml%diag_files(i)%size_file_varlist()))
